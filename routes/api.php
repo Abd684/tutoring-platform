@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AiEvaluationController;
 use App\Http\Controllers\Api\V1\AnswerController;
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\ContentAssetController;
@@ -54,6 +55,12 @@ Route::prefix('v1')
             'teacher-subscriptions' => TeacherSubscriptionController::class,
         ]);
 
+
+        // Public authentication routes (temporary test routes in api.php)
+        Route::prefix('auth')->group(function () {
+            Route::post('/register', [AuthController::class, 'register']);
+            Route::post('/login', [AuthController::class, 'studentLogin']);
+        });
         Route::apiResource('users', UserController::class);
         Route::apiResource('students', StudentController::class);
         Route::apiResource('governortates', GovernortateController::class);
