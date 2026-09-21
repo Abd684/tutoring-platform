@@ -10,19 +10,19 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\DeviceEventController;
 use App\Http\Controllers\Api\V1\DeviceSessionController;
 use App\Http\Controllers\Api\V1\EscrowTransactionController;
+use App\Http\Controllers\Api\V1\GovernortateController;
 use App\Http\Controllers\Api\V1\GroupController;
 use App\Http\Controllers\Api\V1\GroupEnrollmentController;
-use App\Http\Controllers\Api\V1\GovernortateController;
 use App\Http\Controllers\Api\V1\LessonController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\PdfAssetController;
 use App\Http\Controllers\Api\V1\QuestionController;
-use App\Http\Controllers\Api\V1\RegionController;
 use App\Http\Controllers\Api\V1\QuizAttemptController;
 use App\Http\Controllers\Api\V1\QuizController;
-use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\RegionController;
 use App\Http\Controllers\Api\V1\SchoolController;
+use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\StudentController;
 use App\Http\Controllers\Api\V1\SubjectController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanController;
@@ -38,7 +38,6 @@ use App\Http\Controllers\Api\V1\WalletTransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')
-    ->middleware('throttle:api')
     ->group(function () {
         Route::apiResources([
             'teachers' => TeacherController::class,
@@ -79,3 +78,9 @@ Route::prefix('v1')
         Route::apiResource('audit-logs', AuditLogController::class);
         Route::apiResource('escrow-transactions', EscrowTransactionController::class);
     });
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/admin-only', function () {
+        return response()->json(['message' => 'Welcome, admin!']);
+    });
+});
