@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -17,7 +18,7 @@ class User extends Authenticatable
     public $timestamps = false;
 
     protected $fillable = [
-        'name', 'phone', 'email', 'password_hash', 'role', 'status',
+        'name', 'phone', 'email', 'password_hash', 'role', 'status', 'region_id',
     ];
 
     protected $hidden = [
@@ -42,6 +43,7 @@ class User extends Authenticatable
     }
 
     public function student(): HasOne { return $this->hasOne(Student::class); }
+    public function region(): BelongsTo { return $this->belongsTo(Region::class); }
     public function teacher(): HasOne { return $this->hasOne(Teacher::class); }
     public function payments(): HasMany { return $this->hasMany(Payment::class, 'payer_id'); }
     public function wallets(): HasMany { return $this->hasMany(Wallet::class); }
