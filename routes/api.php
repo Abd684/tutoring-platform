@@ -1,10 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\AiEvaluationController;
 use App\Http\Controllers\Api\V1\AnswerController;
-use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuditLogController;
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ContentAssetController;
 use App\Http\Controllers\Api\V1\ContentController;
 use App\Http\Controllers\Api\V1\DeviceController;
@@ -55,7 +56,6 @@ Route::prefix('v1')
             'teacher-subscriptions' => TeacherSubscriptionController::class,
         ]);
 
-
         // Public authentication routes (temporary test routes in api.php)
         Route::prefix('auth')->group(function () {
             Route::post('/register', [AuthController::class, 'register']);
@@ -86,7 +86,10 @@ Route::prefix('v1')
         Route::apiResource('escrow-transactions', EscrowTransactionController::class);
     });
 
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+Route::prefix('v1/admin')->middleware(['auth:sanctum', 'role:company_admin'])->group(function () {
+    Route::patch('/users/{user}/suspend', [AdminController::class, 'suspendUser']);
+    Route::patch('/users/{user}/activate', [AdminController::class, 'activateUser']);
+
     Route::get('/admin-only', function () {
         return response()->json(['message' => 'Welcome, admin!']);
     });
