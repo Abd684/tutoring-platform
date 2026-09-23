@@ -1,0 +1,121 @@
+{
+  "info": {
+    "name": "Liqaa - Teacher API",
+    "description": "Automated teacher authentication and subscription flow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:8001/api/v1/teacher" },
+    { "key": "teacherEmail", "value": "postman.teacher@example.com" },
+    { "key": "teacherPassword", "value": "Password123!" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "planId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Teacher Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{teacherEmail}}\",\n  \"password\": \"{{teacherPassword}}\"\n}" },
+        "url": "{{baseUrl}}/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Login returns 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.test('Token pair is returned', () => { pm.expect(body.access_token).to.be.a('string'); pm.expect(body.refresh_token).to.be.a('string'); });",
+        "pm.collectionVariables.set('accessToken', body.access_token);",
+        "pm.collectionVariables.set('refreshToken', body.refresh_token);"
+      ] }}]
+    },
+    {
+      "name": "02 - Current Teacher",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": "{{baseUrl}}/me"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Profile returns 200', () => pm.response.to.have.status(200));",
+        "pm.test('Teacher profile is active', () => pm.expect(pm.response.json().teacher.status).to.eql('active'));"
+      ] }}]
+    },
+    {
+      "name": "03 - Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}" },
+        "url": "{{baseUrl}}/refresh"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Refresh returns 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.test('A rotated token pair is returned', () => { pm.expect(body.access_token).to.be.a('string'); pm.expect(body.refresh_token).to.be.a('string'); });",
+        "pm.collectionVariables.set('accessToken', body.access_token);",
+        "pm.collectionVariables.set('refreshToken', body.refresh_token);"
+      ] }}]
+    },
+    {
+      "name": "04 - Available Subscription Plans",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": "{{baseUrl}}/subscription-plans?billing_cycle=monthly"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Plans return 200', () => pm.response.to.have.status(200));",
+        "const body = pm.response.json();",
+        "pm.test('At least one active plan is returned', () => pm.expect(body.data.length).to.be.above(0));",
+        "pm.collectionVariables.set('planId', body.data[0].id);"
+      ] }}]
+    },
+    {
+      "name": "05 - Subscribe To Plan",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"auto_renew\": true\n}" },
+        "url": "{{baseUrl}}/subscription-plans/{{planId}}/subscribe"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Subscription is created', () => pm.response.to.have.status(201));",
+        "pm.test('Subscription is active', () => pm.expect(pm.response.json().data.status).to.eql('active'));"
+      ] }}]
+    },
+    {
+      "name": "06 - Prevent Duplicate Subscription",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{}" },
+        "url": "{{baseUrl}}/subscription-plans/{{planId}}/subscribe"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Duplicate subscription returns 409', () => pm.response.to.have.status(409));"
+      ] }}]
+    },
+    {
+      "name": "07 - Teacher Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}" },
+        "url": "{{baseUrl}}/logout"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Logout returns 200', () => pm.response.to.have.status(200));"
+      ] }}]
+    }
+  ]
+}

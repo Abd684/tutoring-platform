@@ -9,6 +9,25 @@ use Illuminate\Validation\Rule;
 
 class SubscriptionPlanController extends ApiController
 {
+    public function available(Request $request): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'billing_cycle' => ['sometimes', Rule::in(['monthly', 'yearly'])],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $query = SubscriptionPlan::query()
+            ->where('status', 'active')
+            ->when(
+                isset($validatedData['billing_cycle']),
+                fn ($query) => $query->where('billing_cycle', $validatedData['billing_cycle'])
+            )
+            ->orderBy('price')
+            ->orderBy('id');
+
+        return $this->paginated($query->paginate($this->perPage($request)));
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = SubscriptionPlan::query();

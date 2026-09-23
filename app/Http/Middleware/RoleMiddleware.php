@@ -14,7 +14,7 @@ class RoleMiddleware
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        if ($request->user()->role !== $roles) {
+        if (! in_array($request->user()->role, $roles, true)) {
             return response()->json(['message' => 'you do not have permission to access this resource'], 403);
         }
 

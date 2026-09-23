@@ -2,13 +2,89 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\SubscriptionPlan;
 use App\Models\TeacherSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class TeacherSubscriptionController extends ApiController
 {
+    public function subscribe(Request $request, SubscriptionPlan $subscriptionPlan): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'auto_renew' => ['sometimes', 'boolean'],
+        ]);
+
+        if ($subscriptionPlan->status !== 'active') {
+            return $this->businessError('This subscription plan is not available.', 422);
+        }
+
+        $teacher = $request->user()->teacher;
+
+        if (! $teacher || $teacher->status !== 'active') {
+            return $this->businessError('The teacher account must be activated before subscribing.', 403);
+        }
+
+        $result = DB::transaction(function () use ($teacher, $subscriptionPlan, $validatedData): array {
+            $now = now();
+
+            TeacherSubscription::query()
+                ->where('teacher_id', $teacher->id)
+                ->where('status', 'active')
+                ->where('ends_at', '<=', $now)
+                ->update(['status' => 'expired']);
+
+            $currentSubscription = TeacherSubscription::query()
+                ->where('teacher_id', $teacher->id)
+                ->where('status', 'active')
+                ->where('ends_at', '>', $now)
+                ->lockForUpdate()
+                ->first();
+
+            if ($currentSubscription?->plan_id === $subscriptionPlan->id) {
+                return ['subscription' => $currentSubscription, 'action' => 'unchanged'];
+            }
+
+            if ($currentSubscription) {
+                $currentSubscription->update(['status' => 'cancelled']);
+            }
+
+            $endsAt = $subscriptionPlan->billing_cycle === 'yearly'
+                ? $now->copy()->addYearNoOverflow()
+                : $now->copy()->addMonthNoOverflow();
+
+            $subscription = TeacherSubscription::create([
+                'teacher_id' => $teacher->id,
+                'plan_id' => $subscriptionPlan->id,
+                'starts_at' => $now,
+                'ends_at' => $endsAt,
+                'auto_renew' => $validatedData['auto_renew'] ?? false,
+                'status' => 'active',
+            ]);
+
+            return [
+                'subscription' => $subscription,
+                'action' => $currentSubscription ? 'upgraded' : 'subscribed',
+            ];
+        });
+
+        if ($result['action'] === 'unchanged') {
+            return $this->businessError('You are already subscribed to this plan.', 409);
+        }
+
+        $message = $result['action'] === 'upgraded'
+            ? 'Subscription upgraded successfully.'
+            : 'Subscription created successfully.';
+
+        return $this->success(
+            $result['subscription']->load('plan'),
+            $message,
+            $result['action'] === 'subscribed' ? 201 : 200
+        );
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = TeacherSubscription::query()->with([
