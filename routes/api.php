@@ -5,7 +5,6 @@ use App\Http\Controllers\Api\V1\AiEvaluationController;
 use App\Http\Controllers\Api\V1\AnswerController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuditLogController;
-use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ContentAssetController;
 use App\Http\Controllers\Api\V1\ContentController;
 use App\Http\Controllers\Api\V1\DeviceController;
@@ -56,22 +55,6 @@ Route::prefix('v1')
             'teacher-subscriptions' => TeacherSubscriptionController::class,
         ]);
 
-        // Student authentication endpoints from the SDD.
-        // Register/login/refresh/device-transfer are public because the client
-        // may not have a valid access token yet. Each sensitive public action
-        // performs its own credential/device/session validation.
-        Route::prefix('auth')->group(function () {
-            Route::post('/register', [AuthController::class, 'register']);
-            Route::post('/login', [AuthController::class, 'studentLogin']);
-            Route::post('/refresh', [AuthController::class, 'studentRefresh']);
-            Route::post('/device/transfer', [AuthController::class, 'studentDeviceTransfer']);
-
-            Route::post('/logout', [AuthController::class, 'studentLogout'])
-                ->middleware(['auth:sanctum', 'role:student']);
-        });
-
-        Route::get('/me', [AuthController::class, 'studentMe'])
-            ->middleware(['auth:sanctum', 'role:student']);
         Route::apiResource('users', UserController::class);
         Route::apiResource('students', StudentController::class);
         Route::apiResource('governortates', GovernortateController::class);

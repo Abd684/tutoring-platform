@@ -12,3 +12,10 @@ Implementation follows the SDD device model: `devices` -> `student_devices` -> `
 - Refresh lifetime: 30 days by default and does not extend indefinitely on rotation.
 
 Teacher authentication and subscription code remains in place and uses its existing `RefreshToken` flow.
+
+## Controller / route separation (2026-09-24)
+- Student auth moved from `AuthController` to `StudentAuthController`.
+- `AuthController` remains for the teacher auth flow.
+- Student auth routes moved from `routes/api.php` to `routes/student.php`.
+- `bootstrap/app.php` mounts `routes/student.php` under `api/v1`, preserving `/api/v1/auth/*` and `/api/v1/me`.
+- Existing teacher route mounting under `api/v1/teacher` is preserved.
