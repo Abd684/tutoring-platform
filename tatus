@@ -1,0 +1,17 @@
+A	app/Http/Controllers/Api/V1/AdminController.php
+M	app/Http/Controllers/Api/V1/AuthController.php
+M	app/Http/Controllers/Api/V1/SubscriptionPlanController.php
+A	app/Http/Controllers/Api/V1/TeacherAuthController.php
+M	app/Http/Controllers/Api/V1/TeacherSubscriptionController.php
+M	app/Http/Middleware/RoleMiddleware.php
+A	app/Models/RefreshToken.php
+M	app/Models/User.php
+M	bootstrap/app.php
+A	database/migrations/2026_09_23_204526_create_refresh_tokens_table.php
+A	database/seeders/PostmanTestSeeder.php
+A	postman/Teacher_API.postman_collection.json
+M	routes/api.php
+M	routes/teacher.php
+A	tests/Feature/AdminUserStatusTest.php
+A	tests/Feature/TeacherAuthTest.php
+A	tests/Feature/TeacherSubscriptionTest.php
