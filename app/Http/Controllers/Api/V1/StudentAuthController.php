@@ -18,106 +18,55 @@ use Illuminate\Validation\Rule;
 
 class StudentAuthController extends Controller
 {
-//أنشاء حساب الطالب
+    // إنشاء حساب الطالب
     public function register(Request $request)
-{
-    $validated = $request->validate([
-        'name' => [
-            'required',
-            'string',
-            'max:255',
-        ],
-
-        'phone' => [
-            'required',
-            'string',
-            'max:30',
-        ],
-
-        'email' => [
-            'required',
-            'email',
-            'max:255',
-            'unique:users,email',
-        ],
-
-        'password' => [
-            'required',
-            'string',
-            'min:8',
-            'confirmed',
-        ],
-
-        'region_id' => [
-            'required',
-            'integer',
-            'exists:regions,id',
-        ],
-
-        'grade' => [
-            'required',
-            'string',
-            'max:100',
-        ],
-
-        'school_id' => [
-            'required',
-            'integer',
-            Rule::exists('schools', 'id')->where(
-                fn ($query) => $query->where('region_id', $request->region_id)
-            ),
-        ],
-    ]);
-
-    $result = DB::transaction(function () use ($validated) {
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-            'email' => $validated['email'],
-            'password_hash' => $validated['password'],
-            'role' => 'student',
-            'status' => 'active',
-            'region_id' => $validated['region_id'],
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:30'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'region_id' => ['required', 'integer', 'exists:regions,id'],
+            'grade' => ['required', 'string', 'max:100'],
+            'school_id' => [
+                'required',
+                'integer',
+                Rule::exists('schools', 'id')->where(
+                    fn ($query) => $query->where('region_id', $request->region_id)
+                ),
+            ],
         ]);
 
-        $student = Student::create([
-            'user_id' => $user->id,
-            'grade' => $validated['grade'],
-            'school_id' => $validated['school_id'],
-            'status' => 'active',
-        ]);
+        $result = DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'email' => $validated['email'],
+                'password_hash' => Hash::make($validated['password']),
+                'role' => 'student',
+                'status' => 'active',
+                'region_id' => $validated['region_id'],
+            ]);
 
-        return [
-            'user' => $user,
-            'student' => $student,
-        ];
-    });
+            $student = Student::create([
+                'user_id' => $user->id,
+                'grade' => $validated['grade'],
+                'school_id' => $validated['school_id'],
+                'status' => 'active',
+            ]);
 
-    return response()->json([
-        'status' => true,
-        'message' => 'Student account created successfully.',
-        'data' => [
-            'user' => [
-                'id' => $result['user']->id,
-                'name' => $result['user']->name,
-                'phone' => $result['user']->phone,
-                'email' => $result['user']->email,
-                'role' => $result['user']->role,
-                'status' => $result['user']->status,
-                'region_id' => $result['user']->region_id,
-            ],
+            return [
+                'user' => $user,
+                'student' => $student,
+            ];
+        });
 
-            'student' => [
-                'id' => $result['student']->id,
-                'grade' => $result['student']->grade,
-                'school_id' => $result['student']->school_id,
-                'status' => $result['student']->status,
-            ],
-        ],
-    ], 201);
+  return response()->json([
+    'status' => true,
+    'message' => 'Student account created successfully.',
+], 201);
 }
-    // Student authentication: SDD one-device flow. Teacher auth methods above are kept intact.
+    // تسجيل دخول الطالب مع مبدأ جهاز واحد فعال.
     public function studentLogin(Request $request)
     {
         $validated = $request->validate(array_merge([
@@ -132,16 +81,40 @@ class StudentAuthController extends Controller
 
         $result = DB::transaction(function () use ($request, $validated, $user, $student) {
             $student = Student::whereKey($student->id)->lockForUpdate()->firstOrFail();
-
             $device = $this->findOrCreateDevice($validated);
 
+            // نفحص أولاً إن كان هذا الجهاز نفسه قد ألغي سابقاً لهذا الطالب.
+            // الجهاز الملغى يبقى محفوظاً ولا يسمح له بالدخول أو العودة للحساب.
+            $studentDevice = StudentDevice::where('student_id', $student->id)
+                ->where('device_id', $device->id)
+                ->lockForUpdate()
+                ->first();
+                $device = $this->findOrCreateDevice($validated);
+
+            if (
+                $studentDevice &&
+                ($studentDevice->status === 'revoked' || ! $studentDevice->is_active)
+            ) {
+                throw new HttpResponseException(
+                    response()->json([
+                        'status' => false,
+                        'message' => 'This device has been revoked for this student.',
+                        'code' => 'DEVICE_REVOKED',
+                    ], 403)
+                );
+            }
+
+            // إذا كان هناك جهاز آخر فعال، نطلب نقل الحساب ولا نسجل الدخول مباشرة.
             $activeStudentDevice = StudentDevice::where('student_id', $student->id)
                 ->where('status', 'active')
                 ->where('is_active', true)
                 ->lockForUpdate()
                 ->first();
 
-            if ($activeStudentDevice && $activeStudentDevice->device_id !== $device->id) {
+            if (
+                $activeStudentDevice &&
+                $activeStudentDevice->device_id !== $device->id
+            ) {
                 throw new HttpResponseException(
                     response()->json([
                         'status' => false,
@@ -151,11 +124,7 @@ class StudentAuthController extends Controller
                 );
             }
 
-            $studentDevice = StudentDevice::where('student_id', $student->id)
-                ->where('device_id', $device->id)
-                ->lockForUpdate()
-                ->first();
-
+            // أول جهاز للطالب.
             if (! $studentDevice) {
                 $studentDevice = StudentDevice::create([
                     'student_id' => $student->id,
@@ -168,18 +137,11 @@ class StudentAuthController extends Controller
                     'revoke_reason' => null,
                 ]);
 
-                $this->recordDeviceEvent($studentDevice, 'device_registered', $request, [
-                    'source' => 'login',
-                ]);
-            }
-
-            if ($studentDevice->status !== 'active' || ! $studentDevice->is_active) {
-                throw new HttpResponseException(
-                    response()->json([
-                        'status' => false,
-                        'message' => 'This device is not active for this student. Device transfer is required.',
-                        'code' => 'DEVICE_TRANSFER_REQUIRED',
-                    ], 409)
+                $this->recordDeviceEvent(
+                    $studentDevice,
+                    'device_registered',
+                    $request,
+                    ['source' => 'login']
                 );
             }
 
@@ -211,10 +173,8 @@ class StudentAuthController extends Controller
     }
 
     /**
-     * Logout only ends the current authenticated session.
-     * It MUST NOT revoke or delete the student's active device binding.
-     * Therefore the student can log in again from the same device, while a
-     * different device still requires an explicit transfer.
+     * Logout ends the current authenticated session only.
+     * The student's active device binding stays active.
      */
     public function studentLogout(Request $request)
     {
@@ -271,10 +231,8 @@ class StudentAuthController extends Controller
     }
 
     /**
-     * Rotate a refresh token and issue a new access token.
-     * This endpoint does not require a live access token because its purpose is
-     * to recover from access-token expiry. The refresh token + active device
-     * binding are the authentication factors here.
+     * Rotate the refresh token and issue a new access token.
+     * The refresh token and active device binding authenticate this request.
      */
     public function studentRefresh(Request $request)
     {
@@ -393,8 +351,7 @@ class StudentAuthController extends Controller
                 );
             }
 
-            // Rotate the refresh token. Keep the original expiry so repeated
-            // refresh calls cannot extend one device session forever.
+            // Rotate refresh token without extending the original session expiry.
             $newRefreshToken = Str::random(80);
 
             $deviceSession->update([
@@ -444,10 +401,7 @@ class StudentAuthController extends Controller
 
     /**
      * Move the student account to a new physical device.
-     *
-     * UX-wise this is the continuation of login after
-     * DEVICE_TRANSFER_REQUIRED. Technically it is kept as the dedicated
-     * /auth/device/transfer endpoint required by the SDD.
+     * A device previously revoked for this student can never receive the account again.
      */
     public function studentDeviceTransfer(Request $request)
     {
@@ -464,6 +418,26 @@ class StudentAuthController extends Controller
         $result = DB::transaction(function () use ($request, $validated, $user, $student) {
             $student = Student::whereKey($student->id)->lockForUpdate()->firstOrFail();
             $newDevice = $this->findOrCreateDevice($validated);
+
+            // افحص الجهاز الهدف قبل إلغاء الجهاز الحالي.
+            $newStudentDevice = StudentDevice::where('student_id', $student->id)
+                ->where('device_id', $newDevice->id)
+                ->lockForUpdate()
+                ->first();
+
+            // الجهاز الذي ألغي سابقاً لهذا الطالب لا يمكن تفعيله من جديد.
+            if (
+                $newStudentDevice &&
+                ($newStudentDevice->status === 'revoked' || ! $newStudentDevice->is_active)
+            ) {
+                throw new HttpResponseException(
+                    response()->json([
+                        'status' => false,
+                        'message' => 'This device was previously revoked and cannot receive this student account again.',
+                        'code' => 'DEVICE_REVOKED',
+                    ], 403)
+                );
+            }
 
             $activeStudentDevices = StudentDevice::where('student_id', $student->id)
                 ->where('status', 'active')
@@ -499,11 +473,6 @@ class StudentAuthController extends Controller
                 ]);
             }
 
-            $newStudentDevice = StudentDevice::where('student_id', $student->id)
-                ->where('device_id', $newDevice->id)
-                ->lockForUpdate()
-                ->first();
-
             if (! $newStudentDevice) {
                 $newStudentDevice = StudentDevice::create([
                     'student_id' => $student->id,
@@ -516,18 +485,12 @@ class StudentAuthController extends Controller
                     'revoke_reason' => null,
                 ]);
             } else {
+                // الموجود هنا لا يمكن أن يكون revoked لأننا رفضناه أعلاه.
                 $newStudentDevice->update([
-                    'status' => 'active',
-                    'is_active' => true,
-                    'activated_at' => now(),
                     'last_seen_at' => now(),
-                    'revoked_at' => null,
-                    'revoke_reason' => null,
                 ]);
             }
 
-            // Close any old sessions that may already exist for the target
-            // device before issuing the new session.
             DeviceSession::where('student_device_id', $newStudentDevice->id)
                 ->where('status', 'active')
                 ->update([
