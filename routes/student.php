@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\StudentAuthController;
+use App\Http\Controllers\Api\V1\StudentEnrollmentController;
 use Illuminate\Support\Facades\Route;
 
 // Student authentication routes.
@@ -18,3 +19,11 @@ Route::prefix('auth')->group(function (): void {
 
 Route::get('/me', [StudentAuthController::class, 'studentMe'])
     ->middleware(['auth:sanctum', 'role:student']);
+
+// Student enrollment / purchase APIs from the SDD.
+Route::middleware(['auth:sanctum', 'role:student'])->group(function (): void {
+    Route::get('/student/enrollments', [StudentEnrollmentController::class, 'index']);
+    Route::post('/teacher-subjects/{id}/enroll', [StudentEnrollmentController::class, 'enrollTeacherSubject']);
+    Route::post('/units/{id}/enroll', [StudentEnrollmentController::class, 'enrollUnit']);
+    Route::post('/contents/{id}/enroll', [StudentEnrollmentController::class, 'enrollContent']);
+});

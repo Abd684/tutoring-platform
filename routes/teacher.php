@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 use App\Http\Controllers\Api\V1\TeacherAuthController;
+use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
 use App\Http\Controllers\Api\V1\TeacherSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,3 +20,9 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
 
 Route::patch('/{teacher}/activate', [TeacherAuthController::class, 'activateTeacher'])
     ->middleware(['auth:sanctum', 'role:company_admin']);
+
+// Teacher availability APIs from the SDD.
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
+    Route::get('/availability', [TeacherAvailabilityController::class, 'myAvailability']);
+    Route::post('/availability', [TeacherAvailabilityController::class, 'storeMyAvailability']);
+});

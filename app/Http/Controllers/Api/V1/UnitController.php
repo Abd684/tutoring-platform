@@ -26,6 +26,7 @@ class UnitController extends ApiController
             'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'price' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'order_no' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', Rule::in(['draft', 'published', 'archived'])],
         ]));
@@ -44,6 +45,7 @@ class UnitController extends ApiController
             'teacher_subject_id' => ['sometimes', 'integer', 'exists:teacher_subjects,id'],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:9999999999.99'],
             'order_no' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', Rule::in(['draft', 'published', 'archived'])],
         ]));
