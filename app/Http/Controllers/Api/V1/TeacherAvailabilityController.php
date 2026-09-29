@@ -1,173 +1,241 @@
 <?php
 
-//deaa
-
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\TeacherAvailability;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TeacherAvailabilityController extends ApiController
 {
+    /**
+     * Get current authenticated teacher ID.
+     */
+    private function currentTeacherId(Request $request): int
+    {
+        $teacherId = $request->user()?->teacher?->id;
+
+        abort_if(
+            ! $teacherId,
+            403,
+            'Teacher account not found.'
+        );
+
+        return (int) $teacherId;
+    }
+
+    /**
+     * Make sure the availability belongs to current teacher.
+     */
+    private function ownedAvailability(
+        Request $request,
+        TeacherAvailability $teacherAvailability
+    ): TeacherAvailability {
+        return TeacherAvailability::query()
+            ->whereKey($teacherAvailability->getKey())
+            ->where('teacher_id', $this->currentTeacherId($request))
+            ->firstOrFail();
+    }
+
+    /**
+     * Display current teacher availability.
+     */
     public function index(Request $request): JsonResponse
     {
-        $query = TeacherAvailability::query()
-            ->with(['teacher.user:id,name,email']);
+        $teacherId = $this->currentTeacherId($request);
 
-        // Keep the current project principle: teacher_id comes from the frontend.
-        // GET /api/v1/teacher/availability?teacher_id=5
-        $query->when(
-            $request->filled('teacher_id'),
-            fn ($q) => $q->where('teacher_id', $request->integer('teacher_id'))
-        )->when(
-            $request->filled('weekday'),
-            fn ($q) => $q->where('weekday', $request->integer('weekday'))
-        )->when(
-            $request->filled('date'),
-            fn ($q) => $q->whereDate('date', $request->date('date'))
-        )->when(
-            $request->filled('status'),
-            fn ($q) => $q->where('status', $request->string('status'))
-        );
+        $query = TeacherAvailability::query()
+            ->where('teacher_id', $teacherId)
+            ->orderBy('date')
+            ->orderBy('weekday')
+            ->orderBy('start_time');
 
         return $this->paginated(
-            $query->orderBy('date')
-                ->orderBy('weekday')
-                ->orderBy('start_time')
-                ->orderBy('id')
-                ->paginate($this->perPage($request))
+            $query->paginate($this->perPage($request))
         );
     }
 
+    /**
+     * Add availability for current teacher.
+     */
     public function store(Request $request): JsonResponse
     {
-        // Keep the current project principle: teacher_id is sent by the frontend.
-        $teacherAvailability = TeacherAvailability::create($request->validate([
-            'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
-            'weekday' => ['nullable', 'integer', 'between:0,6'],
-            'date' => ['nullable', 'date'],
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
-            'recurrence_type' => ['required', Rule::in(['none', 'weekly', 'custom'])],
-            'timezone' => ['required', 'timezone'],
-            'status' => ['sometimes', Rule::in(['active', 'disabled'])],
-        ]));
-
-        return $this->success(
-            $teacherAvailability->load(['teacher.user:id,name,email']),
-            'Teacher Availability created successfully.',
-            201
-        );
-    }
-
-    /**
-     * Teacher-scoped availability list for GET /api/v1/teacher/availability.
-     * The teacher is derived from the authenticated Bearer token.
-     */
-    public function myAvailability(Request $request): JsonResponse
-    {
-        $teacher = $request->user()?->teacher;
-
-        if (! $teacher) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Teacher account not found.',
-                'code' => 'TEACHER_PROFILE_NOT_FOUND',
-            ], 403);
-        }
-
-        $query = TeacherAvailability::query()
-            ->with(['teacher.user:id,name,email'])
-            ->where('teacher_id', $teacher->id);
-
-        $query->when(
-            $request->filled('weekday'),
-            fn ($q) => $q->where('weekday', $request->integer('weekday'))
-        )->when(
-            $request->filled('date'),
-            fn ($q) => $q->whereDate('date', $request->date('date'))
-        )->when(
-            $request->filled('status'),
-            fn ($q) => $q->where('status', $request->string('status'))
-        );
-
-        return $this->paginated(
-            $query->orderBy('date')
-                ->orderBy('weekday')
-                ->orderBy('start_time')
-                ->orderBy('id')
-                ->paginate($this->perPage($request))
-        );
-    }
-
-    /**
-     * Teacher-scoped availability creation for POST /api/v1/teacher/availability.
-     * teacher_id is NOT accepted as the source of identity; it comes from the token.
-     * If the frontend still sends teacher_id, it is ignored because only validated
-     * fields below are used to create the record.
-     */
-    public function storeMyAvailability(Request $request): JsonResponse
-    {
-        $teacher = $request->user()?->teacher;
-
-        if (! $teacher) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Teacher account not found.',
-                'code' => 'TEACHER_PROFILE_NOT_FOUND',
-            ], 403);
-        }
+        $teacherId = $this->currentTeacherId($request);
 
         $validated = $request->validate([
-            'weekday' => ['nullable', 'integer', 'between:0,6'],
-            'date' => ['nullable', 'date'],
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
-            'recurrence_type' => ['required', Rule::in(['none', 'weekly', 'custom'])],
-            'timezone' => ['required', 'timezone'],
-            'status' => ['sometimes', Rule::in(['active', 'disabled'])],
+            'weekday' => [
+                'nullable',
+                'integer',
+                'between:0,6',
+            ],
+
+            'date' => [
+                'nullable',
+                'date',
+            ],
+
+            'start_time' => [
+                'required',
+                'date_format:H:i',
+            ],
+
+            'end_time' => [
+                'required',
+                'date_format:H:i',
+                'after:start_time',
+            ],
+
+            'recurrence_type' => [
+                'required',
+                'string',
+                'max:50',
+            ],
+
+            'timezone' => [
+                'required',
+                'timezone',
+            ],
+
+            'status' => [
+                'sometimes',
+                'string',
+                'max:50',
+            ],
         ]);
 
-        $validated['teacher_id'] = $teacher->id;
+        // Important:
+        // teacher_id comes from authenticated teacher,
+        // never from request.
+        $validated['teacher_id'] = $teacherId;
 
         $teacherAvailability = TeacherAvailability::create($validated);
 
         return $this->success(
-            $teacherAvailability->load(['teacher.user:id,name,email']),
-            'Teacher Availability created successfully.',
+            $teacherAvailability,
+            'Teacher availability created successfully.',
             201
         );
     }
-    public function show(TeacherAvailability $teacherAvailability): JsonResponse
-    {
-        return $this->success($teacherAvailability->load(['teacher.user:id,name,email']));
+
+    /**
+     * Show one availability record.
+     */
+    public function show(
+        Request $request,
+        TeacherAvailability $teacherAvailability
+    ): JsonResponse {
+        $teacherAvailability = $this->ownedAvailability(
+            $request,
+            $teacherAvailability
+        );
+
+        return $this->success($teacherAvailability);
     }
 
-    public function update(Request $request, TeacherAvailability $teacherAvailability): JsonResponse
-    {
-        $teacherAvailability->update($request->validate([
-            'teacher_id' => ['sometimes', 'integer', 'exists:teachers,id'],
-            'weekday' => ['sometimes', 'nullable', 'integer', 'between:0,6'],
-            'date' => ['sometimes', 'nullable', 'date'],
-            'start_time' => ['sometimes', 'date_format:H:i'],
-            'end_time' => ['sometimes', 'date_format:H:i', 'after:start_time'],
-            'recurrence_type' => ['sometimes', Rule::in(['none', 'weekly', 'custom'])],
-            'timezone' => ['sometimes', 'timezone'],
-            'status' => ['sometimes', Rule::in(['active', 'disabled'])],
-        ]));
+    /**
+     * Update current teacher availability.
+     */
+    public function update(
+        Request $request,
+        TeacherAvailability $teacherAvailability
+    ): JsonResponse {
+        $teacherAvailability = $this->ownedAvailability(
+            $request,
+            $teacherAvailability
+        );
+
+        $validated = $request->validate([
+            'weekday' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                'between:0,6',
+            ],
+
+            'date' => [
+                'sometimes',
+                'nullable',
+                'date',
+            ],
+
+            'start_time' => [
+                'sometimes',
+                'date_format:H:i',
+            ],
+
+            'end_time' => [
+                'sometimes',
+                'date_format:H:i',
+            ],
+
+            'recurrence_type' => [
+                'sometimes',
+                'string',
+                'max:50',
+            ],
+
+            'timezone' => [
+                'sometimes',
+                'timezone',
+            ],
+
+            'status' => [
+                'sometimes',
+                'string',
+                'max:50',
+            ],
+        ]);
+
+        /*
+         * Validate end_time against either:
+         * - new start_time
+         * - or current start_time
+         */
+        $startTime = substr(
+            (string) ($validated['start_time'] ?? $teacherAvailability->start_time),
+            0,
+            5
+        );
+
+        $endTime = substr(
+            (string) ($validated['end_time'] ?? $teacherAvailability->end_time),
+            0,
+            5
+        );
+
+        if ($endTime <= $startTime) {
+            throw ValidationException::withMessages([
+                'end_time' => [
+                    'End time must be after start time.',
+                ],
+            ]);
+        }
+
+        $teacherAvailability->update($validated);
 
         return $this->success(
-            $teacherAvailability->fresh()->load(['teacher.user:id,name,email']),
-            'Teacher Availability updated successfully.'
+            $teacherAvailability->fresh(),
+            'Teacher availability updated successfully.'
         );
     }
 
-    public function destroy(TeacherAvailability $teacherAvailability): JsonResponse
-    {
+    /**
+     * Delete current teacher availability.
+     */
+    public function destroy(
+        Request $request,
+        TeacherAvailability $teacherAvailability
+    ): JsonResponse {
+        $teacherAvailability = $this->ownedAvailability(
+            $request,
+            $teacherAvailability
+        );
+
         $teacherAvailability->delete();
 
-        return $this->success(message: 'Teacher Availability deleted successfully.');
+        return $this->success(
+            message: 'Teacher availability deleted successfully.'
+        );
     }
 }

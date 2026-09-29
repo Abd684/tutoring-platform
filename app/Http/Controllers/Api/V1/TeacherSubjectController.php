@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class TeacherSubjectController extends ApiController
             'status' => ['sometimes', 'string', 'max:50'],
         ]);
 
-        if (!($validated['group_enabled'] ?? false)) {
+        if (! ($validated['group_enabled'] ?? false)) {
             $validated['max_group_size'] = null;
         }
 
@@ -75,7 +76,7 @@ class TeacherSubjectController extends ApiController
             ? (bool) $validated['group_enabled']
             : (bool) $teacherSubject->group_enabled;
 
-        if (!$effectiveGroupEnabled) {
+        if (! $effectiveGroupEnabled) {
             $validated['max_group_size'] = null;
         }
 
@@ -89,5 +90,28 @@ class TeacherSubjectController extends ApiController
         $teacherSubject->delete();
 
         return $this->success(message: 'Teacher subject deleted successfully.');
+    }
+
+    public function getSubjectsByTeacher(Teacher $teacher): JsonResponse
+    {
+        $subjects = $teacher->teacherSubjects()
+            ->where('status', 'active')
+            ->whereHas('subject', fn ($query) => $query->where('status', 'active'))
+            ->with(['subject:id,name,status'])
+            ->orderBy('id')
+            ->get();
+
+        return $this->success($subjects, 'Subjects retrieved successfully.');
+    }
+
+    public function units(TeacherSubject $teacherSubject): JsonResponse
+    {
+        $units = $teacherSubject->units()
+            ->where('status', 'published')
+            ->orderBy('order_no')
+            ->orderBy('id')
+            ->get();
+
+        return $this->success($units, 'Units retrieved successfully.');
     }
 }

@@ -5,8 +5,8 @@ use App\Http\Controllers\Api\V1\AiEvaluationController;
 use App\Http\Controllers\Api\V1\AnswerController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuditLogController;
-use App\Http\Controllers\Api\V1\ContentAssetController;
 use App\Http\Controllers\Api\V1\ContentController;
+use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\DeviceEventController;
 use App\Http\Controllers\Api\V1\DeviceSessionController;
@@ -38,8 +38,15 @@ use App\Http\Controllers\Api\V1\WalletController;
 use App\Http\Controllers\Api\V1\WalletTransactionController;
 use Illuminate\Support\Facades\Route;
 
+Route::apiResource('v1/users', UserController::class);
+
 Route::prefix('v1')
     ->group(function () {
+        Route::get('/teachers/{teacher}/subjects', [TeacherSubjectController::class, 'getSubjectsByTeacher']);
+        Route::get('/teacher/subjects/{teacherSubject}/units', [TeacherSubjectController::class, 'units']);
+        Route::get('/units/{unit}/lessons', [UnitController::class, 'lessons']);
+        Route::get('/lessons/{lesson}/contents', [CurriculumBrowseController::class, 'lessonContents']);
+
         Route::apiResources([
             'teachers' => TeacherController::class,
             'subjects' => SubjectController::class,
@@ -47,7 +54,6 @@ Route::prefix('v1')
             'units' => UnitController::class,
             'lessons' => LessonController::class,
             'contents' => ContentController::class,
-            'content-assets' => ContentAssetController::class,
             'groups' => GroupController::class,
             'group-enrollments' => GroupEnrollmentController::class,
             'payments' => PaymentController::class,
@@ -61,7 +67,6 @@ Route::prefix('v1')
         Route::apiResource('regions', RegionController::class);
         Route::apiResource('schools', SchoolController::class);
         Route::apiResource('teacher-availabilities', TeacherAvailabilityController::class);
-        Route::apiResource('sessions', SessionController::class);
         Route::apiResource('attendance', AttendanceController::class);
         Route::apiResource('video-assets', VideoAssetController::class);
         Route::apiResource('pdf-assets', PdfAssetController::class);
@@ -94,3 +99,6 @@ Route::prefix('v1/admin')->middleware(['auth:sanctum', 'role:company_admin'])->g
         return response()->json(['message' => 'Welcome, admin!']);
     });
 });
+
+Route::post('v1/sessions/{session}/cancel', [SessionController::class, 'cancel'])
+    ->middleware(['auth:sanctum', 'role:teacher']);

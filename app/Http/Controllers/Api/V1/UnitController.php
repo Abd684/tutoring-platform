@@ -59,4 +59,15 @@ class UnitController extends ApiController
 
         return $this->success(message: 'Unit deleted successfully.');
     }
+
+    public function lessons(Unit $unit): JsonResponse
+    {
+        $lessons = $unit->lessons()
+            ->where('status', 'published')
+            ->orderBy('order_no')
+            ->orderBy('id')
+            ->get();
+
+        return $this->success($lessons, 'Lessons retrieved successfully.');
+    }
 }
