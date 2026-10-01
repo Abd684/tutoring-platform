@@ -14,8 +14,6 @@ use Throwable;
 
 class TeacherContentAssetController extends ApiController
 {
-    private const DISK = 'local';
-
     public function index(Request $request): JsonResponse
     {
         $teacher = $this->teacher($request);
@@ -74,9 +72,9 @@ class TeacherContentAssetController extends ApiController
             ]);
         }
 
+        $disk = config('filesystems.media_disk', 'local');
         $directory = "teachers/{$teacher->id}/contents/{$content->id}";
-        $storageKey = $file->store($directory, self::DISK);
-
+        $storageKey = $file->store($directory, $disk);
         if ($storageKey === false) {
             return $this->businessError('The file could not be stored.', 500);
         }
@@ -84,7 +82,7 @@ class TeacherContentAssetController extends ApiController
         try {
             $asset = ContentAsset::create([
                 'content_id' => $content->id,
-                'disk' => self::DISK,
+                'disk' => $disk,
                 'storage_key' => $storageKey,
                 'mime_type' => $file->getMimeType(),
                 'file_size' => $file->getSize(),
@@ -94,7 +92,7 @@ class TeacherContentAssetController extends ApiController
                 'status' => 'active',
             ]);
         } catch (Throwable $exception) {
-            Storage::disk(self::DISK)->delete($storageKey);
+            Storage::disk($disk)->delete($storageKey);
             throw $exception;
         }
 

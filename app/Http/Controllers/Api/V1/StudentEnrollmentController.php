@@ -15,6 +15,16 @@ class StudentEnrollmentController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        return $this->listEnrollments($request);
+    }
+
+    public function current(Request $request): JsonResponse
+    {
+        return $this->listEnrollments($request, true);
+    }
+
+    private function listEnrollments(Request $request, bool $currentOnly = false): JsonResponse
+    {
         $student = $this->currentStudent($request);
 
         if (!$student) {
@@ -26,6 +36,12 @@ class StudentEnrollmentController extends ApiController
 
         $paginator = Enrollment::query()
             ->where('student_id', $student->id)
+            ->when($currentOnly, function ($query): void {
+                $query->whereIn('status', ['pending', 'active'])
+                    ->where(function ($query): void {
+                        $query->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    });
+            })
             ->with([
                 'teacher.user:id,name,email',
                 'enrollable' => function (MorphTo $morphTo): void {

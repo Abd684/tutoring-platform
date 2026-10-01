@@ -38,7 +38,6 @@ use App\Http\Controllers\Api\V1\WalletController;
 use App\Http\Controllers\Api\V1\WalletTransactionController;
 use Illuminate\Support\Facades\Route;
 
-Route::apiResource('v1/users', UserController::class);
 
 Route::prefix('v1')
     ->group(function () {

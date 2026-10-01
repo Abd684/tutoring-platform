@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\V1\StudentAuthController;
 use App\Http\Controllers\Api\V1\StudentEnrollmentController;
 use App\Http\Controllers\Api\V1\StudentContentAssetController;
+use App\Http\Controllers\Api\V1\AnswerController;
+use App\Http\Controllers\Api\V1\QuizAttemptController;
+use App\Http\Controllers\Api\V1\QuizController;
 use Illuminate\Support\Facades\Route;
 
 // Student authentication routes.
@@ -24,9 +27,14 @@ Route::get('/me', [StudentAuthController::class, 'studentMe'])
 // Student enrollment / purchase APIs from the SDD.
 Route::middleware(['auth:sanctum', 'role:student'])->group(function (): void {
     Route::get('/student/enrollments', [StudentEnrollmentController::class, 'index']);
+    Route::get('/student/booking', [StudentEnrollmentController::class, 'current']);
     Route::post('/teacher-subjects/{id}/enroll', [StudentEnrollmentController::class, 'enrollTeacherSubject']);
     Route::post('/units/{id}/enroll', [StudentEnrollmentController::class, 'enrollUnit']);
     Route::post('/contents/{id}/enroll', [StudentEnrollmentController::class, 'enrollContent']);
+
+    Route::get('/quizzes/{quiz}/data', [QuizController::class, 'studentData']);
+    Route::post('/quizzes/{quiz}/attempts', [QuizAttemptController::class, 'start']);
+    Route::post('/quiz-attempts/{quizAttempt}/answers', [AnswerController::class, 'submitForAttempt']);
 });
 
 Route::post('/contents/{id}/playback-token', [StudentContentAssetController::class, 'playbackToken'])

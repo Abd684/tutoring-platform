@@ -34,6 +34,32 @@ class QuizController extends ApiController
         return $this->success($quiz);
     }
 
+    public function studentData(Request $request, Quiz $quiz): JsonResponse
+    {
+        $student = $request->user()->student;
+        abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
+        abort_unless($quiz->status === 'published', 404);
+
+        $quiz->load(['content:id,title,description', 'questions' => fn ($query) => $query
+            ->select(['id', 'quiz_id', 'type', 'body', 'points', 'rubric_json', 'order_no'])
+            ->orderBy('order_no')
+            ->orderBy('id')]);
+
+        $attemptsUsed = $quiz->attempts()->where('student_id', $student->id)->count();
+        $activeAttempt = $quiz->attempts()
+            ->where('student_id', $student->id)
+            ->where('status', 'in_progress')
+            ->latest('id')
+            ->first();
+
+        return $this->success([
+            'quiz' => $quiz,
+            'attempts_used' => $attemptsUsed,
+            'attempts_remaining' => max(0, (int) $quiz->attempts_allowed - $attemptsUsed),
+            'active_attempt' => $activeAttempt,
+        ]);
+    }
+
     public function update(Request $request, Quiz $quiz): JsonResponse
     {
         $quiz->update($request->validate([

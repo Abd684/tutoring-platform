@@ -5,8 +5,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\QuizAttempt;
+use App\Models\Quiz;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class QuizAttemptController extends ApiController
 {
@@ -34,6 +36,43 @@ class QuizAttemptController extends ApiController
     public function show(QuizAttempt $quizAttempt): JsonResponse
     {
         return $this->success($quizAttempt);
+    }
+
+    public function start(Request $request, Quiz $quiz): JsonResponse
+    {
+        $student = $request->user()->student;
+        abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
+        abort_unless($quiz->status === 'published', 404);
+
+        $result = DB::transaction(function () use ($quiz, $student): array {
+            $lockedQuiz = Quiz::query()->lockForUpdate()->findOrFail($quiz->id);
+            $attemptsUsed = QuizAttempt::query()
+                ->where('quiz_id', $lockedQuiz->id)
+                ->where('student_id', $student->id)
+                ->count();
+
+            if ($attemptsUsed >= (int) $lockedQuiz->attempts_allowed) {
+                return ['error' => 'No quiz attempts remaining.'];
+            }
+
+            $attempt = QuizAttempt::create([
+                'quiz_id' => $lockedQuiz->id,
+                'student_id' => $student->id,
+                'started_at' => now(),
+                'status' => 'in_progress',
+            ]);
+
+            return [
+                'attempt' => $attempt,
+                'attempts_remaining' => max(0, (int) $lockedQuiz->attempts_allowed - $attemptsUsed - 1),
+            ];
+        });
+
+        if (isset($result['error'])) {
+            return $this->businessError($result['error']);
+        }
+
+        return $this->success($result, 'Quiz attempt started successfully.', 201);
     }
 
     public function update(Request $request, QuizAttempt $quizAttempt): JsonResponse
