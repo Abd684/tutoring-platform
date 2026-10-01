@@ -7,5 +7,5 @@ return [
 
     // Device refresh session lifetime. Refresh rotates the token but does not
     // extend the original session expiration indefinitely.
-    'refresh_token_days' => (int) env('STUDENT_REFRESH_TOKEN_DAYS', 30),
+    'refresh_token_days' => (int) env('STUDENT_REFRESH_TOKEN_DAYS', 180),
 ];

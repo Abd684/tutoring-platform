@@ -45,6 +45,69 @@ class GroupController extends ApiController
         return $this->success($group, 'Group created successfully.', 201);
     }
 
+    /** POST /api/v1/teacher/groups - teacher identity comes from Bearer token. */
+    public function storeForTeacher(Request $request): JsonResponse
+    {
+        $teacher = $request->user()?->teacher;
+        if (! $teacher) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Teacher account not found.',
+                'code' => 'TEACHER_PROFILE_NOT_FOUND',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'capacity' => ['required', 'integer', 'min:1', 'max:100000'],
+            'status' => ['sometimes', Rule::in(['forming', 'active', 'closed'])],
+        ]);
+
+        $teacherSubject = TeacherSubject::findOrFail($validated['teacher_subject_id']);
+
+        if ((int) $teacherSubject->teacher_id !== (int) $teacher->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This teacher subject does not belong to the authenticated teacher.',
+                'code' => 'TEACHER_SUBJECT_FORBIDDEN',
+            ], 403);
+        }
+
+        if ($teacherSubject->status !== 'active') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Groups can only be created for an active teacher subject.',
+                'code' => 'TEACHER_SUBJECT_INACTIVE',
+            ], 422);
+        }
+
+        if (! $teacherSubject->group_enabled) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Groups are disabled for this teacher subject.',
+                'code' => 'GROUPS_DISABLED',
+            ], 422);
+        }
+
+        if ($teacherSubject->max_group_size !== null && $validated['capacity'] > $teacherSubject->max_group_size) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Group capacity exceeds the teacher subject maximum group size.',
+                'code' => 'GROUP_CAPACITY_EXCEEDED',
+            ], 422);
+        }
+
+        $validated['status'] ??= 'forming';
+        $group = Group::create($validated);
+
+        return $this->success(
+            $group->load('teacherSubject.subject:id,name'),
+            'Group created successfully.',
+            201
+        );
+    }
+
     public function show(Group $group): JsonResponse
     {
         return $this->success($group->load('teacherSubject.subject:id,name')->loadCount([

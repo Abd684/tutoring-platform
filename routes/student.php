@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\StudentContentAssetController;
 use App\Http\Controllers\Api\V1\AnswerController;
 use App\Http\Controllers\Api\V1\QuizAttemptController;
 use App\Http\Controllers\Api\V1\QuizController;
+use App\Http\Controllers\Api\V1\SessionController;
 use Illuminate\Support\Facades\Route;
 
 // Student authentication routes.
@@ -43,3 +44,9 @@ Route::post('/contents/{id}/playback-token', [StudentContentAssetController::cla
 Route::get('/content-assets/{contentAsset}/play', [StudentContentAssetController::class, 'play'])
     ->middleware(['auth:sanctum', 'role:student', 'signed'])
     ->name('student.content.play');
+
+// SDD session booking APIs - authenticated student is derived from Bearer token.
+Route::middleware(['auth:sanctum', 'role:student'])->group(function (): void {
+    Route::post('/sessions/{id}/book', [SessionController::class, 'book']);
+    Route::delete('/sessions/{id}/booking', [SessionController::class, 'cancelBooking']);
+});

@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
 use App\Http\Controllers\Api\V1\TeacherContentAssetController;
 use App\Http\Controllers\Api\V1\TeacherContentController;
 use App\Http\Controllers\Api\V1\TeacherSubscriptionController;
+use App\Http\Controllers\Api\V1\GroupController;
+use App\Http\Controllers\Api\V1\GroupEnrollmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [TeacherAuthController::class, 'registerTeacher']);
@@ -35,3 +37,10 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
 
 Route::patch('/{teacher}/activate', [TeacherAuthController::class, 'activateTeacher'])
     ->middleware(['auth:sanctum', 'role:company_admin']);
+
+// SDD teacher group APIs - teacher identity is derived from Bearer token.
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
+    Route::post('/groups', [GroupController::class, 'storeForTeacher']);
+    Route::post('/groups/{id}/enrollments', [GroupEnrollmentController::class, 'addToTeacherGroup']);
+    Route::delete('/groups/{id}/enrollments/{enrollment}', [GroupEnrollmentController::class, 'removeFromTeacherGroup']);
+});
