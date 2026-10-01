@@ -18,7 +18,13 @@ use Illuminate\Validation\Rule;
 
 class StudentAuthController extends Controller
 {
-    // إنشاء حساب الطالب
+    /**
+     * Student registration contract.
+     *
+     * governorate_id is intentionally NOT part of the register request.
+     * Flutter uses governorate_id only to load the selected governorate's regions,
+     * then sends the real region_id + school_id to the backend. grade remains required.
+     */
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -802,6 +808,6 @@ class StudentAuthController extends Controller
 
     private function studentRefreshTokenDays(): int
     {
-        return max(1, (int) config('student_auth.refresh_token_days', 30));
+       return max(1, (int) config('student_auth.refresh_token_days', 180));
     }
 }

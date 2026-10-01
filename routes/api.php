@@ -100,5 +100,18 @@ Route::prefix('v1/admin')->middleware(['auth:sanctum', 'role:company_admin'])->g
     });
 });
 
+// Teacher cancels the session itself (different from the student's booking cancellation).
 Route::post('v1/sessions/{session}/cancel', [SessionController::class, 'cancel'])
     ->middleware(['auth:sanctum', 'role:teacher']);
+
+// SDD attendance API. Exact URL remains /api/v1/sessions/{id}/attendance.
+Route::prefix('v1')->middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
+    Route::post('/sessions/{id}/attendance', [AttendanceController::class, 'recordForSession']);
+});
+// Public registration location APIs.
+// No auth middleware: the registration screen and guest flow can load them.
+Route::prefix('v1')->group(function (): void {
+    Route::get('/governorates', [\App\Http\Controllers\Api\V1\LocationController::class, 'governorates']);
+    Route::get('/governorates/{id}/regions', [\App\Http\Controllers\Api\V1\LocationController::class, 'regions']);
+    Route::get('/regions/{id}/schools', [\App\Http\Controllers\Api\V1\LocationController::class, 'schools']);
+});
