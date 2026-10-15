@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1;
-
 use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\Teacher;
