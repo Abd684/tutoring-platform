@@ -31,6 +31,7 @@ class Session extends Model
         return $this->belongsTo(Teacher::class);
     }
 
+
     public function availability(): BelongsTo
     {
         return $this->belongsTo(TeacherAvailability::class, 'availability_id');

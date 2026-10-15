@@ -13,6 +13,8 @@ class AnswerController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Answer::class);
+
         $query = Answer::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -20,6 +22,8 @@ class AnswerController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Answer::class);
+
         $answer = Answer::create($request->validate([
             'attempt_id' => ['required', 'integer', 'exists:quiz_attempts,id'],
             'question_id' => ['required', 'integer', 'exists:questions,id'],
@@ -33,11 +37,15 @@ class AnswerController extends ApiController
 
     public function show(Answer $answer): JsonResponse
     {
+        $this->authorize('view', $answer);
+
         return $this->success($answer);
     }
 
     public function submitForAttempt(Request $request, QuizAttempt $quizAttempt): JsonResponse
     {
+        $this->authorize('accessStudent', \App\Models\Answer::class);
+
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
         abort_unless((int) $quizAttempt->student_id === (int) $student->id, 404);
@@ -82,6 +90,8 @@ class AnswerController extends ApiController
 
     public function update(Request $request, Answer $answer): JsonResponse
     {
+        $this->authorize('update', $answer);
+
         $answer->update($request->validate([
             'attempt_id' => ['sometimes', 'integer', 'exists:quiz_attempts,id'],
             'question_id' => ['sometimes', 'integer', 'exists:questions,id'],
@@ -95,6 +105,8 @@ class AnswerController extends ApiController
 
     public function destroy(Answer $answer): JsonResponse
     {
+        $this->authorize('delete', $answer);
+
         $answer->delete();
 
         return $this->success(message: 'Answer deleted successfully.');

@@ -65,6 +65,8 @@ class TeacherAuthController extends Controller
     {
         $teacher = Teacher::findOrFail($id);
 
+        $this->authorize('update', $teacher);
+
         $teacher->update([
             'status' => 'active',
         ]);

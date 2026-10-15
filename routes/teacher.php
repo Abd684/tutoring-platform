@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\GroupController;
+use App\Http\Controllers\Api\V1\GroupEnrollmentController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 use App\Http\Controllers\Api\V1\TeacherAuthController;
@@ -8,8 +11,6 @@ use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
 use App\Http\Controllers\Api\V1\TeacherContentAssetController;
 use App\Http\Controllers\Api\V1\TeacherContentController;
 use App\Http\Controllers\Api\V1\TeacherSubscriptionController;
-use App\Http\Controllers\Api\V1\GroupController;
-use App\Http\Controllers\Api\V1\GroupEnrollmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [TeacherAuthController::class, 'registerTeacher']);
@@ -33,6 +34,8 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
     Route::get('/sessions', [SessionController::class, 'index']);
     Route::post('/sessions', [SessionController::class, 'store']);
     Route::patch('/sessions/{session}', [SessionController::class, 'update']);
+    Route::post('v1/sessions/{session}/cancel', [SessionController::class, 'cancel']);
+    Route::post('/sessions/{id}/attendance', [AttendanceController::class, 'recordForSession']);
 });
 
 Route::patch('/{teacher}/activate', [TeacherAuthController::class, 'activateTeacher'])

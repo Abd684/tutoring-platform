@@ -11,6 +11,8 @@ class SubscriptionPlanController extends ApiController
 {
     public function available(Request $request): JsonResponse
     {
+        $this->authorize('subscribe', SubscriptionPlan::class);
+
         $validatedData = $request->validate([
             'billing_cycle' => ['sometimes', Rule::in(['monthly', 'yearly'])],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
@@ -30,6 +32,8 @@ class SubscriptionPlanController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SubscriptionPlan::class);
+
         $query = SubscriptionPlan::query();
 
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
@@ -41,6 +45,8 @@ class SubscriptionPlanController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', SubscriptionPlan::class);
+
         $plan = SubscriptionPlan::create($request->validate([
             'name' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
@@ -58,11 +64,15 @@ class SubscriptionPlanController extends ApiController
 
     public function show(SubscriptionPlan $subscriptionPlan): JsonResponse
     {
+        $this->authorize('view', $subscriptionPlan);
+
         return $this->success($subscriptionPlan->loadCount('teacherSubscriptions'));
     }
 
     public function update(Request $request, SubscriptionPlan $subscriptionPlan): JsonResponse
     {
+        $this->authorize('update', $subscriptionPlan);
+
         $subscriptionPlan->update($request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'price' => ['sometimes', 'numeric', 'min:0', 'max:9999999999.99'],
@@ -80,6 +90,8 @@ class SubscriptionPlanController extends ApiController
 
     public function destroy(SubscriptionPlan $subscriptionPlan): JsonResponse
     {
+        $this->authorize('delete', $subscriptionPlan);
+
         if ($subscriptionPlan->teacherSubscriptions()->where('status', 'active')->exists()) {
             return $this->businessError('A plan with active teacher subscriptions cannot be deleted.', 409);
         }

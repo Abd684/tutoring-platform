@@ -12,6 +12,8 @@ class DeviceEventController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', DeviceEvent::class);
+
         $query = DeviceEvent::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class DeviceEventController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', DeviceEvent::class);
+
         $deviceEvent = DeviceEvent::create($request->validate([
             'student_device_id' => ['required', 'integer', 'exists:student_devices,id'],
             'event_type' => ['required', 'string', 'max:100'],
@@ -31,11 +35,15 @@ class DeviceEventController extends ApiController
 
     public function show(DeviceEvent $deviceEvent): JsonResponse
     {
+        $this->authorize('view', $deviceEvent);
+
         return $this->success($deviceEvent);
     }
 
     public function update(Request $request, DeviceEvent $deviceEvent): JsonResponse
     {
+        $this->authorize('update', $deviceEvent);
+
         $deviceEvent->update($request->validate([
             'student_device_id' => ['sometimes', 'integer', 'exists:student_devices,id'],
             'event_type' => ['sometimes', 'string', 'max:100'],
@@ -48,6 +56,8 @@ class DeviceEventController extends ApiController
 
     public function destroy(DeviceEvent $deviceEvent): JsonResponse
     {
+        $this->authorize('delete', $deviceEvent);
+
         $deviceEvent->delete();
 
         return $this->success(message: 'Device Event deleted successfully.');

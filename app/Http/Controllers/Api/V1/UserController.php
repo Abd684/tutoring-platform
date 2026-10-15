@@ -12,6 +12,8 @@ class UserController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', User::class);
+
         $query = User::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class UserController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', User::class);
+
         $user = User::create($request->validate([
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30'],
@@ -34,11 +38,15 @@ class UserController extends ApiController
 
     public function show(User $user): JsonResponse
     {
+        $this->authorize('view', $user);
+
         return $this->success($user);
     }
 
     public function update(Request $request, User $user): JsonResponse
     {
+        $this->authorize('update', $user);
+
         $user->update($request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
@@ -54,6 +62,8 @@ class UserController extends ApiController
 
     public function destroy(User $user): JsonResponse
     {
+        $this->authorize('delete', $user);
+
         $user->delete();
 
         return $this->success(message: 'User deleted successfully.');

@@ -12,6 +12,8 @@ class DeviceSessionController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', DeviceSession::class);
+
         $query = DeviceSession::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class DeviceSessionController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', DeviceSession::class);
+
         $deviceSession = DeviceSession::create($request->validate([
             'student_device_id' => ['required', 'integer', 'exists:student_devices,id'],
             'refresh_token_hash' => ['required', 'string', 'max:255'],
@@ -34,11 +38,15 @@ class DeviceSessionController extends ApiController
 
     public function show(DeviceSession $deviceSession): JsonResponse
     {
+        $this->authorize('view', $deviceSession);
+
         return $this->success($deviceSession);
     }
 
     public function update(Request $request, DeviceSession $deviceSession): JsonResponse
     {
+        $this->authorize('update', $deviceSession);
+
         $deviceSession->update($request->validate([
             'student_device_id' => ['sometimes', 'integer', 'exists:student_devices,id'],
             'refresh_token_hash' => ['sometimes', 'string', 'max:255'],
@@ -54,6 +62,8 @@ class DeviceSessionController extends ApiController
 
     public function destroy(DeviceSession $deviceSession): JsonResponse
     {
+        $this->authorize('delete', $deviceSession);
+
         $deviceSession->delete();
 
         return $this->success(message: 'Device Session deleted successfully.');

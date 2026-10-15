@@ -12,6 +12,8 @@ class QuestionController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Question::class);
+
         $query = Question::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class QuestionController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Question::class);
+
         $question = Question::create($request->validate([
             'quiz_id' => ['required', 'integer', 'exists:quizzes,id'],
             'type' => ['required', 'string', 'max:50'],
@@ -33,11 +37,15 @@ class QuestionController extends ApiController
 
     public function show(Question $question): JsonResponse
     {
+        $this->authorize('view', $question);
+
         return $this->success($question);
     }
 
     public function update(Request $request, Question $question): JsonResponse
     {
+        $this->authorize('update', $question);
+
         $question->update($request->validate([
             'quiz_id' => ['sometimes', 'integer', 'exists:quizzes,id'],
             'type' => ['sometimes', 'string', 'max:50'],
@@ -52,6 +60,8 @@ class QuestionController extends ApiController
 
     public function destroy(Question $question): JsonResponse
     {
+        $this->authorize('delete', $question);
+
         $question->delete();
 
         return $this->success(message: 'Question deleted successfully.');

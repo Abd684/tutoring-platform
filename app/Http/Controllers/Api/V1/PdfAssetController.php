@@ -12,6 +12,8 @@ class PdfAssetController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', PdfAsset::class);
+
         $query = PdfAsset::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class PdfAssetController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', PdfAsset::class);
+
         $pdfAsset = PdfAsset::create($request->validate([
             'content_asset_id' => ['required', 'integer', 'exists:content_assets,id'],
             'page_count' => ['nullable', 'integer', 'min:1'],
@@ -31,11 +35,15 @@ class PdfAssetController extends ApiController
 
     public function show(PdfAsset $pdfAsset): JsonResponse
     {
+        $this->authorize('view', $pdfAsset);
+
         return $this->success($pdfAsset);
     }
 
     public function update(Request $request, PdfAsset $pdfAsset): JsonResponse
     {
+        $this->authorize('update', $pdfAsset);
+
         $pdfAsset->update($request->validate([
             'content_asset_id' => ['sometimes', 'integer', 'exists:content_assets,id'],
             'page_count' => ['sometimes', 'nullable', 'integer', 'min:1'],
@@ -48,6 +56,8 @@ class PdfAssetController extends ApiController
 
     public function destroy(PdfAsset $pdfAsset): JsonResponse
     {
+        $this->authorize('delete', $pdfAsset);
+
         $pdfAsset->delete();
 
         return $this->success(message: 'Pdf Asset deleted successfully.');

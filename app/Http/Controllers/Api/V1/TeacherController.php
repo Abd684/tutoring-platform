@@ -11,6 +11,8 @@ class TeacherController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Teacher::class);
+
         $query = Teacher::query()
             ->select(['id', 'user_id', 'bio', 'specialization', 'status'])
             ->with(['user:id,name,phone,email,role,status']);
@@ -32,6 +34,8 @@ class TeacherController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Teacher::class);
+
         $validated = $request->validate([
             'user_id' => [
                 'required',
@@ -51,6 +55,8 @@ class TeacherController extends ApiController
 
     public function show(Teacher $teacher): JsonResponse
     {
+        $this->authorize('view', $teacher);
+
         return $this->success($teacher->load([
             'user:id,name,phone,email,role,status',
             'teacherSubjects.subject:id,name,status',
@@ -59,6 +65,8 @@ class TeacherController extends ApiController
 
     public function update(Request $request, Teacher $teacher): JsonResponse
     {
+        $this->authorize('update', $teacher);
+
         $validated = $request->validate([
             'user_id' => [
                 'sometimes',
@@ -78,6 +86,8 @@ class TeacherController extends ApiController
 
     public function destroy(Teacher $teacher): JsonResponse
     {
+        $this->authorize('delete', $teacher);
+
         $teacher->delete();
 
         return $this->success(message: 'Teacher deleted successfully.');

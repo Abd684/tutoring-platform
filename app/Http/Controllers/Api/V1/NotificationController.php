@@ -12,6 +12,8 @@ class NotificationController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Notification::class);
+
         $query = Notification::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class NotificationController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Notification::class);
+
         $notification = Notification::create($request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
             'type' => ['required', 'string', 'max:100'],
@@ -32,11 +36,15 @@ class NotificationController extends ApiController
 
     public function show(Notification $notification): JsonResponse
     {
+        $this->authorize('view', $notification);
+
         return $this->success($notification);
     }
 
     public function update(Request $request, Notification $notification): JsonResponse
     {
+        $this->authorize('update', $notification);
+
         $notification->update($request->validate([
             'user_id' => ['sometimes', 'integer', 'exists:users,id'],
             'type' => ['sometimes', 'string', 'max:100'],
@@ -50,6 +58,8 @@ class NotificationController extends ApiController
 
     public function destroy(Notification $notification): JsonResponse
     {
+        $this->authorize('delete', $notification);
+
         $notification->delete();
 
         return $this->success(message: 'Notification deleted successfully.');

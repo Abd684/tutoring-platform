@@ -11,6 +11,8 @@ class PaymentController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Payment::class);
+
         $query = Payment::query()->with(['payer:id,name,email,role,status']);
 
         $query->when($request->filled('payer_id'), fn ($q) => $q->where('payer_id', $request->integer('payer_id')))
@@ -23,6 +25,11 @@ class PaymentController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Payment::class);
+
+        if ($request->input('payable_type') === (new \App\Models\Enrollment)->getMorphClass()) {
+            return $this->businessError('Enrollment payments must use the student submission and administrator review endpoints.', 422);
+        }
         $payment = Payment::create($request->validate([
             'payer_id' => ['required', 'integer', 'exists:users,id'],
             'payable_type' => ['required', 'string', 'max:255'],
@@ -40,11 +47,19 @@ class PaymentController extends ApiController
 
     public function show(Payment $payment): JsonResponse
     {
+        $this->authorize('view', $payment);
+
         return $this->success($payment->load('payer:id,name,email,role,status'));
     }
 
     public function update(Request $request, Payment $payment): JsonResponse
     {
+        $this->authorize('update', $payment);
+
+        if ($payment->payable_type === (new \App\Models\Enrollment)->getMorphClass()
+            || $request->input('payable_type') === (new \App\Models\Enrollment)->getMorphClass()) {
+            return $this->businessError('Enrollment payments must use the administrator review endpoint.', 422);
+        }
         $payment->update($request->validate([
             'payer_id' => ['sometimes', 'integer', 'exists:users,id'],
             'payable_type' => ['sometimes', 'required', 'string', 'max:255'],
@@ -62,6 +77,8 @@ class PaymentController extends ApiController
 
     public function destroy(Payment $payment): JsonResponse
     {
+        $this->authorize('delete', $payment);
+
         if ($payment->status === 'succeeded') {
             return $this->businessError('Succeeded payments must not be deleted. Use refund/reversal business logic instead.', 409);
         }

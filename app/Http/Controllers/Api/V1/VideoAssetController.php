@@ -12,6 +12,8 @@ class VideoAssetController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', VideoAsset::class);
+
         $query = VideoAsset::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class VideoAssetController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', VideoAsset::class);
+
         $videoAsset = VideoAsset::create($request->validate([
             'content_asset_id' => ['required', 'integer', 'exists:content_assets,id'],
             'hls_manifest_key' => ['required', 'string', 'max:255'],
@@ -32,11 +36,15 @@ class VideoAssetController extends ApiController
 
     public function show(VideoAsset $videoAsset): JsonResponse
     {
+        $this->authorize('view', $videoAsset);
+
         return $this->success($videoAsset);
     }
 
     public function update(Request $request, VideoAsset $videoAsset): JsonResponse
     {
+        $this->authorize('update', $videoAsset);
+
         $videoAsset->update($request->validate([
             'content_asset_id' => ['sometimes', 'integer', 'exists:content_assets,id'],
             'hls_manifest_key' => ['sometimes', 'string', 'max:255'],
@@ -50,6 +58,8 @@ class VideoAssetController extends ApiController
 
     public function destroy(VideoAsset $videoAsset): JsonResponse
     {
+        $this->authorize('delete', $videoAsset);
+
         $videoAsset->delete();
 
         return $this->success(message: 'Video Asset deleted successfully.');

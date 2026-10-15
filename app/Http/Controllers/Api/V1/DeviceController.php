@@ -12,6 +12,8 @@ class DeviceController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Device::class);
+
         $query = Device::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class DeviceController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Device::class);
+
         $device = Device::create($request->validate([
             'device_uuid' => ['required', 'string', 'max:255'],
             'platform' => ['required', 'string', 'max:50'],
@@ -35,11 +39,15 @@ class DeviceController extends ApiController
 
     public function show(Device $device): JsonResponse
     {
+        $this->authorize('view', $device);
+
         return $this->success($device);
     }
 
     public function update(Request $request, Device $device): JsonResponse
     {
+        $this->authorize('update', $device);
+
         $device->update($request->validate([
             'device_uuid' => ['sometimes', 'string', 'max:255'],
             'platform' => ['sometimes', 'string', 'max:50'],
@@ -56,6 +64,8 @@ class DeviceController extends ApiController
 
     public function destroy(Device $device): JsonResponse
     {
+        $this->authorize('delete', $device);
+
         $device->delete();
 
         return $this->success(message: 'Device deleted successfully.');

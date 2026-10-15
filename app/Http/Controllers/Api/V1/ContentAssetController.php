@@ -11,6 +11,8 @@ class ContentAssetController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', ContentAsset::class);
+
         $query = ContentAsset::query()->with(['content:id,lesson_id,type,title,status']);
 
         $query->when($request->filled('content_id'), fn ($q) => $q->where('content_id', $request->integer('content_id')))
@@ -22,6 +24,8 @@ class ContentAssetController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', ContentAsset::class);
+
         $asset = ContentAsset::create($request->validate([
             'content_id' => ['required', 'integer', 'exists:contents,id'],
             'disk' => ['required', 'string', 'max:100'],
@@ -39,11 +43,15 @@ class ContentAssetController extends ApiController
 
     public function show(ContentAsset $contentAsset): JsonResponse
     {
+        $this->authorize('view', $contentAsset);
+
         return $this->success($contentAsset->load(['content:id,lesson_id,type,title,status', 'videoAsset', 'pdfAsset']));
     }
 
     public function update(Request $request, ContentAsset $contentAsset): JsonResponse
     {
+        $this->authorize('update', $contentAsset);
+
         $contentAsset->update($request->validate([
             'content_id' => ['sometimes', 'integer', 'exists:contents,id'],
             'disk' => ['sometimes', 'required', 'string', 'max:100'],
@@ -61,6 +69,8 @@ class ContentAssetController extends ApiController
 
     public function destroy(ContentAsset $contentAsset): JsonResponse
     {
+        $this->authorize('delete', $contentAsset);
+
         $contentAsset->delete();
 
         return $this->success(message: 'Content asset deleted successfully.');

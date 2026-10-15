@@ -18,6 +18,8 @@ class StudentContentAssetController extends ApiController
 {
     public function playbackToken(Request $request, int $id): JsonResponse
     {
+        $this->authorize('accessStudent', \App\Models\Content::class);
+
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
 
@@ -45,6 +47,8 @@ class StudentContentAssetController extends ApiController
 
     public function play(Request $request, ContentAsset $contentAsset): StreamedResponse
     {
+        $this->authorize('accessStudent', \App\Models\Content::class);
+
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
         abort_unless((int) $request->query('student') === (int) $student->id, 403);
@@ -68,32 +72,41 @@ class StudentContentAssetController extends ApiController
         );
     }
 
-    private function hasActiveEnrollment(
-        Student $student,
-        Content $content,
-        Unit $unit,
-        TeacherSubject $teacherSubject,
-    ): bool {
-        return Enrollment::query()
-            ->where('student_id', $student->id)
-            ->where('teacher_id', $teacherSubject->teacher_id)
-            ->where('status', 'active')
-            ->where(fn ($query) => $query
-                ->whereNull('starts_at')
-                ->orWhere('starts_at', '<=', now()))
-            ->where(fn ($query) => $query
-                ->whereNull('expires_at')
-                ->orWhere('expires_at', '>', now()))
-            ->where(fn ($query) => $query
-                ->where(fn ($scope) => $scope
-                    ->where('enrollable_type', Content::class)
-                    ->where('enrollable_id', $content->id))
-                ->orWhere(fn ($scope) => $scope
-                    ->where('enrollable_type', Unit::class)
-                    ->where('enrollable_id', $unit->id))
-                ->orWhere(fn ($scope) => $scope
-                    ->where('enrollable_type', TeacherSubject::class)
-                    ->where('enrollable_id', $teacherSubject->id)))
-            ->exists();
-    }
+private function hasActiveEnrollment(
+    Student $student,
+    Content $content,
+    Unit $unit,
+    TeacherSubject $teacherSubject,
+): bool {
+    return Enrollment::query()
+        ->where('student_id', $student->id)
+        ->where('teacher_id', $teacherSubject->teacher_id)
+        ->where('status', 'active')
+        ->where(fn ($query) => $query
+            ->whereNull('starts_at')
+            ->orWhere('starts_at', '<=', now()))
+        ->where(fn ($query) => $query
+            ->whereNull('expires_at')
+            ->orWhere('expires_at', '>', now()))
+        ->where(fn ($query) => $query
+            ->where(fn ($scope) => $scope
+                ->where(
+                    'enrollable_type',
+                    (new Content)->getMorphClass()
+                )
+                ->where('enrollable_id', $content->id))
+            ->orWhere(fn ($scope) => $scope
+                ->where(
+                    'enrollable_type',
+                    (new Unit)->getMorphClass()
+                )
+                ->where('enrollable_id', $unit->id))
+            ->orWhere(fn ($scope) => $scope
+                ->where(
+                    'enrollable_type',
+                    (new TeacherSubject)->getMorphClass()
+                )
+                ->where('enrollable_id', $teacherSubject->id)))
+        ->exists();
+}
 }

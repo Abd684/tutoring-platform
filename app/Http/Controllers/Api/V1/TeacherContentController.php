@@ -34,6 +34,8 @@ class TeacherContentController extends ApiController
             'published_at' => ['nullable', 'date'],
         ]);
 
+        $this->authorize('manage', \App\Models\Lesson::findOrFail($validated['lesson_id']));
+
         $content = Content::create($validated);
 
         return $this->success($content, 'Content created successfully.', 201);

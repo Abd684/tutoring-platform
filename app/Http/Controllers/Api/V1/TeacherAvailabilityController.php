@@ -9,9 +9,6 @@ use Illuminate\Validation\ValidationException;
 
 class TeacherAvailabilityController extends ApiController
 {
-    /**
-     * Get current authenticated teacher ID.
-     */
     private function currentTeacherId(Request $request): int
     {
         $teacherId = $request->user()?->teacher?->id;
@@ -25,24 +22,10 @@ class TeacherAvailabilityController extends ApiController
         return (int) $teacherId;
     }
 
-    /**
-     * Make sure the availability belongs to current teacher.
-     */
-    private function ownedAvailability(
-        Request $request,
-        TeacherAvailability $teacherAvailability
-    ): TeacherAvailability {
-        return TeacherAvailability::query()
-            ->whereKey($teacherAvailability->getKey())
-            ->where('teacher_id', $this->currentTeacherId($request))
-            ->firstOrFail();
-    }
-
-    /**
-     * Display current teacher availability.
-     */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', TeacherAvailability::class);
+
         $teacherId = $this->currentTeacherId($request);
 
         $query = TeacherAvailability::query()
@@ -61,6 +44,8 @@ class TeacherAvailabilityController extends ApiController
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', TeacherAvailability::class);
+
         $teacherId = $this->currentTeacherId($request);
 
         $validated = $request->validate([
@@ -88,8 +73,7 @@ class TeacherAvailabilityController extends ApiController
 
             'recurrence_type' => [
                 'required',
-                'string',
-                'max:50',
+                'in:none,weekly,custom',
             ],
 
             'timezone' => [
@@ -99,8 +83,7 @@ class TeacherAvailabilityController extends ApiController
 
             'status' => [
                 'sometimes',
-                'string',
-                'max:50',
+                'in:active,disabled',
             ],
         ]);
 
@@ -122,13 +105,9 @@ class TeacherAvailabilityController extends ApiController
      * Show one availability record.
      */
     public function show(
-        Request $request,
         TeacherAvailability $teacherAvailability
     ): JsonResponse {
-        $teacherAvailability = $this->ownedAvailability(
-            $request,
-            $teacherAvailability
-        );
+        $this->authorize('view', $teacherAvailability);
 
         return $this->success($teacherAvailability);
     }
@@ -140,10 +119,7 @@ class TeacherAvailabilityController extends ApiController
         Request $request,
         TeacherAvailability $teacherAvailability
     ): JsonResponse {
-        $teacherAvailability = $this->ownedAvailability(
-            $request,
-            $teacherAvailability
-        );
+        $this->authorize('update', $teacherAvailability);
 
         $validated = $request->validate([
             'weekday' => [
@@ -171,8 +147,7 @@ class TeacherAvailabilityController extends ApiController
 
             'recurrence_type' => [
                 'sometimes',
-                'string',
-                'max:50',
+                'in:none,weekly,custom',
             ],
 
             'timezone' => [
@@ -182,8 +157,7 @@ class TeacherAvailabilityController extends ApiController
 
             'status' => [
                 'sometimes',
-                'string',
-                'max:50',
+                'in:active,disabled',
             ],
         ]);
 
@@ -224,13 +198,9 @@ class TeacherAvailabilityController extends ApiController
      * Delete current teacher availability.
      */
     public function destroy(
-        Request $request,
         TeacherAvailability $teacherAvailability
     ): JsonResponse {
-        $teacherAvailability = $this->ownedAvailability(
-            $request,
-            $teacherAvailability
-        );
+        $this->authorize('delete', $teacherAvailability);
 
         $teacherAvailability->delete();
 

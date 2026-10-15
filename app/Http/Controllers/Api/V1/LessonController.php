@@ -11,6 +11,8 @@ class LessonController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Lesson::class);
+
         $query = Lesson::query()->with(['unit:id,teacher_subject_id,title,status']);
 
         $query->when($request->filled('unit_id'), fn ($q) => $q->where('unit_id', $request->integer('unit_id')))
@@ -22,6 +24,8 @@ class LessonController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Lesson::class);
+
         $lesson = Lesson::create($request->validate([
             'unit_id' => ['required', 'integer', 'exists:units,id'],
             'title' => ['required', 'string', 'max:255'],
@@ -35,11 +39,15 @@ class LessonController extends ApiController
 
     public function show(Lesson $lesson): JsonResponse
     {
+        $this->authorize('view', $lesson);
+
         return $this->success($lesson->load('unit:id,teacher_subject_id,title,status')->loadCount('contents'));
     }
 
     public function update(Request $request, Lesson $lesson): JsonResponse
     {
+        $this->authorize('update', $lesson);
+
         $lesson->update($request->validate([
             'unit_id' => ['sometimes', 'integer', 'exists:units,id'],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
@@ -53,6 +61,8 @@ class LessonController extends ApiController
 
     public function destroy(Lesson $lesson): JsonResponse
     {
+        $this->authorize('delete', $lesson);
+
         $lesson->delete();
 
         return $this->success(message: 'Lesson deleted successfully.');

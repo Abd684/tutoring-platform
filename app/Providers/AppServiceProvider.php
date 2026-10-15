@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\Content;
+use App\Models\TeacherSubject;
+use App\Models\Unit;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -16,10 +20,17 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Relation::enforceMorphMap([
+            'teacher_subject' => TeacherSubject::class,
+            'unit' => Unit::class,
+            'content' => Content::class,
+        ]);
+
         RateLimiter::for('api', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?? $request->ip();
 
             return Limit::perMinute(120)->by((string) $key);
         });
+
     }
 }

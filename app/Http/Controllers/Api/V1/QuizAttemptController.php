@@ -14,6 +14,8 @@ class QuizAttemptController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', QuizAttempt::class);
+
         $query = QuizAttempt::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -21,6 +23,8 @@ class QuizAttemptController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', QuizAttempt::class);
+
         $quizAttempt = QuizAttempt::create($request->validate([
             'quiz_id' => ['required', 'integer', 'exists:quizzes,id'],
             'student_id' => ['required', 'integer', 'exists:students,id'],
@@ -35,11 +39,15 @@ class QuizAttemptController extends ApiController
 
     public function show(QuizAttempt $quizAttempt): JsonResponse
     {
+        $this->authorize('view', $quizAttempt);
+
         return $this->success($quizAttempt);
     }
 
     public function start(Request $request, Quiz $quiz): JsonResponse
     {
+        $this->authorize('accessStudent', \App\Models\QuizAttempt::class);
+
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
         abort_unless($quiz->status === 'published', 404);
@@ -77,6 +85,8 @@ class QuizAttemptController extends ApiController
 
     public function update(Request $request, QuizAttempt $quizAttempt): JsonResponse
     {
+        $this->authorize('update', $quizAttempt);
+
         $quizAttempt->update($request->validate([
             'quiz_id' => ['sometimes', 'integer', 'exists:quizzes,id'],
             'student_id' => ['sometimes', 'integer', 'exists:students,id'],
@@ -91,6 +101,8 @@ class QuizAttemptController extends ApiController
 
     public function destroy(QuizAttempt $quizAttempt): JsonResponse
     {
+        $this->authorize('delete', $quizAttempt);
+
         $quizAttempt->delete();
 
         return $this->success(message: 'Quiz Attempt deleted successfully.');

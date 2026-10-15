@@ -11,6 +11,8 @@ class UnitController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Unit::class);
+
         $query = Unit::query()->with(['teacherSubject.subject:id,name']);
 
         $query->when($request->filled('teacher_subject_id'), fn ($q) => $q->where('teacher_subject_id', $request->integer('teacher_subject_id')))
@@ -22,6 +24,8 @@ class UnitController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Unit::class);
+
         $unit = Unit::create($request->validate([
             'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'],
             'title' => ['required', 'string', 'max:255'],
@@ -36,11 +40,15 @@ class UnitController extends ApiController
 
     public function show(Unit $unit): JsonResponse
     {
+        $this->authorize('view', $unit);
+
         return $this->success($unit->load('teacherSubject.subject:id,name')->loadCount('lessons'));
     }
 
     public function update(Request $request, Unit $unit): JsonResponse
     {
+        $this->authorize('update', $unit);
+
         $unit->update($request->validate([
             'teacher_subject_id' => ['sometimes', 'integer', 'exists:teacher_subjects,id'],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
@@ -55,6 +63,8 @@ class UnitController extends ApiController
 
     public function destroy(Unit $unit): JsonResponse
     {
+        $this->authorize('delete', $unit);
+
         $unit->delete();
 
         return $this->success(message: 'Unit deleted successfully.');

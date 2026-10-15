@@ -12,6 +12,8 @@ class QuizController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Quiz::class);
+
         $query = Quiz::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class QuizController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Quiz::class);
+
         $quiz = Quiz::create($request->validate([
             'content_id' => ['required', 'integer', 'exists:contents,id'],
             'duration_minutes' => ['nullable', 'integer', 'min:1'],
@@ -31,11 +35,15 @@ class QuizController extends ApiController
 
     public function show(Quiz $quiz): JsonResponse
     {
+        $this->authorize('view', $quiz);
+
         return $this->success($quiz);
     }
 
     public function studentData(Request $request, Quiz $quiz): JsonResponse
     {
+        $this->authorize('accessStudent', \App\Models\Quiz::class);
+
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
         abort_unless($quiz->status === 'published', 404);
@@ -62,6 +70,8 @@ class QuizController extends ApiController
 
     public function update(Request $request, Quiz $quiz): JsonResponse
     {
+        $this->authorize('update', $quiz);
+
         $quiz->update($request->validate([
             'content_id' => ['sometimes', 'integer', 'exists:contents,id'],
             'duration_minutes' => ['sometimes', 'nullable', 'integer', 'min:1'],
@@ -74,6 +84,8 @@ class QuizController extends ApiController
 
     public function destroy(Quiz $quiz): JsonResponse
     {
+        $this->authorize('delete', $quiz);
+
         $quiz->delete();
 
         return $this->success(message: 'Quiz deleted successfully.');

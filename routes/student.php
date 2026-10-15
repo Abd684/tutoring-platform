@@ -4,10 +4,12 @@ use App\Http\Controllers\Api\V1\StudentAuthController;
 use App\Http\Controllers\Api\V1\StudentEnrollmentController;
 use App\Http\Controllers\Api\V1\StudentContentAssetController;
 use App\Http\Controllers\Api\V1\AnswerController;
+use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\QuizAttemptController;
 use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\SessionController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\StudentBookingController;
 
 // Student authentication routes.
 // bootstrap/app.php mounts this file under /api/v1, therefore the public URLs
@@ -27,11 +29,17 @@ Route::get('/me', [StudentAuthController::class, 'studentMe'])
 
 // Student enrollment / purchase APIs from the SDD.
 Route::middleware(['auth:sanctum', 'role:student'])->group(function (): void {
+    Route::get('/teachers/{teacher}/available-sessions', [\App\Http\Controllers\Api\V1\AvailableSessionController::class, 'index']);
+    Route::get('/student/bookings', [StudentBookingController::class, 'index']);
+    Route::post('/student/enrollments/{enrollment}/payments', [\App\Http\Controllers\Api\V1\EnrollmentPaymentController::class, 'store']);
+    Route::get('/student/payments/{payment}', [\App\Http\Controllers\Api\V1\EnrollmentPaymentController::class, 'show']);
     Route::get('/student/enrollments', [StudentEnrollmentController::class, 'index']);
     Route::get('/student/booking', [StudentEnrollmentController::class, 'current']);
     Route::post('/teacher-subjects/{id}/enroll', [StudentEnrollmentController::class, 'enrollTeacherSubject']);
     Route::post('/units/{id}/enroll', [StudentEnrollmentController::class, 'enrollUnit']);
     Route::post('/contents/{id}/enroll', [StudentEnrollmentController::class, 'enrollContent']);
+
+    Route::get('/student/attendance/percentage',[AttendanceController::class, 'percentage']);
 
     Route::get('/quizzes/{quiz}/data', [QuizController::class, 'studentData']);
     Route::post('/quizzes/{quiz}/attempts', [QuizAttemptController::class, 'start']);

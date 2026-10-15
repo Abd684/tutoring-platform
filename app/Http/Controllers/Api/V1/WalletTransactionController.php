@@ -12,6 +12,8 @@ class WalletTransactionController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', WalletTransaction::class);
+
         $query = WalletTransaction::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class WalletTransactionController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', WalletTransaction::class);
+
         $walletTransaction = WalletTransaction::create($request->validate([
             'wallet_id' => ['required', 'integer', 'exists:wallets,id'],
             'type' => ['required', 'string', 'max:50'],
@@ -33,11 +37,15 @@ class WalletTransactionController extends ApiController
 
     public function show(WalletTransaction $walletTransaction): JsonResponse
     {
+        $this->authorize('view', $walletTransaction);
+
         return $this->success($walletTransaction);
     }
 
     public function update(Request $request, WalletTransaction $walletTransaction): JsonResponse
     {
+        $this->authorize('update', $walletTransaction);
+
         $walletTransaction->update($request->validate([
             'wallet_id' => ['sometimes', 'integer', 'exists:wallets,id'],
             'type' => ['sometimes', 'string', 'max:50'],
@@ -52,6 +60,8 @@ class WalletTransactionController extends ApiController
 
     public function destroy(WalletTransaction $walletTransaction): JsonResponse
     {
+        $this->authorize('delete', $walletTransaction);
+
         $walletTransaction->delete();
 
         return $this->success(message: 'Wallet Transaction deleted successfully.');

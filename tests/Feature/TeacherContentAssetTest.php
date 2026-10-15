@@ -19,6 +19,12 @@ class TeacherContentAssetTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['filesystems.media_disk' => 'local']);
+    }
+
     public function test_teacher_can_upload_list_and_delete_a_file_for_owned_content(): void
     {
         Storage::fake('local');

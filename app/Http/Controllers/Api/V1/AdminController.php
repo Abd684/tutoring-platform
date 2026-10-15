@@ -24,6 +24,8 @@ class AdminController extends Controller
      */
     public function suspendUser(Request $request, User $user): JsonResponse
     {
+        $this->authorize('update', $user);
+
         if ($user->role === 'student') {
             return $this->suspendStudent($request, $user);
         }
@@ -42,6 +44,8 @@ class AdminController extends Controller
      */
     public function activateUser(Request $request, User $user): JsonResponse
     {
+        $this->authorize('update', $user);
+
         if ($user->role === 'student') {
             return $this->activateStudent($request, $user);
         }
@@ -60,6 +64,8 @@ class AdminController extends Controller
      */
     public function suspendStudent(Request $request, User $user): JsonResponse
     {
+        $this->authorize('update', $user);
+
         $validated = $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
@@ -145,6 +151,8 @@ class AdminController extends Controller
      */
     public function activateStudent(Request $request, User $user): JsonResponse
     {
+        $this->authorize('update', $user);
+
         if ($user->role !== 'student') {
             return response()->json([
                 'status' => false,

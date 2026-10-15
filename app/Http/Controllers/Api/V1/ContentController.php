@@ -11,6 +11,8 @@ class ContentController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Content::class);
+
         $query = Content::query()->with(['lesson:id,unit_id,title,status']);
 
         $query->when($request->filled('lesson_id'), fn ($q) => $q->where('lesson_id', $request->integer('lesson_id')))
@@ -23,6 +25,8 @@ class ContentController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Content::class);
+
         $content = Content::create($request->validate([
             'lesson_id' => ['required', 'integer', 'exists:lessons,id'],
             'type' => ['required', Rule::in(['video', 'pdf', 'quiz', 'link'])],
@@ -39,6 +43,8 @@ class ContentController extends ApiController
 
     public function show(Content $content): JsonResponse
     {
+        $this->authorize('view', $content);
+
         return $this->success($content->load([
             'lesson:id,unit_id,title,status',
             'assets:id,content_id,disk,mime_type,file_size,encryption_type,encryption_status,status',
@@ -47,6 +53,8 @@ class ContentController extends ApiController
 
     public function update(Request $request, Content $content): JsonResponse
     {
+        $this->authorize('update', $content);
+
         $content->update($request->validate([
             'lesson_id' => ['sometimes', 'integer', 'exists:lessons,id'],
             'type' => ['sometimes', Rule::in(['video', 'pdf', 'quiz', 'link'])],
@@ -63,6 +71,8 @@ class ContentController extends ApiController
 
     public function destroy(Content $content): JsonResponse
     {
+        $this->authorize('delete', $content);
+
         $content->delete();
 
         return $this->success(message: 'Content deleted successfully.');

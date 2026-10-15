@@ -7,6 +7,7 @@ use App\Models\Enrollment;
 use App\Models\Student;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,11 +16,15 @@ class StudentEnrollmentController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('accessStudent', Enrollment::class);
+
         return $this->listEnrollments($request);
     }
 
     public function current(Request $request): JsonResponse
     {
+        $this->authorize('accessStudent', Enrollment::class);
+
         return $this->listEnrollments($request, true);
     }
 
@@ -27,7 +32,7 @@ class StudentEnrollmentController extends ApiController
     {
         $student = $this->currentStudent($request);
 
-        if (!$student) {
+        if (! $student) {
             return response()->json([
                 'status' => false,
                 'message' => 'Student profile not found.',
@@ -73,9 +78,11 @@ class StudentEnrollmentController extends ApiController
 
     public function enrollTeacherSubject(Request $request, int $id): JsonResponse
     {
+        $this->authorize('accessStudent', Enrollment::class);
+
         $student = $this->currentStudent($request);
 
-        if (!$student) {
+        if (! $student) {
             return $this->studentNotFound();
         }
 
@@ -89,19 +96,16 @@ class StudentEnrollmentController extends ApiController
 
         $existing = $this->existingEnrollment(
             $student,
-            TeacherSubject::class,
-            $teacherSubject->id
+            $teacherSubject
         );
 
         if ($existing) {
             return $this->alreadyEnrolled($existing);
         }
 
-        $enrollment = Enrollment::create([
+        $enrollment = $teacherSubject->enrollments()->create([
             'student_id' => $student->id,
             'teacher_id' => $teacherSubject->teacher_id,
-            'enrollable_type' => TeacherSubject::class,
-            'enrollable_id' => $teacherSubject->id,
             'price' => $teacherSubject->price,
             'status' => 'pending',
         ]);
@@ -118,9 +122,11 @@ class StudentEnrollmentController extends ApiController
 
     public function enrollUnit(Request $request, int $id): JsonResponse
     {
+        $this->authorize('accessStudent', Enrollment::class);
+
         $student = $this->currentStudent($request);
 
-        if (!$student) {
+        if (! $student) {
             return $this->studentNotFound();
         }
 
@@ -138,8 +144,7 @@ class StudentEnrollmentController extends ApiController
 
         $coveredBySubject = $this->existingEnrollment(
             $student,
-            TeacherSubject::class,
-            $unit->teacher_subject_id
+            $unit->teacherSubject
         );
 
         if ($coveredBySubject) {
@@ -150,17 +155,15 @@ class StudentEnrollmentController extends ApiController
             ], 409);
         }
 
-        $existing = $this->existingEnrollment($student, Unit::class, $unit->id);
+        $existing = $this->existingEnrollment($student, $unit);
 
         if ($existing) {
             return $this->alreadyEnrolled($existing);
         }
 
-        $enrollment = Enrollment::create([
+        $enrollment = $unit->enrollments()->create([
             'student_id' => $student->id,
             'teacher_id' => $unit->teacherSubject->teacher_id,
-            'enrollable_type' => Unit::class,
-            'enrollable_id' => $unit->id,
             'price' => $unit->price,
             'status' => 'pending',
         ]);
@@ -177,9 +180,11 @@ class StudentEnrollmentController extends ApiController
 
     public function enrollContent(Request $request, int $id): JsonResponse
     {
+        $this->authorize('accessStudent', Enrollment::class);
+
         $student = $this->currentStudent($request);
 
-        if (!$student) {
+        if (! $student) {
             return $this->studentNotFound();
         }
 
@@ -193,11 +198,11 @@ class StudentEnrollmentController extends ApiController
 
         if (
             $content->status !== 'published'
-            || !$lesson
+            || ! $lesson
             || $lesson->status !== 'published'
-            || !$unit
+            || ! $unit
             || $unit->status !== 'published'
-            || !$teacherSubject
+            || ! $teacherSubject
             || $teacherSubject->status !== 'active'
         ) {
             return $this->purchaseUnavailable('This content is not available for purchase.');
@@ -209,8 +214,7 @@ class StudentEnrollmentController extends ApiController
 
         $coveredBySubject = $this->existingEnrollment(
             $student,
-            TeacherSubject::class,
-            $teacherSubject->id
+            $teacherSubject
         );
 
         if ($coveredBySubject) {
@@ -221,7 +225,7 @@ class StudentEnrollmentController extends ApiController
             ], 409);
         }
 
-        $coveredByUnit = $this->existingEnrollment($student, Unit::class, $unit->id);
+        $coveredByUnit = $this->existingEnrollment($student, $unit);
 
         if ($coveredByUnit) {
             return response()->json([
@@ -231,17 +235,15 @@ class StudentEnrollmentController extends ApiController
             ], 409);
         }
 
-        $existing = $this->existingEnrollment($student, Content::class, $content->id);
+        $existing = $this->existingEnrollment($student, $content);
 
         if ($existing) {
             return $this->alreadyEnrolled($existing);
         }
 
-        $enrollment = Enrollment::create([
+        $enrollment = $content->enrollments()->create([
             'student_id' => $student->id,
             'teacher_id' => $teacherSubject->teacher_id,
-            'enrollable_type' => Content::class,
-            'enrollable_id' => $content->id,
             'price' => $content->price,
             'status' => 'pending',
         ]);
@@ -261,12 +263,14 @@ class StudentEnrollmentController extends ApiController
         return $request->user()?->student;
     }
 
-    private function existingEnrollment(Student $student, string $type, int $id): ?Enrollment
-    {
+    private function existingEnrollment(
+        Student $student,
+        Model $enrollable
+    ): ?Enrollment {
         return Enrollment::query()
             ->where('student_id', $student->id)
-            ->where('enrollable_type', $type)
-            ->where('enrollable_id', $id)
+            ->where('enrollable_type', $enrollable->getMorphClass())
+            ->where('enrollable_id', $enrollable->getKey())
             ->whereIn('status', ['pending', 'active'])
             ->latest('id')
             ->first();
@@ -275,9 +279,9 @@ class StudentEnrollmentController extends ApiController
     private function enrollmentPayload(Enrollment $enrollment): array
     {
         $type = match ($enrollment->enrollable_type) {
-            TeacherSubject::class => 'subject',
-            Unit::class => 'unit',
-            Content::class => 'content',
+            (new TeacherSubject)->getMorphClass() => 'subject',
+            (new Unit)->getMorphClass() => 'unit',
+            (new Content)->getMorphClass() => 'content',
             default => 'unknown',
         };
 

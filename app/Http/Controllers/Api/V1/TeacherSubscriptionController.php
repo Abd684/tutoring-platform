@@ -13,6 +13,8 @@ class TeacherSubscriptionController extends ApiController
 {
     public function subscribe(Request $request, SubscriptionPlan $subscriptionPlan): JsonResponse
     {
+        $this->authorize('subscribe', $subscriptionPlan);
+
         $validatedData = $request->validate([
             'auto_renew' => ['sometimes', 'boolean'],
         ]);
@@ -87,6 +89,8 @@ class TeacherSubscriptionController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', TeacherSubscription::class);
+
         $query = TeacherSubscription::query()->with([
             'teacher.user:id,name,email,status',
             'plan:id,name,price,billing_cycle,status',
@@ -101,6 +105,8 @@ class TeacherSubscriptionController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', TeacherSubscription::class);
+
         $subscription = TeacherSubscription::create($request->validate([
             'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
             'plan_id' => ['required', 'integer', 'exists:subscription_plans,id'],
@@ -115,11 +121,15 @@ class TeacherSubscriptionController extends ApiController
 
     public function show(TeacherSubscription $teacherSubscription): JsonResponse
     {
+        $this->authorize('view', $teacherSubscription);
+
         return $this->success($teacherSubscription->load(['teacher.user:id,name,email,status', 'plan']));
     }
 
     public function update(Request $request, TeacherSubscription $teacherSubscription): JsonResponse
     {
+        $this->authorize('update', $teacherSubscription);
+
         $startsAt = $request->input('starts_at', $teacherSubscription->starts_at?->toDateTimeString());
 
         $teacherSubscription->update($request->validate([
@@ -136,6 +146,8 @@ class TeacherSubscriptionController extends ApiController
 
     public function destroy(TeacherSubscription $teacherSubscription): JsonResponse
     {
+        $this->authorize('delete', $teacherSubscription);
+
         if ($teacherSubscription->status === 'active') {
             return $this->businessError('Active subscriptions should be cancelled instead of deleted.', 409);
         }

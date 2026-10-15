@@ -15,6 +15,8 @@ class GroupEnrollmentController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', GroupEnrollment::class);
+
         $query = GroupEnrollment::query()->with([
             'group:id,teacher_subject_id,name,capacity,status',
             'enrollment:id,student_id,teacher_id,status',
@@ -29,6 +31,8 @@ class GroupEnrollmentController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', GroupEnrollment::class);
+
         $validated = $request->validate([
             'group_id' => ['required', 'integer', 'exists:groups,id'],
             'enrollment_id' => [
@@ -105,6 +109,8 @@ class GroupEnrollmentController extends ApiController
                 return ['error' => ['This group does not belong to the authenticated teacher.', 'GROUP_FORBIDDEN', 403]];
             }
 
+            $this->authorize('manage', $group);
+
             if ($group->status === 'closed') {
                 return ['error' => ['Closed groups cannot accept enrollments.', 'GROUP_CLOSED', 422]];
             }
@@ -118,8 +124,17 @@ class GroupEnrollmentController extends ApiController
                 return ['error' => ['Enrollment teacher does not match the group teacher.', 'ENROLLMENT_TEACHER_MISMATCH', 422]];
             }
 
-            if ($enrollment->enrollable_type !== TeacherSubject::class || (int) $enrollment->enrollable_id !== (int) $group->teacher_subject_id) {
-                return ['error' => ['The enrollment must be an active full-subject enrollment for this group teacher subject.', 'ENROLLMENT_SUBJECT_MISMATCH', 422]];
+            if (
+                $enrollment->enrollable_type !== (new TeacherSubject)->getMorphClass()
+                || (int) $enrollment->enrollable_id !== (int) $group->teacher_subject_id
+            ) {
+                return [
+                    'error' => [
+                        'The enrollment must be an active full-subject enrollment for this group teacher subject.',
+                        'ENROLLMENT_SUBJECT_MISMATCH',
+                        422,
+                    ],
+                ];
             }
 
             $existing = GroupEnrollment::query()
@@ -163,6 +178,7 @@ class GroupEnrollmentController extends ApiController
 
         if (isset($result['error'])) {
             [$message, $code, $status] = $result['error'];
+
             return response()->json(['status' => false, 'message' => $message, 'code' => $code], $status);
         }
 
@@ -186,6 +202,8 @@ class GroupEnrollmentController extends ApiController
             if ((int) $group->teacherSubject->teacher_id !== (int) $teacher->id) {
                 return ['error' => ['This group does not belong to the authenticated teacher.', 'GROUP_FORBIDDEN', 403]];
             }
+
+            $this->authorize('manage', $group);
 
             $groupEnrollment = GroupEnrollment::query()
                 ->where('group_id', $group->id)
@@ -211,6 +229,7 @@ class GroupEnrollmentController extends ApiController
 
         if (isset($result['error'])) {
             [$message, $code, $status] = $result['error'];
+
             return response()->json(['status' => false, 'message' => $message, 'code' => $code], $status);
         }
 
@@ -219,11 +238,15 @@ class GroupEnrollmentController extends ApiController
 
     public function show(GroupEnrollment $groupEnrollment): JsonResponse
     {
+        $this->authorize('view', $groupEnrollment);
+
         return $this->success($groupEnrollment->load(['group', 'enrollment']));
     }
 
     public function update(Request $request, GroupEnrollment $groupEnrollment): JsonResponse
     {
+        $this->authorize('update', $groupEnrollment);
+
         $validated = $request->validate([
             'status' => ['sometimes', Rule::in(['active', 'left', 'removed'])],
             'joined_at' => ['nullable', 'date'],
@@ -246,7 +269,7 @@ class GroupEnrollmentController extends ApiController
                 }
             }
 
-            if (in_array($validated['status'] ?? null, ['left', 'removed'], true) && !array_key_exists('left_at', $validated)) {
+            if (in_array($validated['status'] ?? null, ['left', 'removed'], true) && ! array_key_exists('left_at', $validated)) {
                 $validated['left_at'] = now();
             }
 
@@ -264,6 +287,8 @@ class GroupEnrollmentController extends ApiController
 
     public function destroy(GroupEnrollment $groupEnrollment): JsonResponse
     {
+        $this->authorize('delete', $groupEnrollment);
+
         $groupEnrollment->delete();
 
         return $this->success(message: 'Group enrollment deleted successfully.');

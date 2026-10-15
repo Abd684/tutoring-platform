@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Teacher;
+use App\Models\Enrollment;
 use App\Models\TeacherSubject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,8 +11,62 @@ use Illuminate\Validation\Rule;
 
 class TeacherSubjectController extends ApiController
 {
+    /** Rank courses by distinct students whose confirmed enrollment started in the last three years. */
+    public function mostRequested(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+        $to = now();
+        $from = $to->copy()->subYearsNoOverflow(3);
+
+        $counts = Enrollment::query()
+            ->select('enrollable_id')
+            ->selectRaw('COUNT(DISTINCT student_id) AS students_count')
+            ->where('enrollable_type', (new TeacherSubject)->getMorphClass())
+            ->whereIn('status', ['active', 'expired'])
+            ->whereBetween('starts_at', [$from, $to])
+            ->groupBy('enrollable_id');
+
+        $courses = TeacherSubject::query()
+            ->joinSub($counts, 'course_popularity', function ($join) {
+                $join->on('teacher_subjects.id', '=', 'course_popularity.enrollable_id');
+            })
+            ->select('teacher_subjects.*', 'course_popularity.students_count')
+            ->where('teacher_subjects.status', 'active')
+            ->whereHas('subject', fn ($query) => $query->where('status', 'active'))
+            ->whereHas('teacher', fn ($query) => $query->where('status', 'active')
+                ->whereHas('user', fn ($query) => $query->where('status', 'active')))
+            ->with(['subject:id,name', 'teacher:id,user_id', 'teacher.user:id,name'])
+            ->orderByDesc('course_popularity.students_count')
+            ->orderBy('teacher_subjects.id')
+            ->limit($validated['limit'] ?? 10)
+            ->get()
+            ->map(fn (TeacherSubject $course) => [
+                'id' => $course->id,
+                'name' => $course->subject->name,
+                'teacher' => [
+                    'id' => $course->teacher_id,
+                    'name' => $course->teacher->user->name,
+                ],
+                'students_count' => (int) $course->students_count,
+            ]);
+
+        return response()->json([
+            'status' => true,
+            'data' => $courses,
+            'meta' => [
+                'from' => $from->toIso8601String(),
+                'to' => $to->toIso8601String(),
+                'limit' => (int) ($validated['limit'] ?? 10),
+            ],
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', TeacherSubject::class);
+
         $query = TeacherSubject::query()
             ->with(['teacher.user:id,name,email', 'subject:id,name,status']);
 
@@ -25,6 +80,8 @@ class TeacherSubjectController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', TeacherSubject::class);
+
         $validated = $request->validate([
             'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
             'subject_id' => [
@@ -48,6 +105,8 @@ class TeacherSubjectController extends ApiController
 
     public function show(TeacherSubject $teacherSubject): JsonResponse
     {
+        $this->authorize('view', $teacherSubject);
+
         return $this->success($teacherSubject->load([
             'teacher.user:id,name,email',
             'subject:id,name,status',
@@ -56,6 +115,8 @@ class TeacherSubjectController extends ApiController
 
     public function update(Request $request, TeacherSubject $teacherSubject): JsonResponse
     {
+        $this->authorize('update', $teacherSubject);
+
         $teacherId = $request->integer('teacher_id', $teacherSubject->teacher_id);
 
         $validated = $request->validate([
@@ -87,6 +148,8 @@ class TeacherSubjectController extends ApiController
 
     public function destroy(TeacherSubject $teacherSubject): JsonResponse
     {
+        $this->authorize('delete', $teacherSubject);
+
         $teacherSubject->delete();
 
         return $this->success(message: 'Teacher subject deleted successfully.');

@@ -15,6 +15,8 @@ class TeacherContentAssetController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewOwnAny', ContentAsset::class);
+
         $teacher = $this->teacher($request);
 
         $assets = ContentAsset::query()
@@ -30,7 +32,7 @@ class TeacherContentAssetController extends ApiController
     public function store(Request $request, Content $content): JsonResponse
     {
         $teacher = $this->teacher($request);
-        $this->ensureOwnsContent($content, $teacher);
+        $this->authorize('upload', $content);
 
         if (! $request->hasFile('file')) {
             $asset = ContentAsset::create([
@@ -100,14 +102,14 @@ class TeacherContentAssetController extends ApiController
 
     public function show(Request $request, ContentAsset $contentAsset): JsonResponse
     {
-        $this->ensureOwnsAsset($contentAsset, $this->teacher($request));
+        $this->authorize('manage', $contentAsset);
 
         return $this->success($contentAsset->load('content:id,lesson_id,type,title,status'));
     }
 
     public function destroy(Request $request, ContentAsset $contentAsset): JsonResponse
     {
-        $this->ensureOwnsAsset($contentAsset, $this->teacher($request));
+        $this->authorize('manage', $contentAsset);
 
         Storage::disk($contentAsset->disk)->delete($contentAsset->storage_key);
         $contentAsset->delete();
@@ -123,23 +125,4 @@ class TeacherContentAssetController extends ApiController
         return $teacher;
     }
 
-    private function ensureOwnsContent(Content $content, Teacher $teacher): void
-    {
-        $ownsContent = Content::query()
-            ->whereKey($content->id)
-            ->whereHas('lesson.unit.teacherSubject', fn ($query) => $query->where('teacher_id', $teacher->id))
-            ->exists();
-
-        abort_unless($ownsContent, 404);
-    }
-
-    private function ensureOwnsAsset(ContentAsset $contentAsset, Teacher $teacher): void
-    {
-        $ownsAsset = ContentAsset::query()
-            ->whereKey($contentAsset->id)
-            ->whereHas('content.lesson.unit.teacherSubject', fn ($query) => $query->where('teacher_id', $teacher->id))
-            ->exists();
-
-        abort_unless($ownsAsset, 404);
-    }
 }

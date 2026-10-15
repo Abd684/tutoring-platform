@@ -14,6 +14,8 @@ class AttendanceController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Attendance::class);
+
         $query = Attendance::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -21,6 +23,8 @@ class AttendanceController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Attendance::class);
+
         $attendance = Attendance::create($request->validate([
             'session_id' => ['required', 'integer', 'exists:sessions,id'],
             'enrollment_id' => ['required', 'integer', 'exists:enrollments,id'],
@@ -63,6 +67,8 @@ class AttendanceController extends ApiController
                 'code' => 'SESSION_FORBIDDEN',
             ], 403);
         }
+
+        $this->authorize('recordAttendance', $session);
 
         if ($session->status === 'cancelled') {
             return response()->json([
@@ -152,11 +158,15 @@ class AttendanceController extends ApiController
 
     public function show(Attendance $attendance): JsonResponse
     {
+        $this->authorize('view', $attendance);
+
         return $this->success($attendance);
     }
 
     public function update(Request $request, Attendance $attendance): JsonResponse
     {
+        $this->authorize('update', $attendance);
+
         $attendance->update($request->validate([
             'session_id' => ['sometimes', 'integer', 'exists:sessions,id'],
             'enrollment_id' => ['sometimes', 'integer', 'exists:enrollments,id'],
@@ -171,8 +181,55 @@ class AttendanceController extends ApiController
 
     public function destroy(Attendance $attendance): JsonResponse
     {
+        $this->authorize('delete', $attendance);
+
         $attendance->delete();
 
         return $this->success(message: 'Attendance deleted successfully.');
     }
+
+    public function percentage(Request $request): JsonResponse
+    {
+        $this->authorize('accessStudent', \App\Models\Attendance::class);
+
+        $student = $request->user()->student;
+
+        if (! $student) {
+            return response()->json([
+                'message' => 'Student account not found.',
+            ], 404);
+        }
+
+        $query = Attendance::query()
+            ->whereHas('enrollment', function ($query) use ($student) {
+                $query->where('student_id', $student->id);
+            })
+            ->whereHas('session', function ($query) {
+                $query->where('ends_at', '<=', now());
+            });
+
+        $totalSessions = (clone $query)->count();
+
+        $attendedSessions = (clone $query)
+            ->whereIn('status', ['present', 'late'])
+            ->count();
+
+        $absentSessions = (clone $query)
+            ->where('status', 'absent')
+            ->count();
+
+        $percentage = $totalSessions > 0
+            ? round(($attendedSessions / $totalSessions) * 100, 2)
+            : 0;
+
+        return response()->json([
+            'data' => [
+                'attendance_percentage' => $percentage,
+                'attended_sessions' => $attendedSessions,
+                'absent_sessions' => $absentSessions,
+                'total_sessions' => $totalSessions,
+            ],
+        ]);
+    }
+
 }

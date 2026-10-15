@@ -12,6 +12,8 @@ class GroupController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Group::class);
+
         $query = Group::query()
             ->with(['teacherSubject.subject:id,name'])
             ->withCount(['groupEnrollments as active_enrollments_count' => fn ($q) => $q->where('status', 'active')]);
@@ -25,6 +27,8 @@ class GroupController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Group::class);
+
         $validated = $request->validate([
             'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'],
             'name' => ['required', 'string', 'max:255'],
@@ -98,6 +102,8 @@ class GroupController extends ApiController
             ], 422);
         }
 
+        $this->authorize('manage', $teacherSubject);
+
         $validated['status'] ??= 'forming';
         $group = Group::create($validated);
 
@@ -110,6 +116,8 @@ class GroupController extends ApiController
 
     public function show(Group $group): JsonResponse
     {
+        $this->authorize('view', $group);
+
         return $this->success($group->load('teacherSubject.subject:id,name')->loadCount([
             'groupEnrollments as active_enrollments_count' => fn ($q) => $q->where('status', 'active'),
         ]));
@@ -117,6 +125,8 @@ class GroupController extends ApiController
 
     public function update(Request $request, Group $group): JsonResponse
     {
+        $this->authorize('update', $group);
+
         $validated = $request->validate([
             'teacher_subject_id' => ['sometimes', 'integer', 'exists:teacher_subjects,id'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
@@ -147,6 +157,8 @@ class GroupController extends ApiController
 
     public function destroy(Group $group): JsonResponse
     {
+        $this->authorize('delete', $group);
+
         $group->delete();
 
         return $this->success(message: 'Group deleted successfully.');

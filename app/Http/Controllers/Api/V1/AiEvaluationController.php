@@ -12,6 +12,8 @@ class AiEvaluationController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', AiEvaluation::class);
+
         $query = AiEvaluation::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class AiEvaluationController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', AiEvaluation::class);
+
         $aiEvaluation = AiEvaluation::create($request->validate([
             'answer_id' => ['required', 'integer', 'exists:answers,id'],
             'model' => ['required', 'string', 'max:255'],
@@ -34,11 +38,15 @@ class AiEvaluationController extends ApiController
 
     public function show(AiEvaluation $aiEvaluation): JsonResponse
     {
+        $this->authorize('view', $aiEvaluation);
+
         return $this->success($aiEvaluation);
     }
 
     public function update(Request $request, AiEvaluation $aiEvaluation): JsonResponse
     {
+        $this->authorize('update', $aiEvaluation);
+
         $aiEvaluation->update($request->validate([
             'answer_id' => ['sometimes', 'integer', 'exists:answers,id'],
             'model' => ['sometimes', 'string', 'max:255'],
@@ -54,6 +62,8 @@ class AiEvaluationController extends ApiController
 
     public function destroy(AiEvaluation $aiEvaluation): JsonResponse
     {
+        $this->authorize('delete', $aiEvaluation);
+
         $aiEvaluation->delete();
 
         return $this->success(message: 'Ai Evaluation deleted successfully.');

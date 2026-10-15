@@ -10,6 +10,8 @@ class SubjectController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Subject::class);
+
         $query = Subject::query()->select(['id', 'name', 'description', 'status']);
 
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
@@ -20,6 +22,8 @@ class SubjectController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Subject::class);
+
         $subject = Subject::create($request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -31,11 +35,15 @@ class SubjectController extends ApiController
 
     public function show(Subject $subject): JsonResponse
     {
+        $this->authorize('view', $subject);
+
         return $this->success($subject->loadCount('teacherSubjects'));
     }
 
     public function update(Request $request, Subject $subject): JsonResponse
     {
+        $this->authorize('update', $subject);
+
         $subject->update($request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
@@ -47,6 +55,8 @@ class SubjectController extends ApiController
 
     public function destroy(Subject $subject): JsonResponse
     {
+        $this->authorize('delete', $subject);
+
         $subject->delete();
 
         return $this->success(message: 'Subject deleted successfully.');

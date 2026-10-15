@@ -12,6 +12,8 @@ class EscrowTransactionController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', EscrowTransaction::class);
+
         $query = EscrowTransaction::query();
 
         return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
@@ -19,6 +21,8 @@ class EscrowTransactionController extends ApiController
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', EscrowTransaction::class);
+
         $escrowTransaction = EscrowTransaction::create($request->validate([
             'payment_id' => ['required', 'integer', 'exists:payments,id'],
             'enrollment_id' => ['required', 'integer', 'exists:enrollments,id'],
@@ -36,11 +40,15 @@ class EscrowTransactionController extends ApiController
 
     public function show(EscrowTransaction $escrowTransaction): JsonResponse
     {
+        $this->authorize('view', $escrowTransaction);
+
         return $this->success($escrowTransaction);
     }
 
     public function update(Request $request, EscrowTransaction $escrowTransaction): JsonResponse
     {
+        $this->authorize('update', $escrowTransaction);
+
         $escrowTransaction->update($request->validate([
             'payment_id' => ['sometimes', 'integer', 'exists:payments,id'],
             'enrollment_id' => ['sometimes', 'integer', 'exists:enrollments,id'],
@@ -58,6 +66,8 @@ class EscrowTransactionController extends ApiController
 
     public function destroy(EscrowTransaction $escrowTransaction): JsonResponse
     {
+        $this->authorize('delete', $escrowTransaction);
+
         $escrowTransaction->delete();
 
         return $this->success(message: 'Escrow Transaction deleted successfully.');

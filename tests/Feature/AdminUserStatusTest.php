@@ -14,7 +14,8 @@ class AdminUserStatusTest extends TestCase
     public function test_company_admin_can_suspend_and_activate_a_user(): void
     {
         $admin = User::factory()->create(['role' => 'company_admin']);
-        $user = User::factory()->create(['status' => 'active']);
+        // This test covers the generic response; student suspension has its own contract.
+        $user = User::factory()->create(['role' => 'teacher', 'status' => 'active']);
 
         Sanctum::actingAs($admin);
 
