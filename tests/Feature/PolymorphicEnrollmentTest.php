@@ -13,6 +13,7 @@ use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\ContentAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -61,6 +62,7 @@ class PolymorphicEnrollmentTest extends TestCase
             $this->postJson('/api/v1/'.$path.'/'.$model->id.'/enroll')->assertConflict()
                 ->assertJsonPath('code', 'ALREADY_ENROLLED')->assertJsonPath('enrollment_id', $result->json('data.id'));
         }
+        Enrollment::query()->update(['status' => 'active']);
         foreach ([['units', $coveredUnit, 'SUBJECT'], ['contents', $subjectContent, 'SUBJECT'], ['contents', $unitContent, 'UNIT']] as [$path, $model, $scope]) {
             $this->postJson('/api/v1/'.$path.'/'.$model->id.'/enroll')->assertConflict()->assertJsonPath('code', 'ALREADY_COVERED_BY_'.$scope);
         }
@@ -117,17 +119,68 @@ class PolymorphicEnrollmentTest extends TestCase
         $this->assertDatabaseCount('group_enrollments', 1);
     }
 
+    public function test_enrollment_rejects_types_outside_its_domain(): void
+    {
+        $student = $this->setupStudent();
+        [, , , $teacher] = $this->curriculum();
+        foreach (['user', User::class, TeacherSubject::class, '', null] as $type) {
+            try {
+                Enrollment::create([
+                    'student_id' => $student->id,
+                    'teacher_id' => $teacher->id,
+                    'enrollable_type' => $type,
+                    'enrollable_id' => 1,
+                    'status' => 'pending',
+                ]);
+                $this->fail('Invalid enrollment type was accepted.');
+            } catch (\LogicException $exception) {
+                $this->assertStringStartsWith('Invalid enrollable type:', $exception->getMessage());
+            }
+        }
+        $this->assertDatabaseCount('enrollments', 0);
+    }
+
     public function test_migration_normalizes_existing_class_names(): void
     {
         $student = $this->setupStudent();
         [$subject, $unit, $content, $teacher] = $this->curriculum();
         foreach ([$subject, $unit, $content] as $model) {
-            Enrollment::create(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'enrollable_type' => get_class($model), 'enrollable_id' => $model->id, 'status' => 'active']);
+            DB::table('enrollments')->insert(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'enrollable_type' => get_class($model), 'enrollable_id' => $model->id, 'status' => 'active']);
         }
         $migration = require database_path('migrations/2026_10_15_122315_normalize_enrollment_morph_types.php');
         $migration->up();
         $migration->up();
         $this->assertSame(['content', 'teacher_subject', 'unit'], DB::table('enrollments')->orderBy('enrollable_type')->pluck('enrollable_type')->all());
         $this->getJson('/api/v1/student/enrollments')->assertOk()->assertJsonPath('data.0.type', 'content')->assertJsonPath('data.1.type', 'unit')->assertJsonPath('data.2.type', 'subject');
+    }
+
+    public function test_pending_parent_does_not_cover_children_but_duplicate_pending_is_rejected(): void
+    {
+        $this->setupStudent();
+        [$subject, $unit, $content] = $this->curriculum();
+        foreach ([['teacher-subjects', $subject], ['units', $unit], ['contents', $content]] as [$path, $item]) {
+            $this->postJson('/api/v1/'.$path.'/'.$item->id.'/enroll')->assertCreated();
+            $this->postJson('/api/v1/'.$path.'/'.$item->id.'/enroll')->assertConflict()->assertJsonPath('code', 'ALREADY_ENROLLED');
+        }
+    }
+
+    public function test_content_access_time_boundaries_and_sibling_units(): void
+    {
+        $student = $this->setupStudent();
+        [$course, $unit, $content, $teacher] = $this->curriculum();
+        $otherUnit = Unit::create(['teacher_subject_id' => $course->id, 'title' => 'B', 'status' => 'published']);
+        $lesson = Lesson::create(['unit_id' => $otherUnit->id, 'title' => 'B', 'status' => 'published']);
+        $other = Content::create(['lesson_id' => $lesson->id, 'type' => 'pdf', 'title' => 'B', 'status' => 'published']);
+        $enrollment = $unit->enrollments()->create(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'status' => 'active']);
+        $access = app(ContentAccess::class);
+        $this->assertTrue($access->allows($student, $content));
+        $this->assertFalse($access->allows($student, $other));
+        $this->freezeTime();
+        $enrollment->update(['expires_at' => now()]);
+        $this->assertFalse($access->allows($student, $content));
+        $enrollment->update(['expires_at' => null, 'starts_at' => now()->addSecond()]);
+        $this->assertFalse($access->allows($student, $content));
+        $enrollment->update(['starts_at' => now()]);
+        $this->assertTrue($access->allows($student, $content));
     }
 }

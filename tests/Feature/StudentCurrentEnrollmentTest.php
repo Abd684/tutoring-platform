@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Device;
+use App\Models\DeviceSession;
 use App\Models\Enrollment;
 use App\Models\Student;
+use App\Models\StudentDevice;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
@@ -23,14 +26,17 @@ class StudentCurrentEnrollmentTest extends TestCase
         $teacher = Teacher::create(['user_id' => User::factory()->create(['role' => 'teacher'])->id]);
         $subject = Subject::create(['name' => 'Math', 'status' => 'active']);
         $item = TeacherSubject::create(['teacher_id' => $teacher->id, 'subject_id' => $subject->id, 'price' => 10, 'status' => 'active']);
-        $base = ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'enrollable_type' => TeacherSubject::class, 'enrollable_id' => $item->id, 'price' => 10];
+        $base = ['student_id' => $student->id, 'teacher_id' => $teacher->id, 'enrollable_type' => (new TeacherSubject)->getMorphClass(), 'enrollable_id' => $item->id, 'price' => 10];
         $active = Enrollment::create(array_merge($base, ['status' => 'active', 'expires_at' => now()->addDay()]));
         $pending = Enrollment::create(array_merge($base, ['status' => 'pending']));
         Enrollment::create(array_merge($base, ['status' => 'active', 'expires_at' => now()->subDay()]));
         Enrollment::create(array_merge($base, ['status' => 'cancelled']));
         Enrollment::create(array_merge($base, ['student_id' => $other->id, 'status' => 'active']));
 
-        $token = $user->createToken('student')->plainTextToken;
+        $device = Device::create(['device_uuid' => 'enrollment-test-device', 'platform' => 'android', 'status' => 'trusted']);
+        $binding = StudentDevice::create(['student_id' => $student->id, 'device_id' => $device->id, 'status' => 'active', 'is_active' => true]);
+        $session = DeviceSession::create(['student_device_id' => $binding->id, 'refresh_token_hash' => hash('sha256', 'test'), 'status' => 'active', 'expires_at' => now()->addDay()]);
+        $token = $user->createToken('student_device_'.$binding->id.'_session_'.$session->id)->plainTextToken;
         $response = $this->withToken($token)->getJson('/api/v1/student/booking?student_id='.$other->id)
             ->assertOk()->assertJsonPath('meta.total', 2)
             ->assertJsonPath('data.0.teacher.id', $teacher->id)

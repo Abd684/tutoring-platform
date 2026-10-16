@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Content;
+use App\Models\Lesson;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -29,15 +30,34 @@ class TeacherContentController extends ApiController
             'type' => ['required', Rule::in(['video', 'pdf', 'quiz', 'link'])],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'learning_objectives' => ['nullable', 'array', 'max:100'],
+            'learning_objectives.*' => ['string', 'max:1000'],
+            'price' => ['sometimes', 'numeric', 'min:0'],
             'order_no' => ['sometimes', 'integer', 'min:0'],
             'status' => ['sometimes', Rule::in(['draft', 'published', 'archived'])],
             'published_at' => ['nullable', 'date'],
         ]);
 
-        $this->authorize('manage', \App\Models\Lesson::findOrFail($validated['lesson_id']));
+        $this->authorize('manage', Lesson::findOrFail($validated['lesson_id']));
 
         $content = Content::create($validated);
 
         return $this->success($content, 'Content created successfully.', 201);
+    }
+
+    public function update(Request $request, Content $content): JsonResponse
+    {
+        $this->authorize('manage', $content);
+        $content->update($request->validate([
+            'title' => ['sometimes', 'required', 'string', 'max:255'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'learning_objectives' => ['sometimes', 'nullable', 'array', 'max:100'],
+            'learning_objectives.*' => ['string', 'max:1000'],
+            'price' => ['sometimes', 'numeric', 'min:0'],
+            'order_no' => ['sometimes', 'integer', 'min:0'],
+            'status' => ['sometimes', Rule::in(['draft', 'published', 'archived'])],
+        ]));
+
+        return $this->success($content->fresh());
     }
 }

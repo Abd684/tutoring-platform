@@ -16,7 +16,7 @@ class StudentBookingController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $this->authorize('accessStudent', \App\Models\Enrollment::class);
+        $this->authorize('accessStudent', Enrollment::class);
 
         $student = Student::query()
             ->where('user_id', $request->user()->id)
@@ -28,6 +28,8 @@ class StudentBookingController extends ApiController
             ], 404);
         }
         abort_unless($student->status === 'active' && $request->user()->status === 'active', 403);
+        $request->validate(['scope' => ['sometimes', 'in:upcoming,history,all']]);
+        $scope = $request->input('scope', 'upcoming');
 
         /*
          * تحميل العنصر المشترك فيه حسب نوع الـ enrollment.
@@ -84,12 +86,10 @@ class StudentBookingController extends ApiController
             ])
 
             // الجلسات القادمة فقط
-            ->where('starts_at', '>=', now())
+            ->when($scope === 'upcoming', fn ($q) => $q->where('starts_at', '>=', now())->where('status', 'scheduled'))
+            ->when($scope === 'history', fn ($q) => $q->where(fn ($q) => $q->where('ends_at', '<=', now())->orWhereIn('status', ['completed', 'cancelled'])))
 
             // لا نعيد الجلسات الملغاة أو المنتهية
-            ->whereIn('status', [
-                'scheduled',
-            ])
 
             // جلسات هذا الطالب فقط
             ->where(function ($query) use ($student) {
@@ -97,27 +97,27 @@ class StudentBookingController extends ApiController
                 // Individual
                 $query->where(function ($q) use ($student) {
                     $q->where('type', 'INDIVIDUAL')->whereHas('enrollment', function ($enrollmentQuery) use ($student) {
-                    $enrollmentQuery->where('student_id', $student->id);
+                        $enrollmentQuery->where('student_id', $student->id);
                     });
                 })
 
                 // Group
                     ->orWhere(function ($q) use ($student) {
                         $q->where('type', 'GROUP')->whereHas(
-                        'group.groupEnrollments',
-                        function ($groupEnrollmentQuery) use ($student) {
-                            $groupEnrollmentQuery
-                                ->where('status', 'active')
-                                ->whereHas(
-                                    'enrollment',
-                                    function ($enrollmentQuery) use ($student) {
-                                        $enrollmentQuery->where(
-                                            'student_id',
-                                            $student->id
-                                        );
-                                    }
-                                );
-                        }
+                            'group.groupEnrollments',
+                            function ($groupEnrollmentQuery) use ($student) {
+                                $groupEnrollmentQuery
+                                    ->where('status', 'active')
+                                    ->whereHas(
+                                        'enrollment',
+                                        function ($enrollmentQuery) use ($student) {
+                                            $enrollmentQuery->where(
+                                                'student_id',
+                                                $student->id
+                                            );
+                                        }
+                                    );
+                            }
                         );
                     });
             })
@@ -172,6 +172,13 @@ class StudentBookingController extends ApiController
         return response()->json([
             'data' => $data,
         ]);
+    }
+
+    public function show(Request $request, Session $session): JsonResponse
+    {
+        $this->authorize('viewBooking', $session);
+
+        return $this->success($session->only(['id', 'teacher_id', 'type', 'starts_at', 'ends_at', 'status']));
     }
 
     private function formatEnrollment(?Enrollment $enrollment): ?array

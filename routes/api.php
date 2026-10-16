@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AdminController;
+use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
 use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\TeacherSubjectController;
+use App\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
 // use App\Http\Controllers\Api\V1\AiEvaluationController;
@@ -11,7 +14,6 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Api\V1\AttendanceController;
 // use App\Http\Controllers\Api\V1\AuditLogController;
 // use App\Http\Controllers\Api\V1\ContentController;
-// use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 // use App\Http\Controllers\Api\V1\DeviceController;
 // use App\Http\Controllers\Api\V1\DeviceEventController;
 // use App\Http\Controllers\Api\V1\DeviceSessionController;
@@ -33,21 +35,19 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 // use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
 // use App\Http\Controllers\Api\V1\TeacherController;
-// use App\Http\Controllers\Api\V1\TeacherSubjectController;
 // use App\Http\Controllers\Api\V1\TeacherSubscriptionController;
-// use App\Http\Controllers\Api\V1\UnitController;
 // use App\Http\Controllers\Api\V1\UserController;
 // use App\Http\Controllers\Api\V1\VideoAssetController;
 // use App\Http\Controllers\Api\V1\WalletController;
 // use App\Http\Controllers\Api\V1\WalletTransactionController;
 
-// Route::prefix('v1')
-//     ->group(function () {
-// Route::get('/teacher-subjects/most-requested', [TeacherSubjectController::class, 'mostRequested']);
-// Route::get('/teachers/{teacher}/subjects', [TeacherSubjectController::class, 'getSubjectsByTeacher']);
-// Route::get('/teacher/subjects/{teacherSubject}/units', [TeacherSubjectController::class, 'units']);
-// Route::get('/units/{unit}/lessons', [UnitController::class, 'lessons']);
-// Route::get('/lessons/{lesson}/contents', [CurriculumBrowseController::class, 'lessonContents']);
+Route::prefix('v1')->group(function (): void {
+    Route::get('/teacher-subjects/most-requested', [TeacherSubjectController::class, 'mostRequested']);
+    Route::get('/teachers/{teacher}/subjects', [TeacherSubjectController::class, 'getSubjectsByTeacher']);
+    Route::get('/teacher/subjects/{teacherSubject}/units', [TeacherSubjectController::class, 'units']);
+    Route::get('/units/{unit}/lessons', [UnitController::class, 'lessons']);
+    Route::get('/lessons/{lesson}/contents', [CurriculumBrowseController::class, 'lessonContents']);
+});
 
 // Route::apiResources([
 //     'teachers' => TeacherController::class,

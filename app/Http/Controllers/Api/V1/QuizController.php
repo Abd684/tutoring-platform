@@ -1,6 +1,6 @@
 <?php
 
-//deaa
+// deaa
 
 namespace App\Http\Controllers\Api\V1;
 
@@ -42,11 +42,11 @@ class QuizController extends ApiController
 
     public function studentData(Request $request, Quiz $quiz): JsonResponse
     {
-        $this->authorize('accessStudent', \App\Models\Quiz::class);
+        $this->authorize('accessStudent', Quiz::class);
 
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
-        abort_unless($quiz->status === 'published', 404);
+        $this->authorize('access', $quiz);
 
         $quiz->load(['content:id,title,description', 'questions' => fn ($query) => $query
             ->select(['id', 'quiz_id', 'type', 'body', 'points', 'rubric_json', 'order_no'])
@@ -91,4 +91,3 @@ class QuizController extends ApiController
         return $this->success(message: 'Quiz deleted successfully.');
     }
 }
-

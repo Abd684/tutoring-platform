@@ -1,6 +1,6 @@
 <?php
 
-//deaa
+// deaa
 
 namespace App\Http\Controllers\Api\V1;
 
@@ -44,11 +44,12 @@ class AnswerController extends ApiController
 
     public function submitForAttempt(Request $request, QuizAttempt $quizAttempt): JsonResponse
     {
-        $this->authorize('accessStudent', \App\Models\Answer::class);
+        $this->authorize('accessStudent', Answer::class);
 
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
-        abort_unless((int) $quizAttempt->student_id === (int) $student->id, 404);
+        $this->authorize('view', $quizAttempt);
+        $this->authorize('access', $quizAttempt->quiz);
 
         if ($quizAttempt->status !== 'in_progress' || $quizAttempt->submitted_at !== null) {
             return $this->businessError('This quiz attempt no longer accepts answers.');
@@ -112,4 +113,3 @@ class AnswerController extends ApiController
         return $this->success(message: 'Answer deleted successfully.');
     }
 }
-

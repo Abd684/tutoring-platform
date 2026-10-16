@@ -9,6 +9,7 @@ use App\Models\DeviceSession;
 use App\Models\Student;
 use App\Models\StudentDevice;
 use App\Models\User;
+use App\Services\DeviceManagementService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,8 @@ use Illuminate\Validation\Rule;
 
 class StudentAuthController extends Controller
 {
+    use Concerns\HandlesDeviceTransfers;
+
     /**
      * Student registration contract.
      *
@@ -67,11 +70,12 @@ class StudentAuthController extends Controller
             ];
         });
 
-  return response()->json([
-    'status' => true,
-    'message' => 'Student account created successfully.',
-], 201);
-}
+        return response()->json([
+            'status' => true,
+            'message' => 'Student account created successfully.',
+        ], 201);
+    }
+
     // تسجيل دخول الطالب مع مبدأ جهاز واحد فعال.
     public function studentLogin(Request $request)
     {
@@ -89,71 +93,7 @@ class StudentAuthController extends Controller
             $student = Student::whereKey($student->id)->lockForUpdate()->firstOrFail();
             $device = $this->findOrCreateDevice($validated);
 
-            // نفحص أولاً إن كان هذا الجهاز نفسه قد ألغي سابقاً لهذا الطالب.
-            // الجهاز الملغى يبقى محفوظاً ولا يسمح له بالدخول أو العودة للحساب.
-            $studentDevice = StudentDevice::where('student_id', $student->id)
-                ->where('device_id', $device->id)
-                ->lockForUpdate()
-                ->first();
-                $device = $this->findOrCreateDevice($validated);
-
-            if (
-                $studentDevice &&
-                ($studentDevice->status === 'revoked' || ! $studentDevice->is_active)
-            ) {
-                throw new HttpResponseException(
-                    response()->json([
-                        'status' => false,
-                        'message' => 'This device has been revoked for this student.',
-                        'code' => 'DEVICE_REVOKED',
-                    ], 403)
-                );
-            }
-
-            // إذا كان هناك جهاز آخر فعال، نطلب نقل الحساب ولا نسجل الدخول مباشرة.
-            $activeStudentDevice = StudentDevice::where('student_id', $student->id)
-                ->where('status', 'active')
-                ->where('is_active', true)
-                ->lockForUpdate()
-                ->first();
-
-            if (
-                $activeStudentDevice &&
-                $activeStudentDevice->device_id !== $device->id
-            ) {
-                throw new HttpResponseException(
-                    response()->json([
-                        'status' => false,
-                        'message' => 'Your account is active on another device. Device transfer is required.',
-                        'code' => 'DEVICE_TRANSFER_REQUIRED',
-                    ], 409)
-                );
-            }
-
-            // أول جهاز للطالب.
-            if (! $studentDevice) {
-                $studentDevice = StudentDevice::create([
-                    'student_id' => $student->id,
-                    'device_id' => $device->id,
-                    'status' => 'active',
-                    'is_active' => true,
-                    'activated_at' => now(),
-                    'last_seen_at' => now(),
-                    'revoked_at' => null,
-                    'revoke_reason' => null,
-                ]);
-
-                $this->recordDeviceEvent(
-                    $studentDevice,
-                    'device_registered',
-                    $request,
-                    ['source' => 'login']
-                );
-            }
-
-            $studentDevice->update([
-                'last_seen_at' => now(),
-            ]);
+            $studentDevice = app(DeviceManagementService::class)->loginBinding($student, $device);
 
             $sessionData = $this->issueStudentSession(
                 $user,
@@ -250,6 +190,10 @@ class StudentAuthController extends Controller
         $refreshHash = hash('sha256', $validated['refresh_token']);
 
         $result = DB::transaction(function () use ($request, $validated, $refreshHash) {
+            $candidate = DeviceSession::with('studentDevice')->where('refresh_token_hash', $refreshHash)->first();
+            if ($candidate?->studentDevice) {
+                Student::whereKey($candidate->studentDevice->student_id)->lockForUpdate()->firstOrFail();
+            }
             $deviceSession = DeviceSession::with([
                 'studentDevice.device',
                 'studentDevice.student.user',
@@ -405,136 +349,6 @@ class StudentAuthController extends Controller
         ]);
     }
 
-    /**
-     * Move the student account to a new physical device.
-     * A device previously revoked for this student can never receive the account again.
-     */
-    public function studentDeviceTransfer(Request $request)
-    {
-        $validated = $request->validate(array_merge([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ], $this->deviceValidationRules()));
-
-        [$user, $student] = $this->validatedStudentCredentials(
-            $validated['email'],
-            $validated['password']
-        );
-
-        $result = DB::transaction(function () use ($request, $validated, $user, $student) {
-            $student = Student::whereKey($student->id)->lockForUpdate()->firstOrFail();
-            $newDevice = $this->findOrCreateDevice($validated);
-
-            // افحص الجهاز الهدف قبل إلغاء الجهاز الحالي.
-            $newStudentDevice = StudentDevice::where('student_id', $student->id)
-                ->where('device_id', $newDevice->id)
-                ->lockForUpdate()
-                ->first();
-
-            // الجهاز الذي ألغي سابقاً لهذا الطالب لا يمكن تفعيله من جديد.
-            if (
-                $newStudentDevice &&
-                ($newStudentDevice->status === 'revoked' || ! $newStudentDevice->is_active)
-            ) {
-                throw new HttpResponseException(
-                    response()->json([
-                        'status' => false,
-                        'message' => 'This device was previously revoked and cannot receive this student account again.',
-                        'code' => 'DEVICE_REVOKED',
-                    ], 403)
-                );
-            }
-
-            $activeStudentDevices = StudentDevice::where('student_id', $student->id)
-                ->where('status', 'active')
-                ->where('is_active', true)
-                ->lockForUpdate()
-                ->get();
-
-            foreach ($activeStudentDevices as $oldStudentDevice) {
-                if ($oldStudentDevice->device_id === $newDevice->id) {
-                    continue;
-                }
-
-                DeviceSession::where('student_device_id', $oldStudentDevice->id)
-                    ->where('status', 'active')
-                    ->update([
-                        'status' => 'revoked',
-                        'last_activity_at' => now(),
-                        'revoked_at' => now(),
-                        'revoke_reason' => 'new_device_linked',
-                    ]);
-
-                $oldStudentDevice->update([
-                    'status' => 'revoked',
-                    'is_active' => false,
-                    'last_seen_at' => now(),
-                    'revoked_at' => now(),
-                    'revoke_reason' => 'new_device_linked',
-                ]);
-
-                $this->recordDeviceEvent($oldStudentDevice, 'device_transfer_out', $request, [
-                    'new_device_id' => $newDevice->id,
-                    'reason' => 'new_device_linked',
-                ]);
-            }
-
-            if (! $newStudentDevice) {
-                $newStudentDevice = StudentDevice::create([
-                    'student_id' => $student->id,
-                    'device_id' => $newDevice->id,
-                    'status' => 'active',
-                    'is_active' => true,
-                    'activated_at' => now(),
-                    'last_seen_at' => now(),
-                    'revoked_at' => null,
-                    'revoke_reason' => null,
-                ]);
-            } else {
-                // الموجود هنا لا يمكن أن يكون revoked لأننا رفضناه أعلاه.
-                $newStudentDevice->update([
-                    'last_seen_at' => now(),
-                ]);
-            }
-
-            DeviceSession::where('student_device_id', $newStudentDevice->id)
-                ->where('status', 'active')
-                ->update([
-                    'status' => 'revoked',
-                    'last_activity_at' => now(),
-                    'revoked_at' => now(),
-                    'revoke_reason' => 'new_device_linked',
-                ]);
-
-            $user->tokens()->delete();
-
-            $this->recordDeviceEvent($newStudentDevice, 'device_transfer_in', $request, [
-                'reason' => 'new_device_linked',
-            ]);
-
-            $sessionData = $this->issueStudentSession(
-                $user,
-                $newStudentDevice,
-                $request,
-                'login_success'
-            );
-
-            return array_merge($sessionData, [
-                'device' => $newDevice,
-                'student_device' => $newStudentDevice,
-            ]);
-        });
-
-        $student->load('school.region');
-
-        return response()->json($this->studentAuthResponse(
-            'Device transfer completed and student logged in successfully.',
-            $user,
-            $student,
-            $result
-        ));
-    }
-
     public function studentMe(Request $request)
     {
         $user = $request->user();
@@ -629,94 +443,13 @@ class StudentAuthController extends Controller
 
     private function findOrCreateDevice(array $validated): Device
     {
-        $device = Device::where('device_uuid', $validated['device_uuid'])
-            ->lockForUpdate()
-            ->first();
-
-        if (! $device) {
-            return Device::create([
-                'device_uuid' => $validated['device_uuid'],
-                'platform' => $validated['platform'],
-                'manufacturer' => $validated['manufacturer'] ?? null,
-                'model' => $validated['model'] ?? null,
-                'os_version' => $validated['os_version'] ?? null,
-                'app_version' => $validated['app_version'] ?? null,
-                'public_key' => $validated['public_key'] ?? null,
-                'status' => 'trusted',
-            ]);
-        }
-
-        if ($device->status === 'blocked') {
-            throw new HttpResponseException(
-                response()->json([
-                    'status' => false,
-                    'message' => 'This device is blocked.',
-                    'code' => 'DEVICE_BLOCKED',
-                ], 403)
-            );
-        }
-
-        $device->update([
-            'platform' => $validated['platform'],
-            'manufacturer' => $validated['manufacturer'] ?? $device->manufacturer,
-            'model' => $validated['model'] ?? $device->model,
-            'os_version' => $validated['os_version'] ?? $device->os_version,
-            'app_version' => $validated['app_version'] ?? $device->app_version,
-            'public_key' => $validated['public_key'] ?? $device->public_key,
-        ]);
-
-        return $device;
+        return app(DeviceManagementService::class)->findOrCreateDevice($validated);
     }
 
-    private function issueStudentSession(
-        User $user,
-        StudentDevice $studentDevice,
-        Request $request,
-        string $eventType
-    ): array {
-        DeviceSession::where('student_device_id', $studentDevice->id)
-            ->where('status', 'active')
-            ->update([
-                'status' => 'revoked',
-                'last_activity_at' => now(),
-                'revoked_at' => now(),
-                'revoke_reason' => 'new_login',
-            ]);
-
-        $user->tokens()->delete();
-
-        $refreshToken = Str::random(80);
-        $refreshExpiresAt = now()->addDays($this->studentRefreshTokenDays());
-
-        $deviceSession = DeviceSession::create([
-            'student_device_id' => $studentDevice->id,
-            'refresh_token_hash' => hash('sha256', $refreshToken),
-            'status' => 'active',
-            'last_activity_at' => now(),
-            'expires_at' => $refreshExpiresAt,
-            'revoked_at' => null,
-            'revoke_reason' => null,
-        ]);
-
-        $accessTokenExpiresAt = now()->addMinutes($this->studentAccessTokenMinutes());
-
-        $newToken = $user->createToken(
-            'student_device_'.$studentDevice->id.'_session_'.$deviceSession->id,
-            ['student'],
-            $accessTokenExpiresAt
-        );
-
-        $this->recordDeviceEvent($studentDevice, $eventType, $request, [
-            'device_session_id' => $deviceSession->id,
-        ]);
-
-        return [
-            'access_token' => $newToken->plainTextToken,
-            'access_token_expires_at' => $accessTokenExpiresAt->toDateTimeString(),
-            'refresh_token' => $refreshToken,
-            'refresh_token_expires_at' => $refreshExpiresAt->toDateTimeString(),
-            'device_session' => $deviceSession,
-        ];
+    private function issueStudentSession(User $user, StudentDevice $studentDevice, Request $request, string $eventType): array
+    {
+        return app(DeviceManagementService::class)->issueStudentSession($user, $studentDevice, $request, $eventType,
+            $this->studentRefreshTokenDays(), $this->studentAccessTokenMinutes());
     }
 
     private function recordDeviceEvent(
@@ -774,6 +507,7 @@ class StudentAuthController extends Controller
             'role' => $user->role,
             'status' => $user->status,
             'region_id' => $user->region_id,
+            'avatar_url' => $user->avatar_url,
         ];
     }
 
@@ -808,6 +542,6 @@ class StudentAuthController extends Controller
 
     private function studentRefreshTokenDays(): int
     {
-       return max(1, (int) config('student_auth.refresh_token_days', 180));
+        return max(1, (int) config('student_auth.refresh_token_days', 180));
     }
 }

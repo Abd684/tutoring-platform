@@ -48,7 +48,7 @@ class MostRequestedCoursesTest extends TestCase
         return Enrollment::create(array_merge([
             'student_id' => $studentId,
             'teacher_id' => $course->teacher_id,
-            'enrollable_type' => TeacherSubject::class,
+            'enrollable_type' => (new TeacherSubject)->getMorphClass(),
             'enrollable_id' => $course->id,
             'status' => 'active',
             'starts_at' => now()->subMonth(),
@@ -71,7 +71,7 @@ class MostRequestedCoursesTest extends TestCase
         $this->enroll($lessPopular, ['starts_at' => now()->addSecond()]);
         $this->enroll($lessPopular, ['starts_at' => null]);
         // A unit enrollment with the same numeric ID must not count as a course enrollment.
-        $this->enroll($lessPopular, ['enrollable_type' => \App\Models\Unit::class]);
+        $this->enroll($lessPopular, ['enrollable_type' => (new \App\Models\Unit)->getMorphClass()]);
 
         $this->getJson(self::URL)->assertOk()
             ->assertJsonCount(2, 'data')

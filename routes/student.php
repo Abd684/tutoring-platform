@@ -1,45 +1,52 @@
 <?php
 
-use App\Http\Controllers\Api\V1\StudentAuthController;
-use App\Http\Controllers\Api\V1\StudentEnrollmentController;
-use App\Http\Controllers\Api\V1\StudentContentAssetController;
 use App\Http\Controllers\Api\V1\AnswerController;
 use App\Http\Controllers\Api\V1\AttendanceController;
+use App\Http\Controllers\Api\V1\AvailableSessionController;
+use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
+use App\Http\Controllers\Api\V1\IndividualBookingController;
 use App\Http\Controllers\Api\V1\QuizAttemptController;
 use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\SessionController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\V1\StudentAuthController;
 use App\Http\Controllers\Api\V1\StudentBookingController;
+use App\Http\Controllers\Api\V1\StudentContentAssetController;
+use App\Http\Controllers\Api\V1\StudentEnrollmentController;
+use App\Http\Controllers\Api\V1\StudentLearningController;
+use App\Http\Controllers\Api\V1\StudentProfileController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 // Student authentication routes.
 // bootstrap/app.php mounts this file under /api/v1, therefore the public URLs
 // remain /api/v1/auth/... exactly as required by the SDD.
-Route::prefix('auth')->group(function (): void {
+Route::prefix('auth')->middleware('throttle:10,1')->group(function (): void {
     Route::post('/register', [StudentAuthController::class, 'register']);
     Route::post('/login', [StudentAuthController::class, 'studentLogin']);
     Route::post('/refresh', [StudentAuthController::class, 'studentRefresh']);
     Route::post('/device/transfer', [StudentAuthController::class, 'studentDeviceTransfer']);
 
     Route::post('/logout', [StudentAuthController::class, 'studentLogout'])
-        ->middleware(['auth:sanctum', 'role:student']);
+        ->middleware(['auth:sanctum', 'role:student', 'student.device']);
 });
 
 Route::get('/me', [StudentAuthController::class, 'studentMe'])
-    ->middleware(['auth:sanctum', 'role:student']);
+    ->middleware(['auth:sanctum', 'role:student', 'student.device']);
 
 // Student enrollment / purchase APIs from the SDD.
-Route::middleware(['auth:sanctum', 'role:student'])->group(function (): void {
-    Route::get('/teachers/{teacher}/available-sessions', [\App\Http\Controllers\Api\V1\AvailableSessionController::class, 'index']);
+Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(function (): void {
+    Route::post('/teachers/{teacher}/bookings', [IndividualBookingController::class, 'store']);
+    Route::get('/teachers/{teacher}/available-sessions', [AvailableSessionController::class, 'index']);
     Route::get('/student/bookings', [StudentBookingController::class, 'index']);
-    Route::post('/student/enrollments/{enrollment}/payments', [\App\Http\Controllers\Api\V1\EnrollmentPaymentController::class, 'store']);
-    Route::get('/student/payments/{payment}', [\App\Http\Controllers\Api\V1\EnrollmentPaymentController::class, 'show']);
+    Route::post('/student/enrollments/{enrollment}/payments', [EnrollmentPaymentController::class, 'store']);
+    Route::get('/student/payments/{payment}', [EnrollmentPaymentController::class, 'show']);
     Route::get('/student/enrollments', [StudentEnrollmentController::class, 'index']);
     Route::get('/student/booking', [StudentEnrollmentController::class, 'current']);
     Route::post('/teacher-subjects/{id}/enroll', [StudentEnrollmentController::class, 'enrollTeacherSubject']);
     Route::post('/units/{id}/enroll', [StudentEnrollmentController::class, 'enrollUnit']);
     Route::post('/contents/{id}/enroll', [StudentEnrollmentController::class, 'enrollContent']);
 
-    Route::get('/student/attendance/percentage',[AttendanceController::class, 'percentage']);
+    Route::get('/student/attendance/percentage', [AttendanceController::class, 'percentage']);
 
     Route::get('/quizzes/{quiz}/data', [QuizController::class, 'studentData']);
     Route::post('/quizzes/{quiz}/attempts', [QuizAttemptController::class, 'start']);
@@ -47,14 +54,36 @@ Route::middleware(['auth:sanctum', 'role:student'])->group(function (): void {
 });
 
 Route::post('/contents/{id}/playback-token', [StudentContentAssetController::class, 'playbackToken'])
-    ->middleware(['auth:sanctum', 'role:student']);
+    ->middleware(['auth:sanctum', 'role:student', 'student.device']);
 
 Route::get('/content-assets/{contentAsset}/play', [StudentContentAssetController::class, 'play'])
-    ->middleware(['auth:sanctum', 'role:student', 'signed'])
+    ->middleware(['auth:sanctum', 'role:student', 'student.device', 'signed'])
     ->name('student.content.play');
 
 // SDD session booking APIs - authenticated student is derived from Bearer token.
-Route::middleware(['auth:sanctum', 'role:student'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(function (): void {
     Route::post('/sessions/{id}/book', [SessionController::class, 'book']);
     Route::delete('/sessions/{id}/booking', [SessionController::class, 'cancelBooking']);
+});
+
+// Student profile, learning and device approval contracts.
+Route::get('/auth/device/transfer-requests/{transfer}', [StudentAuthController::class, 'transferStatus'])->middleware('throttle:30,1');
+Route::post('/auth/device/transfer-requests', [StudentAuthController::class, 'studentDeviceTransfer'])->middleware('throttle:10,1');
+Route::post('/auth/device/transfer-requests/{transfer}/claim', [StudentAuthController::class, 'claimTransfer'])->middleware('throttle:10,1');
+Route::get('/teachers/{teacher}', [StudentLearningController::class, 'teacher']);
+Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(function (): void {
+    Route::match(['put', 'patch'], '/profile', [StudentProfileController::class, 'update']);
+    Route::post('/profile/avatar', [StudentProfileController::class, 'storeAvatar']);
+    Route::delete('/profile/avatar', [StudentProfileController::class, 'deleteAvatar']);
+    Route::get('/contents/{content}/assets', [StudentContentAssetController::class, 'assets']);
+    Route::post('/content-assets/{contentAsset}/access-token', [StudentContentAssetController::class, 'accessToken']);
+    Route::post('/student/contents/{content}/complete', [StudentLearningController::class, 'complete']);
+    Route::get('/student/teacher-subjects/{teacherSubject}/progress', [StudentLearningController::class, 'progress']);
+    Route::get('/student/teacher-subjects/{teacherSubject}', [StudentLearningController::class, 'course']);
+    Route::get('/student/sessions/{session}', [StudentBookingController::class, 'show']);
+    Route::get('/student/device-transfer-requests', [StudentAuthController::class, 'pendingTransfers']);
+    Route::post('/student/device-transfer-requests/{transfer}/{decision}', [StudentAuthController::class, 'decideTransfer'])->whereIn('decision', ['approve', 'reject']);
+    Route::get('/student/notifications', function (Request $request) {
+        return response()->json(['status' => true, 'data' => $request->user()->notifications()->orderByDesc('id')->limit(100)->get()]);
+    });
 });

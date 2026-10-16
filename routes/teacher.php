@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\GroupController;
 use App\Http\Controllers\Api\V1\GroupEnrollmentController;
 use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\StudentLearningController;
 use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 use App\Http\Controllers\Api\V1\TeacherAuthController;
 use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
@@ -46,4 +47,11 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
     Route::post('/groups', [GroupController::class, 'storeForTeacher']);
     Route::post('/groups/{id}/enrollments', [GroupEnrollmentController::class, 'addToTeacherGroup']);
     Route::delete('/groups/{id}/enrollments/{enrollment}', [GroupEnrollmentController::class, 'removeFromTeacherGroup']);
+});
+
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
+    Route::patch('/profile', [StudentLearningController::class, 'updateTeacher']);
+    Route::patch('/contents/{content}', [TeacherContentController::class, 'update']);
+    Route::post('/sessions/{session}/complete', [SessionController::class, 'complete']);
+    Route::post('/sessions/{session}/cancel', [SessionController::class, 'cancel']);
 });

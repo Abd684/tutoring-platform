@@ -5,6 +5,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Enrollment extends Model {
+    public const ALLOWED_ENROLLABLE_TYPES = ['teacher_subject', 'unit', 'content'];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Enrollment $enrollment): void {
+            if (! in_array($enrollment->enrollable_type, self::ALLOWED_ENROLLABLE_TYPES, true)) {
+                throw new \LogicException('Invalid enrollable type: '.$enrollment->enrollable_type);
+            }
+        });
+    }
+
     public $timestamps = false;
     protected $fillable = ['student_id','teacher_id','enrollable_type','enrollable_id','price','status','starts_at','expires_at'];
     protected function casts(): array { return ['price'=>'decimal:2','starts_at'=>'datetime','expires_at'=>'datetime']; }

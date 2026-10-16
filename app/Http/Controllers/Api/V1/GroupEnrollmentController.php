@@ -52,8 +52,13 @@ class GroupEnrollmentController extends ApiController
                 return ['error' => 'Closed groups cannot accept enrollments.'];
             }
 
-            if ($enrollment->status !== 'active') {
+            if ($enrollment->status !== 'active' || ($enrollment->starts_at && $enrollment->starts_at->isFuture()) || ($enrollment->expires_at && $enrollment->expires_at->lte(now()))) {
                 return ['error' => 'Only active enrollments can join a group.'];
+            }
+
+            if ($enrollment->enrollable_type !== (new TeacherSubject)->getMorphClass()
+                || (int) $enrollment->enrollable_id !== (int) $group->teacher_subject_id) {
+                return ['error' => 'A full-subject enrollment matching the group is required.'];
             }
 
             $teacherSubject = $group->teacherSubject()->firstOrFail();
@@ -105,10 +110,6 @@ class GroupEnrollmentController extends ApiController
             $group = Group::query()->lockForUpdate()->with('teacherSubject')->findOrFail($id);
             $teacherSubject = $group->teacherSubject;
 
-            if ((int) $teacherSubject->teacher_id !== (int) $teacher->id) {
-                return ['error' => ['This group does not belong to the authenticated teacher.', 'GROUP_FORBIDDEN', 403]];
-            }
-
             $this->authorize('manage', $group);
 
             if ($group->status === 'closed') {
@@ -116,7 +117,7 @@ class GroupEnrollmentController extends ApiController
             }
 
             $enrollment = Enrollment::findOrFail($validated['enrollment_id']);
-            if ($enrollment->status !== 'active') {
+            if ($enrollment->status !== 'active' || ($enrollment->starts_at && $enrollment->starts_at->isFuture()) || ($enrollment->expires_at && $enrollment->expires_at->lte(now()))) {
                 return ['error' => ['Only active enrollments can join a group.', 'ENROLLMENT_NOT_ACTIVE', 422]];
             }
 
@@ -197,12 +198,8 @@ class GroupEnrollmentController extends ApiController
             ], 403);
         }
 
-        $result = DB::transaction(function () use ($teacher, $id, $enrollment) {
+        $result = DB::transaction(function () use ($id, $enrollment) {
             $group = Group::query()->lockForUpdate()->with('teacherSubject')->findOrFail($id);
-            if ((int) $group->teacherSubject->teacher_id !== (int) $teacher->id) {
-                return ['error' => ['This group does not belong to the authenticated teacher.', 'GROUP_FORBIDDEN', 403]];
-            }
-
             $this->authorize('manage', $group);
 
             $groupEnrollment = GroupEnrollment::query()
@@ -258,6 +255,15 @@ class GroupEnrollmentController extends ApiController
 
             $becomingActive = ($validated['status'] ?? $groupEnrollment->status) === 'active' && $groupEnrollment->status !== 'active';
             if ($becomingActive) {
+                $enrollment = $groupEnrollment->enrollment;
+                if ($group->status === 'closed' || $enrollment->status !== 'active'
+                    || $enrollment->enrollable_type !== (new TeacherSubject)->getMorphClass()
+                    || (int) $enrollment->enrollable_id !== (int) $group->teacher_subject_id
+                    || (int) $enrollment->teacher_id !== (int) $group->teacherSubject->teacher_id
+                    || ($enrollment->starts_at && $enrollment->starts_at->isFuture())
+                    || ($enrollment->expires_at && $enrollment->expires_at->lte(now()))) {
+                    return ['error' => 'An open group and matching active full-subject enrollment are required.'];
+                }
                 $activeCount = GroupEnrollment::query()
                     ->where('group_id', $group->id)
                     ->where('status', 'active')

@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\Session;
-use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\TeacherAvailability;
-use App\Services\SessionEligibility;
+use App\Services\SessionRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -77,12 +77,16 @@ class SessionController extends ApiController
             ],
 
             'group_id' => [
+                'required_if:type,GROUP',
+                'prohibited_if:type,INDIVIDUAL',
                 'nullable',
                 'integer',
                 'exists:groups,id',
             ],
 
             'enrollment_id' => [
+                'required_if:type,INDIVIDUAL',
+                'prohibited_if:type,GROUP',
                 'nullable',
                 'integer',
                 'exists:enrollments,id',
@@ -111,48 +115,15 @@ class SessionController extends ApiController
          * to the authenticated teacher.
          */
         if (! empty($validated['group_id'])) {
-            $exists = Group::query()
-                ->whereKey($validated['group_id'])
-                ->whereHas(
-                    'teacherSubject',
-                    fn ($query) => $query->where(
-                        'teacher_id',
-                        $teacherId
-                    )
-                )
-                ->exists();
-
-            abort_unless(
-                $exists,
-                404,
-                'Group not found.'
-            );
+            $this->authorize('manage', Group::findOrFail($validated['group_id']));
         }
 
         if (! empty($validated['availability_id'])) {
-            $exists = TeacherAvailability::query()
-                ->whereKey($validated['availability_id'])
-                ->where('teacher_id', $teacherId)
-                ->exists();
-
-            abort_unless(
-                $exists,
-                404,
-                'Teacher availability not found.'
-            );
+            $this->authorize('view', TeacherAvailability::findOrFail($validated['availability_id']));
         }
 
         if (! empty($validated['enrollment_id'])) {
-            $exists = Enrollment::query()
-                ->whereKey($validated['enrollment_id'])
-                ->where('teacher_id', $teacherId)
-                ->exists();
-
-            abort_unless(
-                $exists,
-                404,
-                'Enrollment not found.'
-            );
+            $this->authorize('manage', Enrollment::findOrFail($validated['enrollment_id']));
         }
 
         /*
@@ -161,7 +132,14 @@ class SessionController extends ApiController
         $validated['teacher_id'] = $teacherId;
         $validated['status'] = 'scheduled';
 
-        $session = Session::create($validated);
+        $session = DB::transaction(function () use ($validated, $teacherId) {
+            Teacher::whereKey($teacherId)->lockForUpdate()->firstOrFail();
+            $session = new Session($validated);
+            app(SessionRules::class)->validate($session);
+            $session->save();
+
+            return $session;
+        }, 3);
 
         return $this->success(
             $session,
@@ -178,205 +156,7 @@ class SessionController extends ApiController
     {
         $this->authorize('book', Session::class);
 
-        $student = $request->user()?->student;
-
-        if (! $student) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Student account not found.',
-                'code' => 'STUDENT_PROFILE_NOT_FOUND',
-            ], 403);
-        }
-
-        $validated = $request->validate([
-            'enrollment_id' => [
-                'nullable',
-                'integer',
-                'exists:enrollments,id',
-            ],
-        ]);
-
-        abort_unless(
-            $student->status === 'active'
-                && $request->user()->status === 'active',
-            403
-        );
-
-        $result = DB::transaction(
-            function () use ($student, $validated, $id) {
-                Student::query()
-                    ->whereKey($student->id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                $session = Session::query()
-                    ->lockForUpdate()
-                    ->findOrFail($id);
-
-                if (
-                    $session->teacher?->status !== 'active'
-                    || $session->teacher->user?->status !== 'active'
-                ) {
-                    return [
-                        'error' => [
-                            'The teacher is not available.',
-                            'TEACHER_NOT_AVAILABLE',
-                            409,
-                        ],
-                    ];
-                }
-
-                if ($session->type !== 'INDIVIDUAL') {
-                    return [
-                        'error' => [
-                            'This endpoint books individual sessions only.',
-                            'SESSION_TYPE_NOT_BOOKABLE',
-                            422,
-                        ],
-                    ];
-                }
-
-                if ($session->status !== 'scheduled') {
-                    return [
-                        'error' => [
-                            'Only scheduled sessions can be booked.',
-                            'SESSION_NOT_AVAILABLE',
-                            409,
-                        ],
-                    ];
-                }
-
-                if (
-                    $session->starts_at !== null
-                    && $session->starts_at->lte(now())
-                ) {
-                    return [
-                        'error' => [
-                            'Past or started sessions cannot be booked.',
-                            'SESSION_ALREADY_STARTED',
-                            409,
-                        ],
-                    ];
-                }
-
-                if ($session->enrollment_id !== null) {
-                    $existing = Enrollment::find(
-                        $session->enrollment_id
-                    );
-
-                    $code =
-                        $existing
-                        && (int) $existing->student_id
-                            === (int) $student->id
-                            ? 'ALREADY_BOOKED_BY_STUDENT'
-                            : 'SESSION_ALREADY_BOOKED';
-
-                    return [
-                        'error' => [
-                            'This session is already booked.',
-                            $code,
-                            409,
-                        ],
-                    ];
-                }
-
-                $eligibility = app(SessionEligibility::class);
-
-                $query = $eligibility->enrollments(
-                    $student->id,
-                    $session
-                );
-
-                if (! empty($validated['enrollment_id'])) {
-                    $enrollment = (clone $query)
-                        ->whereKey($validated['enrollment_id'])
-                        ->first();
-
-                    if (! $enrollment) {
-                        return [
-                            'error' => [
-                                'The selected enrollment is not an active enrollment for this student and teacher.',
-                                'INVALID_ENROLLMENT',
-                                422,
-                            ],
-                        ];
-                    }
-                } else {
-                    $matches = $query
-                        ->orderBy('id')
-                        ->limit(2)
-                        ->get();
-
-                    if ($matches->isEmpty()) {
-                        return [
-                            'error' => [
-                                'No active enrollment is available for this teacher.',
-                                'NO_ACTIVE_ENROLLMENT',
-                                422,
-                            ],
-                        ];
-                    }
-
-                    if ($matches->count() > 1) {
-                        return [
-                            'error' => [
-                                'More than one active enrollment matches this teacher. Send enrollment_id in the request body.',
-                                'ENROLLMENT_SELECTION_REQUIRED',
-                                422,
-                            ],
-                        ];
-                    }
-
-                    $enrollment = $matches->first();
-                }
-
-                $hasConflict = $eligibility
-                    ->conflicts(
-                        $student->id,
-                        $session
-                    )
-                    ->exists();
-
-                if ($hasConflict) {
-                    return [
-                        'error' => [
-                            'The student already has another session that overlaps this time.',
-                            'SESSION_TIME_CONFLICT',
-                            409,
-                        ],
-                    ];
-                }
-
-                $session->update([
-                    'enrollment_id' => $enrollment->id,
-                    'capacity' => 1,
-                ]);
-
-                return [
-                    'session' => $session
-                        ->fresh()
-                        ->load([
-                            'teacher.user:id,name,email',
-                            'enrollment',
-                        ]),
-                ];
-            }
-        );
-
-        if (isset($result['error'])) {
-            [$message, $code, $status] = $result['error'];
-
-            return response()->json([
-                'status' => false,
-                'message' => $message,
-                'code' => $code,
-            ], $status);
-        }
-
-        return $this->success(
-            $result['session'],
-            'Session booked successfully.'
-        );
+        return response()->json(['status' => false, 'message' => 'Book an availability using POST /teachers/{teacher}/bookings.', 'code' => 'USE_AVAILABILITY_BOOKING'], 410);
     }
 
     /**
@@ -400,7 +180,7 @@ class SessionController extends ApiController
         }
 
         $result = DB::transaction(
-            function () use ($student, $id) {
+            function () use ($id) {
                 $session = Session::query()
                     ->lockForUpdate()
                     ->findOrFail($id);
@@ -418,23 +198,7 @@ class SessionController extends ApiController
                     ];
                 }
 
-                $enrollment = Enrollment::find(
-                    $session->enrollment_id
-                );
-
-                if (
-                    ! $enrollment
-                    || (int) $enrollment->student_id
-                        !== (int) $student->id
-                ) {
-                    return [
-                        'error' => [
-                            'This booking does not belong to the authenticated student.',
-                            'BOOKING_FORBIDDEN',
-                            403,
-                        ],
-                    ];
-                }
+                $this->authorize('cancelBooking', $session);
 
                 if ($session->status !== 'scheduled') {
                     return [
@@ -460,7 +224,7 @@ class SessionController extends ApiController
                 }
 
                 $session->update([
-                    'enrollment_id' => null,
+                    'status' => 'cancelled',
                 ]);
 
                 return [
@@ -489,70 +253,70 @@ class SessionController extends ApiController
      * Teacher cancels the session itself.
      */
     public function cancel(
-    Session $session
-): JsonResponse {
-    $this->authorize('cancel', $session);
+        Session $session
+    ): JsonResponse {
+        $this->authorize('cancel', $session);
 
-    $result = DB::transaction(
-        function () use ($session) {
-            $session = Session::query()
-                ->lockForUpdate()
-                ->findOrFail($session->id);
+        $result = DB::transaction(
+            function () use ($session) {
+                $session = Session::query()
+                    ->lockForUpdate()
+                    ->findOrFail($session->id);
 
-            /*
-             * Idempotent cancellation.
-             */
-            if ($session->status === 'cancelled') {
+                /*
+                 * Idempotent cancellation.
+                 */
+                if ($session->status === 'cancelled') {
+                    return [
+                        'session' => $session->fresh(),
+                        'already_cancelled' => true,
+                    ];
+                }
+
+                /*
+                 * Completed session cannot be cancelled.
+                 */
+                if ($session->status === 'completed') {
+                    return [
+                        'error' => [
+                            'A completed session cannot be cancelled.',
+                            'SESSION_ALREADY_COMPLETED',
+                            409,
+                        ],
+                    ];
+                }
+
+                /*
+                 * Cancellation has its own endpoint.
+                 */
+                $session->update([
+                    'status' => 'cancelled',
+                ]);
+
                 return [
                     'session' => $session->fresh(),
-                    'already_cancelled' => true,
+                    'already_cancelled' => false,
                 ];
             }
+        );
 
-            /*
-             * Completed session cannot be cancelled.
-             */
-            if ($session->status === 'completed') {
-                return [
-                    'error' => [
-                        'A completed session cannot be cancelled.',
-                        'SESSION_ALREADY_COMPLETED',
-                        409,
-                    ],
-                ];
-            }
+        if (isset($result['error'])) {
+            [$message, $code, $status] = $result['error'];
 
-            /*
-             * Cancellation has its own endpoint.
-             */
-            $session->update([
-                'status' => 'cancelled',
-            ]);
-
-            return [
-                'session' => $session->fresh(),
-                'already_cancelled' => false,
-            ];
+            return response()->json([
+                'status' => false,
+                'message' => $message,
+                'code' => $code,
+            ], $status);
         }
-    );
 
-    if (isset($result['error'])) {
-        [$message, $code, $status] = $result['error'];
-
-        return response()->json([
-            'status' => false,
-            'message' => $message,
-            'code' => $code,
-        ], $status);
+        return $this->success(
+            $result['session'],
+            $result['already_cancelled']
+                ? 'Session is already cancelled.'
+                : 'Session cancelled successfully.'
+        );
     }
-
-    return $this->success(
-        $result['session'],
-        $result['already_cancelled']
-            ? 'Session is already cancelled.'
-            : 'Session cancelled successfully.'
-    );
-}
 
     /**
      * Show teacher session.
@@ -659,54 +423,21 @@ class SessionController extends ApiController
             array_key_exists('availability_id', $validated)
             && $validated['availability_id'] !== null
         ) {
-            $exists = TeacherAvailability::query()
-                ->whereKey($validated['availability_id'])
-                ->where('teacher_id', $teacherId)
-                ->exists();
-
-            abort_unless(
-                $exists,
-                404,
-                'Teacher availability not found.'
-            );
+            $this->authorize('view', TeacherAvailability::findOrFail($validated['availability_id']));
         }
 
         if (
             array_key_exists('group_id', $validated)
             && $validated['group_id'] !== null
         ) {
-            $exists = Group::query()
-                ->whereKey($validated['group_id'])
-                ->whereHas(
-                    'teacherSubject',
-                    fn ($query) => $query->where(
-                        'teacher_id',
-                        $teacherId
-                    )
-                )
-                ->exists();
-
-            abort_unless(
-                $exists,
-                404,
-                'Group not found.'
-            );
+            $this->authorize('manage', Group::findOrFail($validated['group_id']));
         }
 
         if (
             array_key_exists('enrollment_id', $validated)
             && $validated['enrollment_id'] !== null
         ) {
-            $exists = Enrollment::query()
-                ->whereKey($validated['enrollment_id'])
-                ->where('teacher_id', $teacherId)
-                ->exists();
-
-            abort_unless(
-                $exists,
-                404,
-                'Enrollment not found.'
-            );
+            $this->authorize('manage', Enrollment::findOrFail($validated['enrollment_id']));
         }
 
         /*
@@ -732,12 +463,36 @@ class SessionController extends ApiController
             ]);
         }
 
-        $session->update($validated);
+        if (($validated['status'] ?? null) === 'completed' && $endAt?->isFuture()) {
+            throw ValidationException::withMessages(['status' => ['Session has not ended yet.']]);
+        }
+        DB::transaction(function () use ($session, $validated, $teacherId) {
+            Teacher::whereKey($teacherId)->lockForUpdate()->firstOrFail();
+            $locked = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            abort_if(in_array($locked->status, ['cancelled', 'completed'], true), 409);
+            $locked->fill($validated);
+            app(SessionRules::class)->validate($locked);
+            $locked->save();
+        }, 3);
 
         return $this->success(
             $session->fresh(),
             'Session updated successfully.'
         );
+    }
+
+    public function complete(Request $request, Session $session): JsonResponse
+    {
+        $this->authorize('update', $session);
+
+        return DB::transaction(function () use ($session) {
+            $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            abort_if($session->status === 'cancelled', 409, 'Cancelled session cannot be completed.');
+            abort_if($session->ends_at->isFuture(), 422, 'Session has not ended yet.');
+            $session->update(['status' => 'completed']);
+
+            return $this->success($session->fresh(), 'Session completed successfully.');
+        });
     }
 
     /**

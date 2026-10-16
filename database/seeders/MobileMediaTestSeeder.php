@@ -121,7 +121,7 @@ class MobileMediaTestSeeder extends Seeder
             Enrollment::updateOrCreate([
                 'student_id' => $students[0]->id,
                 'teacher_id' => $teacher->id,
-                'enrollable_type' => TeacherSubject::class,
+                'enrollable_type' => (new TeacherSubject)->getMorphClass(),
                 'enrollable_id' => $teacherSubject->id,
             ], [
                 'price' => 100,

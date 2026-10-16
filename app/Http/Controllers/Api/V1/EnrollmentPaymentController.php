@@ -12,13 +12,11 @@ class EnrollmentPaymentController extends ApiController
 {
     public function store(Request $request, Enrollment $enrollment): JsonResponse
     {
-        $this->authorize('accessStudent', Payment::class);
-        $student = $request->user()->student;
-        abort_unless($student && $student->status === 'active' && $request->user()->status === 'active'
-            && $enrollment->student_id === $student->id, 403);
+        $this->authorize('pay', $enrollment);
         $validated = $request->validate([
             'provider_reference' => ['required', 'string', 'max:255'],
         ]);
+
         return DB::transaction(function () use ($request, $enrollment, $validated) {
             $enrollment = Enrollment::whereKey($enrollment->id)->lockForUpdate()->firstOrFail();
             if ($enrollment->status !== 'pending' || (float) $enrollment->price <= 0) {
@@ -35,15 +33,15 @@ class EnrollmentPaymentController extends ApiController
                 'currency' => config('payments.currency'), 'provider' => 'manual_transfer',
                 'provider_reference' => $validated['provider_reference'], 'status' => 'pending',
             ]);
+
             return $this->success($payment, 'Transfer submitted for administrator verification.', 201);
         });
     }
 
     public function show(Request $request, Payment $payment): JsonResponse
     {
-        $this->authorize('accessStudent', Payment::class);
-        abort_unless($payment->payer_id === $request->user()->id && $request->user()->status === 'active'
-            && $request->user()->student?->status === 'active', 403);
+        $this->authorize('viewReceipt', $payment);
+
         return $this->success($payment);
     }
 
@@ -52,6 +50,7 @@ class EnrollmentPaymentController extends ApiController
         abort_unless($request->user()->status === 'active', 403);
         $this->authorize('update', $payment);
         $validated = $request->validate(['decision' => ['required', 'in:confirm,reject']]);
+
         return DB::transaction(function () use ($payment, $validated) {
             // Same locking order as submitting a payment: enrollment, then payment.
             abort_unless($payment->payable_type === (new Enrollment)->getMorphClass() && $payment->provider === 'manual_transfer', 422);
@@ -72,6 +71,7 @@ class EnrollmentPaymentController extends ApiController
                 $payment->update(['status' => 'succeeded', 'paid_at' => now()]);
                 $enrollment->update(['status' => 'active', 'starts_at' => now(), 'expires_at' => null]);
             }
+
             return $this->success(['payment' => $payment->fresh(), 'enrollment' => $enrollment->fresh()], 'Payment review completed.');
         });
     }

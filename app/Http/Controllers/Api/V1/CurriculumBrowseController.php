@@ -12,10 +12,18 @@ class CurriculumBrowseController extends ApiController
         $contents = $lesson->contents()
             ->where('status', 'published')
             ->withCount(['assets', 'quizzes'])
+            ->with(['assets' => fn ($q) => $q->where('status', 'active')->with('videoAsset')])
             ->orderBy('order_no')
             ->orderBy('id')
             ->get();
 
-        return $this->success($contents, 'Lesson contents retrieved successfully.');
+        return $this->success($contents->map(function ($content) {
+            $duration = $content->assets->sortByDesc('id')->first(fn ($asset) => $asset->videoAsset !== null)?->videoAsset?->duration_seconds;
+            $payload = $content->toArray();
+            unset($payload['assets']);
+            $payload['duration_seconds'] = $duration;
+
+            return $payload;
+        }), 'Lesson contents retrieved successfully.');
     }
 }

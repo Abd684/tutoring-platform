@@ -7,6 +7,7 @@ use App\Models\Enrollment;
 use App\Models\Student;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
+use App\Services\ContentAccess;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\JsonResponse;
@@ -142,7 +143,7 @@ class StudentEnrollmentController extends ApiController
             return $this->priceNotSet('The price for this unit has not been set yet.');
         }
 
-        $coveredBySubject = $this->existingEnrollment(
+        $coveredBySubject = $this->coveringEnrollment(
             $student,
             $unit->teacherSubject
         );
@@ -212,7 +213,7 @@ class StudentEnrollmentController extends ApiController
             return $this->priceNotSet('The price for this content has not been set yet.');
         }
 
-        $coveredBySubject = $this->existingEnrollment(
+        $coveredBySubject = $this->coveringEnrollment(
             $student,
             $teacherSubject
         );
@@ -225,7 +226,7 @@ class StudentEnrollmentController extends ApiController
             ], 409);
         }
 
-        $coveredByUnit = $this->existingEnrollment($student, $unit);
+        $coveredByUnit = $this->coveringEnrollment($student, $unit);
 
         if ($coveredByUnit) {
             return response()->json([
@@ -261,6 +262,13 @@ class StudentEnrollmentController extends ApiController
     private function currentStudent(Request $request): ?Student
     {
         return $request->user()?->student;
+    }
+
+    private function coveringEnrollment(Student $student, Model $enrollable): ?Enrollment
+    {
+        return app(ContentAccess::class)->enrollments($student)
+            ->where('enrollable_type', $enrollable->getMorphClass())
+            ->where('enrollable_id', $enrollable->getKey())->first();
     }
 
     private function existingEnrollment(

@@ -4,21 +4,21 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Content;
 use App\Models\ContentAsset;
-use App\Models\Enrollment;
 use App\Models\Student;
-use App\Models\TeacherSubject;
-use App\Models\Unit;
+use App\Services\ProtectedS3Media;
+use Illuminate\Filesystem\AwsS3V3Adapter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentContentAssetController extends ApiController
 {
     public function playbackToken(Request $request, int $id): JsonResponse
     {
-        $this->authorize('accessStudent', \App\Models\Content::class);
+        $this->authorize('accessStudent', Content::class);
 
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
@@ -28,9 +28,40 @@ class StudentContentAssetController extends ApiController
         $teacherSubject = $unit?->teacherSubject;
 
         abort_unless($content !== null && $unit !== null && $teacherSubject !== null, 404);
-        abort_unless($this->hasActiveEnrollment($student, $content, $unit, $teacherSubject), 404);
+        $this->authorize('access', $content);
 
-        $contentAsset = $content->assets()->where('status', 'active')->latest('id')->firstOrFail();
+        $contentAsset = $content->assets()->where('status', 'active')
+            ->when($content->type === 'video', fn ($q) => $q->where('mime_type', 'like', 'video/%'))
+            ->latest('id')->firstOrFail();
+
+        return $this->assetToken($contentAsset, $student);
+    }
+
+    public function assets(Request $request, Content $content): JsonResponse
+    {
+        $this->authorize('accessStudent', Content::class);
+        $this->authorize('access', $content);
+
+        return $this->success($content->assets()->where('status', 'active')->with('videoAsset')->get()->map(fn ($asset) => [
+            'id' => $asset->id, 'mime_type' => $asset->mime_type, 'file_size' => $asset->file_size,
+            'duration_seconds' => $asset->videoAsset?->duration_seconds,
+            'token_endpoint' => url('/api/v1/content-assets/'.$asset->id.'/access-token'),
+        ]));
+    }
+
+    public function accessToken(Request $request, ContentAsset $contentAsset): JsonResponse
+    {
+        $this->authorize('accessStudent', Content::class);
+        $student = $request->user()->student;
+        abort_unless($contentAsset->status === 'active', 404);
+        $this->authorize('access', $contentAsset->content);
+
+        return $this->assetToken($contentAsset, $student);
+    }
+
+    private function assetToken(ContentAsset $contentAsset, Student $student): JsonResponse
+    {
+        abort_if($contentAsset->disk === 'public', 404, 'Protected files require private storage.');
         abort_unless(Storage::disk($contentAsset->disk)->exists($contentAsset->storage_key), 404);
 
         $expiresAt = now()->addMinutes(5);
@@ -45,9 +76,9 @@ class StudentContentAssetController extends ApiController
         ], 'Playback token created successfully.');
     }
 
-    public function play(Request $request, ContentAsset $contentAsset): StreamedResponse
+    public function play(Request $request, ContentAsset $contentAsset): StreamedResponse|BinaryFileResponse
     {
-        $this->authorize('accessStudent', \App\Models\Content::class);
+        $this->authorize('accessStudent', Content::class);
 
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
@@ -59,54 +90,28 @@ class StudentContentAssetController extends ApiController
         $teacherSubject = $unit?->teacherSubject;
 
         abort_unless($content !== null && $unit !== null && $teacherSubject !== null, 404);
-        abort_unless($this->hasActiveEnrollment($student, $content, $unit, $teacherSubject), 404);
+        $this->authorize('access', $content);
 
         $disk = Storage::disk($contentAsset->disk);
+        abort_if($contentAsset->disk === 'public', 404);
         abort_unless($contentAsset->status === 'active' && $disk->exists($contentAsset->storage_key), 404);
+
+        $headers = ['Content-Type' => $contentAsset->mime_type ?: 'application/octet-stream',
+            'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "sandbox; default-src 'none'"];
+        if (config('filesystems.disks.'.$contentAsset->disk.'.driver') === 'local') {
+            return response()->file($disk->path($contentAsset->storage_key), $headers)
+                ->setContentDisposition('inline', basename($contentAsset->storage_key));
+        }
+        if ($disk instanceof AwsS3V3Adapter) {
+            return app(ProtectedS3Media::class)->response($request, $contentAsset, $disk, $headers);
+        }
 
         return $disk->response(
             $contentAsset->storage_key,
             null,
-            ['Content-Type' => $contentAsset->mime_type ?: 'application/octet-stream'],
+            $headers,
             'inline',
         );
     }
-
-private function hasActiveEnrollment(
-    Student $student,
-    Content $content,
-    Unit $unit,
-    TeacherSubject $teacherSubject,
-): bool {
-    return Enrollment::query()
-        ->where('student_id', $student->id)
-        ->where('teacher_id', $teacherSubject->teacher_id)
-        ->where('status', 'active')
-        ->where(fn ($query) => $query
-            ->whereNull('starts_at')
-            ->orWhere('starts_at', '<=', now()))
-        ->where(fn ($query) => $query
-            ->whereNull('expires_at')
-            ->orWhere('expires_at', '>', now()))
-        ->where(fn ($query) => $query
-            ->where(fn ($scope) => $scope
-                ->where(
-                    'enrollable_type',
-                    (new Content)->getMorphClass()
-                )
-                ->where('enrollable_id', $content->id))
-            ->orWhere(fn ($scope) => $scope
-                ->where(
-                    'enrollable_type',
-                    (new Unit)->getMorphClass()
-                )
-                ->where('enrollable_id', $unit->id))
-            ->orWhere(fn ($scope) => $scope
-                ->where(
-                    'enrollable_type',
-                    (new TeacherSubject)->getMorphClass()
-                )
-                ->where('enrollable_id', $teacherSubject->id)))
-        ->exists();
-}
 }

@@ -24,6 +24,7 @@ class StudentQuizAttemptTest extends TestCase
     {
         [$user, $student] = $this->student();
         [$quiz, $question] = $this->quiz();
+        $this->grant($student, $quiz);
         Sanctum::actingAs($user);
 
         $this->getJson("/api/v1/quizzes/{$quiz->id}/data")
@@ -55,9 +56,10 @@ class StudentQuizAttemptTest extends TestCase
 
     public function test_attempt_limit_and_attempt_ownership_are_enforced(): void
     {
-        [$user] = $this->student();
+        [$user, $student] = $this->student();
         [$otherUser] = $this->student();
         [$quiz, $question] = $this->quiz(['attempts_allowed' => 1]);
+        $this->grant($student, $quiz);
         Sanctum::actingAs($user);
 
         $attemptId = $this->postJson("/api/v1/quizzes/{$quiz->id}/attempts")
@@ -70,6 +72,12 @@ class StudentQuizAttemptTest extends TestCase
             'question_id' => $question->id,
             'answer_text' => '4',
         ])->assertNotFound();
+    }
+
+    private function grant(Student $student, Quiz $quiz): void
+    {
+        $quiz->content->enrollments()->create(['student_id' => $student->id,
+            'teacher_id' => $quiz->content->lesson->unit->teacherSubject->teacher_id, 'status' => 'active']);
     }
 
     private function student(): array
@@ -91,8 +99,8 @@ class StudentQuizAttemptTest extends TestCase
             'price' => 10,
             'status' => 'active',
         ]);
-        $unit = Unit::create(['teacher_subject_id' => $teacherSubject->id, 'title' => 'Unit']);
-        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson']);
+        $unit = Unit::create(['teacher_subject_id' => $teacherSubject->id, 'title' => 'Unit', 'status' => 'published']);
+        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson', 'status' => 'published']);
         $content = Content::create([
             'lesson_id' => $lesson->id,
             'type' => 'quiz',

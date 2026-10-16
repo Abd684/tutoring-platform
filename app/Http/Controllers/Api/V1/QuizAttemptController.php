@@ -1,11 +1,11 @@
 <?php
 
-//deaa
+// deaa
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\QuizAttempt;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,11 +46,11 @@ class QuizAttemptController extends ApiController
 
     public function start(Request $request, Quiz $quiz): JsonResponse
     {
-        $this->authorize('accessStudent', \App\Models\QuizAttempt::class);
+        $this->authorize('accessStudent', QuizAttempt::class);
 
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
-        abort_unless($quiz->status === 'published', 404);
+        $this->authorize('access', $quiz);
 
         $result = DB::transaction(function () use ($quiz, $student): array {
             $lockedQuiz = Quiz::query()->lockForUpdate()->findOrFail($quiz->id);
@@ -108,4 +108,3 @@ class QuizAttemptController extends ApiController
         return $this->success(message: 'Quiz Attempt deleted successfully.');
     }
 }
-
