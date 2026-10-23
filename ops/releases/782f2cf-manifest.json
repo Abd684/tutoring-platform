@@ -167,7 +167,7 @@
   "app/Services/TeacherCalendar.php": "c0aeaaaf6085768c0b887b42a2f0fdb38e3ddfa2664224261846d0a1f3a74e8f",
   "app/Services/TeacherDashboard.php": "4dd3e329a61128c0581d01f07df159bbacf85a8a374d6ade1c03df14dde5d986",
   "app/Services/VideoMetadata.php": "713a309ea204ca5cd11c35a05d2474052800b2be80b671623dcd2b8ae16627c2",
-  "bootstrap/app.php": "f116017c537b00e76056f3e5ef0c17b98641f7fcec3117b2a91d6fc6cc6aa63d",
+  "bootstrap/app.php": "e5e80ca0b00b0088936b1e494828be54cec740ca5a4f3b772cddd2a6f01cd0d8",
   "config/app.php": "78dcd36b226fd7b24057cb95f567cb6e96561c2406653892d8aef6dcea8461e4",
   "config/auth.php": "c7e204e9785c9f596d66fb884b493f658f2327f157646bdb4088efd6b3a7773f",
   "config/cache.php": "b8bcf382283330b94c0a602ff06452de819041ea709e28eea5065d51d1d7d085",
