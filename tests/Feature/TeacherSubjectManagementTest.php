@@ -56,12 +56,15 @@ class TeacherSubjectManagementTest extends TestCase
         TeacherSubject::create([...$payload, 'teacher_id' => $other->teacher->id]);
         Sanctum::actingAs($owner);
 
-        $id = $this->postJson(self::URL, [...$payload, 'teacher_id' => $other->teacher->id])
+        $this->postJson(self::URL, [...$payload, 'teacher_id' => $other->teacher->id])
+            ->assertUnprocessable()->assertJsonValidationErrors('teacher_id');
+        $id = $this->postJson(self::URL, $payload)
             ->assertCreated()->assertJsonPath('data.teacher_id', $owner->teacher->id)->json('data.id');
         $this->getJson(self::URL.'?teacher_id='.$other->teacher->id)
             ->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $id);
         $this->patchJson(self::URL.'/'.$id, ['teacher_id' => $other->teacher->id, 'price' => 40])
-            ->assertOk()->assertJsonPath('data.teacher_id', $owner->teacher->id);
+            ->assertUnprocessable()->assertJsonValidationErrors('teacher_id');
+        $this->assertDatabaseHas('teacher_subjects', ['id' => $id, 'teacher_id' => $owner->teacher->id, 'price' => 25]);
     }
 
     public function test_other_teachers_cannot_read_change_or_delete_a_subject(): void

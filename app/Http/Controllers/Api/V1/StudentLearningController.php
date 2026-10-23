@@ -6,8 +6,11 @@ use App\Models\Content;
 use App\Models\ContentCompletion;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
+use App\Models\User;
 use App\Services\ContentAccess;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class StudentLearningController extends ApiController
 {
@@ -17,9 +20,9 @@ class StudentLearningController extends ApiController
         $this->authorize('access', $content);
         $course = $content->lesson->unit->teacherSubject;
         abort_unless($access->published($course)->whereKey($content->id)->exists(), 404);
-        ContentCompletion::firstOrCreate(['student_id' => $request->user()->student->id, 'content_id' => $content->id], ['completed_at' => now()]);
+        $completion = ContentCompletion::firstOrCreate(['student_id' => $request->user()->student->id, 'content_id' => $content->id], ['completed_at' => now()]);
 
-        return $this->success($this->progressData($request, $course, $access), 'Content completed successfully.');
+        return $this->success([...$this->progressData($request, $course, $access), 'content_id' => $content->id, 'completed' => true, 'completed_at' => $completion->completed_at->toIso8601String()], 'Content completed successfully.');
     }
 
     public function progress(Request $request, TeacherSubject $teacherSubject, ContentAccess $access)
@@ -95,9 +98,27 @@ class StudentLearningController extends ApiController
     {
         $teacher = $request->user()->teacher;
         abort_unless($teacher && $teacher->status === 'active' && $request->user()->status === 'active', 403);
-        $teacher->update($request->validate(['experience_years' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
-            'bio' => ['sometimes', 'nullable', 'string', 'max:10000'], 'specialization' => ['sometimes', 'nullable', 'string', 'max:255']]));
+        $user = $request->user();
+        $data = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['sometimes', 'required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)],
+            'region_id' => ['sometimes', 'required', 'integer', 'exists:regions,id'],
+            'experience_years' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
+            'bio' => ['sometimes', 'nullable', 'string', 'max:10000'],
+            'specialization' => ['sometimes', 'nullable', 'string', 'max:255'],
+        ]);
+        DB::transaction(function () use ($user, $teacher, $data) {
+            $lockedUser = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            $lockedTeacher = Teacher::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
+            abort_unless($lockedUser->status === 'active' && $lockedTeacher->status === 'active', 403);
+            $lockedUser->update(array_intersect_key($data, array_flip(['name', 'email', 'phone', 'region_id'])));
+            $lockedTeacher->update(array_intersect_key($data, array_flip(['experience_years', 'bio', 'specialization'])));
+        });
 
-        return $this->success($teacher);
+        $user->refresh();
+
+        // Keep the existing teacher fields in data; user is an additive field.
+        return $this->success($teacher->fresh()->load('user'));
     }
 }

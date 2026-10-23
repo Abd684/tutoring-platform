@@ -27,7 +27,7 @@ class DeviceTransfers
                 return $transfer;
             }
             $source = StudentDevice::whereKey($transfer->source_student_device_id)->lockForUpdate()->firstOrFail();
-            $target = Device::findOrFail($transfer->target_device_id);
+            $target = Device::whereKey($transfer->target_device_id)->lockForUpdate()->firstOrFail();
             if ($student->status !== 'active' || $student->user?->status !== 'active' || $target->status === 'blocked'
                 || $source->status !== 'active' || ! $source->is_active) {
                 $transfer->update(['status' => 'cancelled', 'resolved_at' => now()]);

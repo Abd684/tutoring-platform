@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Api\V1\AnswerController;
 use App\Http\Controllers\Api\V1\AttendanceController;
+use App\Http\Controllers\Api\V1\AvailabilityBookingController;
 use App\Http\Controllers\Api\V1\AvailableSessionController;
+use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
 use App\Http\Controllers\Api\V1\IndividualBookingController;
+use App\Http\Controllers\Api\V1\ProfileAvatarController;
 use App\Http\Controllers\Api\V1\QuizAttemptController;
 use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\SessionController;
@@ -12,8 +15,12 @@ use App\Http\Controllers\Api\V1\StudentAuthController;
 use App\Http\Controllers\Api\V1\StudentBookingController;
 use App\Http\Controllers\Api\V1\StudentContentAssetController;
 use App\Http\Controllers\Api\V1\StudentEnrollmentController;
+use App\Http\Controllers\Api\V1\StudentGroupReadController;
 use App\Http\Controllers\Api\V1\StudentLearningController;
 use App\Http\Controllers\Api\V1\StudentProfileController;
+use App\Http\Controllers\Api\V1\StudentQuizReadController;
+use App\Http\Controllers\Api\V1\TeacherCalendarController;
+use App\Http\Middleware\StudentDeviceWhenRequired;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -73,8 +80,6 @@ Route::post('/auth/device/transfer-requests/{transfer}/claim', [StudentAuthContr
 Route::get('/teachers/{teacher}', [StudentLearningController::class, 'teacher']);
 Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(function (): void {
     Route::match(['put', 'patch'], '/profile', [StudentProfileController::class, 'update']);
-    Route::post('/profile/avatar', [StudentProfileController::class, 'storeAvatar']);
-    Route::delete('/profile/avatar', [StudentProfileController::class, 'deleteAvatar']);
     Route::get('/contents/{content}/assets', [StudentContentAssetController::class, 'assets']);
     Route::post('/content-assets/{contentAsset}/access-token', [StudentContentAssetController::class, 'accessToken']);
     Route::post('/student/contents/{content}/complete', [StudentLearningController::class, 'complete']);
@@ -86,4 +91,19 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
     Route::get('/student/notifications', function (Request $request) {
         return response()->json(['status' => true, 'data' => $request->user()->notifications()->orderByDesc('id')->limit(100)->get()]);
     });
+    Route::get('/teachers/{teacher}/available-slots', [AvailabilityBookingController::class, 'index']);
+    Route::post('/teacher-availabilities/{availability}/book', [AvailabilityBookingController::class, 'store']);
+    Route::post('/quiz-attempts/{quizAttempt}/submit', [QuizAttemptController::class, 'submit']);
+    Route::get('/contents/{content}', [CurriculumBrowseController::class, 'show']);
+    Route::get('/teachers/{teacher}/calendar', [TeacherCalendarController::class, 'index']);
+    Route::get('/student/my-quizzes', [StudentQuizReadController::class, 'index']);
+    Route::get('/student/my-quizzes/{quiz}/attempts', [StudentQuizReadController::class, 'attempts']);
+    Route::get('/student/groups', [StudentGroupReadController::class, 'index']);
+    Route::get('/student/groups/{group}/members', [StudentGroupReadController::class, 'members']);
+    Route::get('/contents/{content}/quizzes', [CurriculumBrowseController::class, 'quizzes']);
+});
+
+Route::middleware(['auth:sanctum', 'role:student,teacher', StudentDeviceWhenRequired::class])->group(function () {
+    Route::post('/profile/avatar', [ProfileAvatarController::class, 'store'])->middleware('throttle:20,1');
+    Route::delete('/profile/avatar', [ProfileAvatarController::class, 'destroy']);
 });

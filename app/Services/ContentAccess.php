@@ -20,22 +20,26 @@ class ContentAccess
 
     public function allows(Student $student, Content $content): bool
     {
-        $content->loadMissing('lesson.unit.teacherSubject');
-        $unit = $content->lesson?->unit;
-        $course = $unit?->teacherSubject;
-        if (! $course || $student->status !== 'active' || $student->user?->status !== 'active'
-            || $content->status !== 'published' || $content->lesson->status !== 'published' || $unit->status !== 'published'
-            || $course->status !== 'active' || $course->subject?->status !== 'active'
-            || $course->teacher?->status !== 'active' || $course->teacher?->user?->status !== 'active') {
-            return false;
+        return $this->accessibleContents($student)->whereKey($content->id)->exists();
+    }
+
+    public function accessibleContents(Student $student): Builder
+    {
+        $query = Content::where('status', 'published');
+        if ($student->status !== 'active' || $student->user?->status !== 'active') {
+            return $query->whereRaw('1 = 0');
         }
 
-        return $this->enrollments($student)->where('teacher_id', $course->teacher_id)
-            ->where(fn ($q) => $q
-                ->where(fn ($q) => $q->where('enrollable_type', (new Content)->getMorphClass())->where('enrollable_id', $content->id))
-                ->orWhere(fn ($q) => $q->where('enrollable_type', (new Unit)->getMorphClass())->where('enrollable_id', $unit->id))
-                ->orWhere(fn ($q) => $q->where('enrollable_type', (new TeacherSubject)->getMorphClass())->where('enrollable_id', $course->id)))
-            ->exists();
+        return $query->whereHas('lesson', fn ($q) => $q->where('status', 'published')->whereHas('unit', fn ($q) => $q->where('status', 'published')
+            ->whereHas('teacherSubject', function ($q) use ($student) {
+                $q->where('status', 'active')->whereHas('subject', fn ($q) => $q->where('status', 'active'))
+                    ->whereHas('teacher', fn ($q) => $q->where('status', 'active')->whereHas('user', fn ($q) => $q->where('status', 'active')))
+                    ->whereExists($this->enrollments($student)->selectRaw('1')->whereColumn('teacher_id', 'teacher_subjects.teacher_id')
+                        ->where(fn ($q) => $q
+                            ->where(fn ($q) => $q->where('enrollable_type', 'content')->whereColumn('enrollable_id', 'contents.id'))
+                            ->orWhere(fn ($q) => $q->where('enrollable_type', 'unit')->whereColumn('enrollable_id', 'units.id'))
+                            ->orWhere(fn ($q) => $q->where('enrollable_type', 'teacher_subject')->whereColumn('enrollable_id', 'teacher_subjects.id'))));
+            })));
     }
 
     public function allowsCourse(Student $student, TeacherSubject $course): bool
@@ -45,9 +49,9 @@ class ContentAccess
 
         return $this->enrollments($student)->where('teacher_id', $course->teacher_id)
             ->where(fn ($q) => $q
-                ->where(fn ($q) => $q->where('enrollable_type', (new TeacherSubject)->getMorphClass())->where('enrollable_id', $course->id))
-                ->orWhere(fn ($q) => $q->where('enrollable_type', (new Unit)->getMorphClass())->whereIn('enrollable_id', $units))
-                ->orWhere(fn ($q) => $q->where('enrollable_type', (new Content)->getMorphClass())->whereIn('enrollable_id', $contents)))->exists();
+                ->where(fn ($q) => $q->where('enrollable_type', 'teacher_subject')->where('enrollable_id', $course->id))
+                ->orWhere(fn ($q) => $q->where('enrollable_type', 'unit')->whereIn('enrollable_id', $units))
+                ->orWhere(fn ($q) => $q->where('enrollable_type', 'content')->whereIn('enrollable_id', $contents)))->exists();
     }
 
     public function published(TeacherSubject $course): Builder

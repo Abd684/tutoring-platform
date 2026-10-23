@@ -14,4 +14,9 @@ class DeviceTransferRequest extends Model
     {
         return ['expires_at' => 'datetime', 'resolved_at' => 'datetime', 'claimed_at' => 'datetime'];
     }
+
+    public function sourceStudentDevice()
+    {
+        return $this->belongsTo(StudentDevice::class, 'source_student_device_id');
+    }
 }

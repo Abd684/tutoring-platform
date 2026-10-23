@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\V1\TeacherAuthController;
 use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
 use App\Http\Controllers\Api\V1\TeacherContentAssetController;
 use App\Http\Controllers\Api\V1\TeacherContentController;
+use App\Http\Controllers\Api\V1\TeacherCourseController;
+use App\Http\Controllers\Api\V1\TeacherDashboardController;
 use App\Http\Controllers\Api\V1\TeacherSubjectManagementController;
 use App\Http\Controllers\Api\V1\TeacherSubscriptionController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +26,10 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
         ->names('teacher.subjects')
         ->parameters(['subjects' => 'teacherSubject']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/subject-catalog', [TeacherCourseController::class, 'catalog']);
+    Route::get('/subscription', [TeacherDashboardController::class, 'current']);
+    Route::get('/subscriptions', [TeacherDashboardController::class, 'history']);
+    Route::get('/usage', [TeacherDashboardController::class, 'usage']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/subscription-plans', [SubscriptionPlanController::class, 'available']);
     Route::post('/subscription-plans/{subscriptionPlan}/subscribe', [TeacherSubscriptionController::class, 'subscribe']);

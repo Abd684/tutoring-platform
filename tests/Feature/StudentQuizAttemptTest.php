@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Content;
+use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\Question;
 use App\Models\Quiz;
@@ -121,6 +122,10 @@ class StudentQuizAttemptTest extends TestCase
             'rubric_json' => ['options' => ['3', '4']],
             'order_no' => 1,
         ]);
+
+        foreach (Student::all() as $student) {
+            Enrollment::create(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'enrollable_type' => $teacherSubject->getMorphClass(), 'enrollable_id' => $teacherSubject->id, 'status' => 'active']);
+        }
 
         return [$quiz, $question];
     }

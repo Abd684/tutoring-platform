@@ -8,6 +8,7 @@ use App\Models\Answer;
 use App\Models\QuizAttempt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AnswerController extends ApiController
 {
@@ -44,49 +45,52 @@ class AnswerController extends ApiController
 
     public function submitForAttempt(Request $request, QuizAttempt $quizAttempt): JsonResponse
     {
-        $this->authorize('accessStudent', Answer::class);
+        return DB::transaction(function () use ($request, $quizAttempt) {
+            $quizAttempt = QuizAttempt::whereKey($quizAttempt->id)->lockForUpdate()->firstOrFail();
+            $this->authorize('accessStudent', Answer::class);
 
-        $student = $request->user()->student;
-        abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
-        $this->authorize('view', $quizAttempt);
-        $this->authorize('access', $quizAttempt->quiz);
+            $student = $request->user()->student;
+            abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
+            abort_unless((int) $quizAttempt->student_id === (int) $student->id, 404);
+            $this->authorize('access', $quizAttempt->quiz);
 
-        if ($quizAttempt->status !== 'in_progress' || $quizAttempt->submitted_at !== null) {
-            return $this->businessError('This quiz attempt no longer accepts answers.');
-        }
+            if ($quizAttempt->status !== 'in_progress' || $quizAttempt->submitted_at !== null) {
+                return $this->businessError('This quiz attempt no longer accepts answers.');
+            }
 
-        if ($quizAttempt->quiz->duration_minutes !== null
-            && $quizAttempt->started_at->copy()->addMinutes($quizAttempt->quiz->duration_minutes)->isPast()) {
-            return $this->businessError('The quiz attempt time has expired.');
-        }
+            if ($quizAttempt->quiz->duration_minutes !== null
+                && $quizAttempt->started_at->copy()->addMinutes($quizAttempt->quiz->duration_minutes)->isPast()) {
+                return $this->businessError('The quiz attempt time has expired.');
+            }
 
-        $validated = $request->validate([
-            'question_id' => ['required', 'integer', 'exists:questions,id'],
-            'answer_text' => ['present', 'nullable', 'string'],
-        ]);
+            $validated = $request->validate([
+                'question_id' => ['required', 'integer', 'exists:questions,id'],
+                'answer_text' => ['present', 'nullable', 'string'],
+            ]);
 
-        $questionBelongsToQuiz = $quizAttempt->quiz->questions()
-            ->whereKey($validated['question_id'])
-            ->exists();
-        abort_unless($questionBelongsToQuiz, 422, 'The selected question does not belong to this quiz.');
+            $questionBelongsToQuiz = $quizAttempt->quiz->questions()
+                ->whereKey($validated['question_id'])
+                ->exists();
+            abort_unless($questionBelongsToQuiz, 422, 'The selected question does not belong to this quiz.');
 
-        $answer = Answer::updateOrCreate(
-            [
-                'attempt_id' => $quizAttempt->id,
-                'question_id' => $validated['question_id'],
-            ],
-            [
-                'answer_text' => $validated['answer_text'],
-                'score' => null,
-                'status' => 'pending',
-            ],
-        );
+            $answer = Answer::updateOrCreate(
+                [
+                    'attempt_id' => $quizAttempt->id,
+                    'question_id' => $validated['question_id'],
+                ],
+                [
+                    'answer_text' => $validated['answer_text'],
+                    'score' => null,
+                    'status' => 'pending',
+                ],
+            );
 
-        return $this->success(
-            $answer->fresh(),
-            $answer->wasRecentlyCreated ? 'Answer submitted successfully.' : 'Answer updated successfully.',
-            $answer->wasRecentlyCreated ? 201 : 200,
-        );
+            return $this->success(
+                $answer->fresh(),
+                $answer->wasRecentlyCreated ? 'Answer submitted successfully.' : 'Answer updated successfully.',
+                $answer->wasRecentlyCreated ? 201 : 200,
+            );
+        });
     }
 
     public function update(Request $request, Answer $answer): JsonResponse

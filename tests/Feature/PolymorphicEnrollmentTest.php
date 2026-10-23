@@ -123,7 +123,7 @@ class PolymorphicEnrollmentTest extends TestCase
     {
         $student = $this->setupStudent();
         [, , , $teacher] = $this->curriculum();
-        foreach (['user', User::class, TeacherSubject::class, '', null] as $type) {
+        foreach (['user', User::class, '', null] as $type) {
             try {
                 Enrollment::create([
                     'student_id' => $student->id,
@@ -138,6 +138,17 @@ class PolymorphicEnrollmentTest extends TestCase
             }
         }
         $this->assertDatabaseCount('enrollments', 0);
+    }
+
+    public function test_legacy_enrollment_class_names_are_normalized_to_allowed_aliases(): void
+    {
+        $student = $this->setupStudent();
+        [$course, $unit, $content, $teacher] = $this->curriculum();
+        foreach ([$course, $unit, $content] as $item) {
+            $enrollment = Enrollment::create(['student_id' => $student->id, 'teacher_id' => $teacher->id,
+                'enrollable_type' => $item::class, 'enrollable_id' => $item->id, 'status' => 'pending']);
+            $this->assertSame($item->getMorphClass(), $enrollment->fresh()->getRawOriginal('enrollable_type'));
+        }
     }
 
     public function test_migration_normalizes_existing_class_names(): void

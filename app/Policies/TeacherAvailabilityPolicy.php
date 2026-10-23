@@ -64,4 +64,10 @@ class TeacherAvailabilityPolicy
             && $user->teacher !== null
             && $user->teacher->status === 'active';
     }
+
+    public function book(User $user, TeacherAvailability $availability): bool
+    {
+        return $user->role === 'student' && $user->status === 'active' && $user->student?->status === 'active'
+            && $availability->teacher?->status === 'active' && $availability->teacher?->user?->status === 'active';
+    }
 }

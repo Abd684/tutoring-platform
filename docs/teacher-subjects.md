@@ -28,11 +28,11 @@ Create example:
 must not already be associated with this teacher. Price must be between 0 and
 9999999999.99. `group_enabled` is optional (defaults to false).
 `max_group_size` is optional/nullable, or an integer from 1 to 100000. It is saved
-as null when groups are disabled. `status` is optional (`active` or `inactive`,
-defaults to `active`). Updates accept these same fields optionally.
+as null when groups are disabled. Creation always uses status `active`. Updates
+accept these fields optionally, plus `status` (`active` or `inactive`).
 
 `teacher_id` is always derived from the authenticated account. Supplying it in a
-request cannot change ownership or select another teacher's list.
+write request returns 422. A list filter cannot select another teacher's list.
 
 Unauthenticated requests return 401, disallowed roles/profiles return 403 for
 list/create, inaccessible individual records return 404, and invalid input

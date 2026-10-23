@@ -3,8 +3,11 @@
 use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
+use App\Http\Controllers\Api\V1\FeaturedTeacherController;
 use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\ProfileAvatarController;
+use App\Http\Controllers\Api\V1\TeacherDirectoryController;
 use App\Http\Controllers\Api\V1\TeacherSubjectController;
 use App\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +45,11 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Api\V1\WalletTransactionController;
 
 Route::prefix('v1')->group(function (): void {
+    Route::get('/teachers/featured', [FeaturedTeacherController::class, 'index']);
+    Route::get('/teachers/directory', [TeacherDirectoryController::class, 'index']);
+    Route::get('/teachers', [TeacherDirectoryController::class, 'index']);
+    Route::get('/avatars/{user}/{filename}', [ProfileAvatarController::class, 'show'])
+        ->where('filename', '[A-Za-z0-9_-]+\\.(jpg|jpeg|png|webp)')->name('profile.avatar.show');
     Route::get('/teacher-subjects/most-requested', [TeacherSubjectController::class, 'mostRequested']);
     Route::get('/teachers/{teacher}/subjects', [TeacherSubjectController::class, 'getSubjectsByTeacher']);
     Route::get('/teacher/subjects/{teacherSubject}/units', [TeacherSubjectController::class, 'units']);

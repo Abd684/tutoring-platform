@@ -180,7 +180,7 @@ class StudentSessionFlowTest extends TestCase
         $this->patchJson($url, ['type' => 'GROUP'])->assertUnprocessable();
         $this->patchJson($url, ['type' => 'GROUP', 'group_id' => $group->id, 'enrollment_id' => null])->assertOk();
         $this->patchJson($url, ['group_id' => null])->assertUnprocessable();
-        $this->postJson('/api/v1/teacher/sessions', array_merge($times, ['type' => 'GROUP', 'group_id' => $group->id]))->assertUnprocessable();
+        $this->postJson('/api/v1/teacher/sessions', array_merge($times, ['type' => 'GROUP', 'group_id' => $group->id]))->assertConflict();
     }
 
     public function test_booking_rejects_invalid_availability_enrollment_and_teacher(): void
@@ -267,7 +267,7 @@ class StudentSessionFlowTest extends TestCase
         Student::create(['user_id' => $other->id, 'status' => 'active']);
         Sanctum::actingAs($other);
         $this->getJson('/api/v1/student/sessions/'.$session->id)->assertNotFound();
-        $this->deleteJson('/api/v1/sessions/'.$session->id.'/booking')->assertForbidden();
+        $this->deleteJson('/api/v1/sessions/'.$session->id.'/booking')->assertNotFound();
         $this->app['auth']->forgetGuards();
         $this->getJson('/api/v1/student/sessions/'.$session->id)->assertUnauthorized();
         $this->postJson('/api/v1/teachers/'.$this->teacher->id.'/bookings', [])->assertUnauthorized();

@@ -176,7 +176,8 @@ class StudentBookingController extends ApiController
 
     public function show(Request $request, Session $session): JsonResponse
     {
-        $this->authorize('viewBooking', $session);
+        $this->authorize('accessStudent', Enrollment::class);
+        $this->authorize('studentView', $session);
 
         return $this->success($session->only(['id', 'teacher_id', 'type', 'starts_at', 'ends_at', 'status']));
     }

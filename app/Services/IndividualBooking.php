@@ -14,18 +14,7 @@ class IndividualBooking
 {
     public function contains(TeacherAvailability $availability, Carbon $start, Carbon $end): bool
     {
-        $local = $start->copy()->setTimezone($availability->timezone);
-        $day = $local->toDateString();
-        if ($availability->status !== 'active'
-            || ($availability->recurrence_type === 'weekly'
-                ? $local->dayOfWeek !== $availability->weekday
-                : $availability->date?->toDateString() !== $day)) {
-            return false;
-        }
-        $from = Carbon::parse($day.' '.$availability->start_time, $availability->timezone);
-        $to = Carbon::parse($day.' '.$availability->end_time, $availability->timezone);
-
-        return $start->gt(now()) && $end->gt($start) && $start->gte($from) && $end->lte($to);
+        return $start->gt(now()) && app(AvailabilityBooking::class)->contains($availability, $start, $end);
     }
 
     public function book(Student $student, Teacher $teacher, array $data): Session
@@ -43,7 +32,12 @@ class IndividualBooking
             $session = new Session(array_merge($data, ['teacher_id' => $teacher->id, 'type' => 'INDIVIDUAL',
                 'group_id' => null, 'capacity' => 1, 'status' => 'scheduled']));
             $this->authorizeEnrollment($student, $session);
-            app(SessionRules::class)->validate($session);
+            // Keep the legacy endpoint's 422 validation contract while sharing
+            // overlap and enrollment validity rules with the new booking API.
+            $rules = app(SessionRules::class);
+            if (! $rules->active($session->enrollment, $start, $end) || $rules->conflicts($session->getAttributes())) {
+                throw ValidationException::withMessages(['starts_at' => 'The enrollment or requested interval is no longer available.']);
+            }
             $session->save();
 
             return $session;
