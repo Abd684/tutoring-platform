@@ -1,9 +1,11 @@
 <?php
 
 namespace App\Http\Controllers\Api\V1;
+
 use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\Teacher;
+use App\Services\VideoMetadata;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -33,14 +35,20 @@ class TeacherContentAssetController extends ApiController
     {
         $teacher = $this->teacher($request);
         $this->authorize('upload', $content);
+        abort_if(config('filesystems.media_disk', 'local') === 'public', 422, 'Protected media requires a private disk.');
 
         if (! $request->hasFile('file')) {
+            $key = $request->input('storage_key');
+            if (! is_string($key) || ! str_starts_with($key, "teachers/{$teacher->id}/contents/{$content->id}/")
+                || str_contains($key, '..') || str_contains($key, '\\')) {
+                throw ValidationException::withMessages(['storage_key' => ['File must be in the owned content directory.']]);
+            }
             $asset = ContentAsset::create([
                 'content_id' => $content->id,
                 ...$request->validate([
-                    'disk' => ['required', 'string', 'max:100'],
+                    'disk' => ['required', Rule::in(array_values(array_diff(array_keys(config('filesystems.disks')), ['public'])))],
                     'storage_key' => ['required', 'string', 'max:2048'],
-                    'mime_type' => ['nullable', 'string', 'max:255'],
+                    'mime_type' => ['required', Rule::in(['application/pdf', 'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'])],
                     'file_size' => ['nullable', 'integer', 'min:0'],
                     'checksum' => ['nullable', 'string', 'max:255'],
                     'encryption_type' => ['nullable', 'string', 'max:100'],
@@ -49,7 +57,9 @@ class TeacherContentAssetController extends ApiController
                 ]),
             ]);
 
-            return $this->success($asset, 'Content asset created successfully.', 201);
+            app(VideoMetadata::class)->probe($asset);
+
+            return $this->success($asset->load('videoAsset'), 'Content asset created successfully.', 201);
         }
 
         if (! in_array($content->type, ['pdf', 'video'], true)) {
@@ -65,7 +75,7 @@ class TeacherContentAssetController extends ApiController
         $file = $validated['file'];
         $allowedMimeTypes = $content->type === 'pdf'
             ? ['application/pdf']
-            : ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'];
+            : ['application/pdf', 'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'];
 
         if (! in_array($file->getMimeType(), $allowedMimeTypes, true)) {
             throw ValidationException::withMessages([
@@ -97,7 +107,9 @@ class TeacherContentAssetController extends ApiController
             throw $exception;
         }
 
-        return $this->success($asset, 'File uploaded successfully.', 201);
+        app(VideoMetadata::class)->probe($asset, $file->getRealPath() ?: null);
+
+        return $this->success($asset->load('videoAsset'), 'File uploaded successfully.', 201);
     }
 
     public function show(Request $request, ContentAsset $contentAsset): JsonResponse
@@ -124,5 +136,4 @@ class TeacherContentAssetController extends ApiController
 
         return $teacher;
     }
-
 }

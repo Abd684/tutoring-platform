@@ -1,9 +1,15 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AdminController;
+use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
+use App\Http\Controllers\Api\V1\FeaturedTeacherController;
 use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\ProfileAvatarController;
+use App\Http\Controllers\Api\V1\TeacherDirectoryController;
+use App\Http\Controllers\Api\V1\TeacherSubjectController;
+use App\Http\Controllers\Api\V1\UnitController;
 use Illuminate\Support\Facades\Route;
 
 // use App\Http\Controllers\Api\V1\AiEvaluationController;
@@ -11,7 +17,6 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Api\V1\AttendanceController;
 // use App\Http\Controllers\Api\V1\AuditLogController;
 // use App\Http\Controllers\Api\V1\ContentController;
-// use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 // use App\Http\Controllers\Api\V1\DeviceController;
 // use App\Http\Controllers\Api\V1\DeviceEventController;
 // use App\Http\Controllers\Api\V1\DeviceSessionController;
@@ -33,21 +38,19 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Api\V1\SubscriptionPlanController;
 // use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
 // use App\Http\Controllers\Api\V1\TeacherController;
-// use App\Http\Controllers\Api\V1\TeacherSubjectController;
 // use App\Http\Controllers\Api\V1\TeacherSubscriptionController;
-// use App\Http\Controllers\Api\V1\UnitController;
 // use App\Http\Controllers\Api\V1\UserController;
 // use App\Http\Controllers\Api\V1\VideoAssetController;
 // use App\Http\Controllers\Api\V1\WalletController;
 // use App\Http\Controllers\Api\V1\WalletTransactionController;
 
-// Route::prefix('v1')
-//     ->group(function () {
-// Route::get('/teacher-subjects/most-requested', [TeacherSubjectController::class, 'mostRequested']);
-// Route::get('/teachers/{teacher}/subjects', [TeacherSubjectController::class, 'getSubjectsByTeacher']);
-// Route::get('/teacher/subjects/{teacherSubject}/units', [TeacherSubjectController::class, 'units']);
-// Route::get('/units/{unit}/lessons', [UnitController::class, 'lessons']);
-// Route::get('/lessons/{lesson}/contents', [CurriculumBrowseController::class, 'lessonContents']);
+Route::prefix('v1')->group(function (): void {
+    Route::get('/teacher-subjects/most-requested', [TeacherSubjectController::class, 'mostRequested']);
+    Route::get('/teachers/{teacher}/subjects', [TeacherSubjectController::class, 'getSubjectsByTeacher']);
+    Route::get('/teacher/subjects/{teacherSubject}/units', [TeacherSubjectController::class, 'units']);
+    Route::get('/units/{unit}/lessons', [UnitController::class, 'lessons']);
+    Route::get('/lessons/{lesson}/contents', [CurriculumBrowseController::class, 'lessonContents']);
+});
 
 // Route::apiResources([
 //     'teachers' => TeacherController::class,
@@ -107,4 +110,16 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/governorates', [LocationController::class, 'governorates']);
     Route::get('/governorates/{id}/regions', [LocationController::class, 'regions']);
     Route::get('/regions/{id}/schools', [LocationController::class, 'schools']);
+});
+
+Route::prefix('v1')->group(function () {
+    Route::get('/teachers/featured', [FeaturedTeacherController::class, 'index']);
+    Route::get('/avatars/{user}/{filename}', [ProfileAvatarController::class, 'show'])
+        ->where('filename', '[A-Za-z0-9_-]+\\.(jpg|jpeg|png|webp)')->name('profile.avatar.show');
+});
+
+// Explicit read-only directory; no public administrative CRUD is enabled.
+Route::prefix('v1')->group(function () {
+    Route::get('/teachers', [TeacherDirectoryController::class, 'index']);
+    Route::get('/teachers/directory', [TeacherDirectoryController::class, 'index']);
 });

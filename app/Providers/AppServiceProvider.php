@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Relation::enforceMorphMap([
+        Relation::morphMap([
             'teacher_subject' => TeacherSubject::class,
             'unit' => Unit::class,
             'content' => Content::class,
@@ -31,6 +31,5 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(120)->by((string) $key);
         });
-
     }
 }

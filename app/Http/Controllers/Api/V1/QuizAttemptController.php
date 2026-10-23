@@ -1,11 +1,11 @@
 <?php
 
-//deaa
+// deaa
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\QuizAttempt;
 use App\Models\Quiz;
+use App\Models\QuizAttempt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,11 +46,12 @@ class QuizAttemptController extends ApiController
 
     public function start(Request $request, Quiz $quiz): JsonResponse
     {
-        $this->authorize('accessStudent', \App\Models\QuizAttempt::class);
+        $this->authorize('accessStudent', QuizAttempt::class);
 
         $student = $request->user()->student;
         abort_if($student === null || $student->status !== 'active', 403, 'Active student profile required.');
         abort_unless($quiz->status === 'published', 404);
+        $this->authorize('access', $quiz->content);
 
         $result = DB::transaction(function () use ($quiz, $student): array {
             $lockedQuiz = Quiz::query()->lockForUpdate()->findOrFail($quiz->id);
@@ -72,6 +73,7 @@ class QuizAttemptController extends ApiController
 
             return [
                 'attempt' => $attempt,
+                'attempt_id' => $attempt->id, 'quiz_id' => $quiz->id,
                 'attempts_remaining' => max(0, (int) $lockedQuiz->attempts_allowed - $attemptsUsed - 1),
             ];
         });
@@ -107,5 +109,43 @@ class QuizAttemptController extends ApiController
 
         return $this->success(message: 'Quiz Attempt deleted successfully.');
     }
-}
 
+    public function submit(Request $request, QuizAttempt $quizAttempt): JsonResponse
+    {
+        $student = $request->user()->student;
+        abort_if($request->user()->status !== 'active' || ! $student || $student->status !== 'active', 403, 'Active student profile required.');
+        abort_unless((int) $quizAttempt->student_id === (int) $student->id, 404);
+        $this->authorize('access', $quizAttempt->quiz->content);
+        $attempt = DB::transaction(function () use ($quizAttempt): QuizAttempt {
+            $attempt = QuizAttempt::query()->lockForUpdate()->findOrFail($quizAttempt->id);
+            if ($attempt->submitted_at !== null) {
+                return $attempt;
+            }
+            abort_unless($attempt->status === 'in_progress', 422, 'This attempt cannot be submitted.');
+            $questions = $attempt->quiz->questions()->get(['id', 'points']);
+            $answers = $attempt->answers()->get()->keyBy('question_id');
+            // Unanswered questions earn zero. Pending answers must be reviewed first.
+            $pending = $answers->contains(fn ($answer) => $answer->status === 'pending' || $answer->score === null);
+            $score = $pending ? null : $questions->sum(fn ($question) => min(
+                (float) $question->points,
+                max(0, (float) ($answers->get($question->id)?->score ?? 0)),
+            ));
+            $attempt->update([
+                'submitted_at' => now(),
+                'status' => 'submitted',
+                'score' => $score,
+            ]);
+
+            return $attempt->fresh();
+        });
+
+        return $this->success([
+            'attempt_id' => $attempt->id,
+            'quiz_id' => $attempt->quiz_id,
+            'status' => $attempt->status,
+            'submitted_at' => $attempt->submitted_at->toIso8601String(),
+            'score' => $attempt->score === null ? null : (float) $attempt->score,
+            'grading_pending' => $attempt->score === null,
+        ], 'Quiz attempt submitted successfully.');
+    }
+}

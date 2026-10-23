@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Device;
+use App\Models\DeviceSession;
 use App\Models\Enrollment;
 use App\Models\Student;
+use App\Models\StudentDevice;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
@@ -30,7 +33,10 @@ class StudentCurrentEnrollmentTest extends TestCase
         Enrollment::create(array_merge($base, ['status' => 'cancelled']));
         Enrollment::create(array_merge($base, ['student_id' => $other->id, 'status' => 'active']));
 
-        $token = $user->createToken('student')->plainTextToken;
+        $device = Device::create(['device_uuid' => fake()->uuid(), 'platform' => 'android', 'status' => 'trusted']);
+        $binding = StudentDevice::create(['student_id' => $student->id, 'device_id' => $device->id, 'status' => 'active', 'is_active' => true]);
+        $session = DeviceSession::create(['student_device_id' => $binding->id, 'refresh_token_hash' => str_repeat('a', 64), 'status' => 'active', 'issued_at' => now(), 'expires_at' => now()->addDay()]);
+        $token = $user->createToken('student_device_'.$binding->id.'_session_'.$session->id)->plainTextToken;
         $response = $this->withToken($token)->getJson('/api/v1/student/booking?student_id='.$other->id)
             ->assertOk()->assertJsonPath('meta.total', 2)
             ->assertJsonPath('data.0.teacher.id', $teacher->id)

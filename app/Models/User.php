@@ -22,7 +22,15 @@ class User extends Authenticatable
         'name', 'phone', 'email', 'password_hash', 'role', 'status', 'region_id',
     ];
 
+    protected $appends = ['avatar_url'];
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar_path ? route('profile.avatar.show', ['user' => $this->id, 'filename' => basename($this->avatar_path)]) : null;
+    }
+
     protected $hidden = [
+        'avatar_path',
         'password_hash',
     ];
 

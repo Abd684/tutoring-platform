@@ -103,8 +103,8 @@ class TeacherContentAssetTest extends TestCase
         $contentId = $createdContent->json('data.id');
 
         $this->postJson("/api/v1/teacher/contents/{$contentId}/asset", [
-            'disk' => 'public',
-            'storage_key' => 'contents/videos/video-1.mp4',
+            'disk' => 'local',
+            'storage_key' => 'teachers/'.$user->teacher->id.'/contents/'.$contentId.'/video-1.mp4',
             'mime_type' => 'video/mp4',
             'file_size' => 5242880,
             'checksum' => 'sha256-value',

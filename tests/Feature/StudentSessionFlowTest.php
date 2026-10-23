@@ -2,9 +2,20 @@
 
 namespace Tests\Feature;
 
-use App\Models\{User, Student, Teacher, Subject, TeacherSubject, Unit, Lesson, Enrollment, Session, Group, GroupEnrollment, Payment};
+use App\Models\Enrollment;
+use App\Models\Group;
+use App\Models\GroupEnrollment;
+use App\Models\Lesson;
+use App\Models\Payment;
+use App\Models\Session;
+use App\Models\Student;
+use App\Models\Subject;
+use App\Models\Teacher;
+use App\Models\TeacherAvailability;
+use App\Models\TeacherSubject;
+use App\Models\Unit;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -13,10 +24,15 @@ class StudentSessionFlowTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Student $student;
+
     private Teacher $teacher;
+
     private TeacherSubject $course;
+
     private Lesson $lesson;
+
     private Enrollment $enrollment;
 
     protected function setUp(): void
@@ -60,27 +76,27 @@ class StudentSessionFlowTest extends TestCase
 
     public function test_available_booking_cancellation_and_expiration(): void
     {
-        $slot = $this->makeSession();
-        $this->makeSession(['status' => 'cancelled']);
-        $this->getJson($this->slots())->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $slot->id);
-        $this->getJson($this->slots().'?to='.urlencode(now()->addWeek()->toISOString()))->assertOk()->assertJsonPath('meta.total', 1);
-        $this->postJson('/api/v1/sessions/'.$slot->id.'/book', ['enrollment_id' => $this->enrollment->id])->assertOk();
-        $this->getJson($this->slots())->assertJsonPath('meta.total', 0);
-        $this->deleteJson('/api/v1/sessions/'.$slot->id.'/booking')->assertOk()->assertJsonPath('data.status', 'scheduled')->assertJsonPath('data.enrollment_id', null);
-        $this->getJson($this->slots())->assertJsonPath('meta.total', 1);
+        $availability = TeacherAvailability::create(['teacher_id' => $this->teacher->id, 'date' => now()->addDay()->toDateString(), 'start_time' => '10:00', 'end_time' => '12:00', 'timezone' => 'UTC', 'recurrence_type' => 'none', 'status' => 'active']);
+        $slots = '/api/v1/teachers/'.$this->teacher->id.'/available-slots';
+        $this->getJson($slots)->assertOk()->assertJsonCount(1, 'data');
+        $payload = ['enrollment_id' => $this->enrollment->id, 'starts_at' => now()->addDay()->startOfDay()->addHours(10)->toISOString(), 'ends_at' => now()->addDay()->startOfDay()->addHours(11)->toISOString()];
+        $id = $this->postJson('/api/v1/teacher-availabilities/'.$availability->id.'/book', $payload)->assertCreated()->json('data.id');
+        $this->deleteJson('/api/v1/sessions/'.$id.'/booking')->assertOk()->assertJsonPath('data.status', 'cancelled')->assertJsonPath('data.enrollment_id', $this->enrollment->id);
+        $this->getJson($slots)->assertOk()->assertJsonCount(1, 'data');
         $this->enrollment->update(['expires_at' => now()->addHour()]);
-        $this->getJson($this->slots())->assertJsonPath('meta.total', 0);
-        $this->postJson('/api/v1/sessions/'.$slot->id.'/book', ['enrollment_id' => $this->enrollment->id])->assertUnprocessable();
+        $this->getJson($slots)->assertOk()->assertJsonCount(0, 'data');
+        $this->postJson('/api/v1/teacher-availabilities/'.$availability->id.'/book', $payload)->assertUnprocessable();
     }
 
     public function test_booking_rejects_overlap_across_different_enrollments(): void
     {
-        $other = $this->enrollment->replicate(); $other->save();
-        $this->makeSession(['enrollment_id' => $other->id]);
-        $slot = $this->makeSession();
-        $this->getJson($this->slots())->assertJsonPath('meta.total', 0);
-        $this->postJson('/api/v1/sessions/'.$slot->id.'/book', ['enrollment_id' => $this->enrollment->id])
-            ->assertConflict()->assertJsonPath('code', 'SESSION_TIME_CONFLICT');
+        $other = $this->enrollment->replicate();
+        $other->save();
+        $start = now()->addDay()->startOfDay()->addHours(10);
+        $end = $start->copy()->addHour();
+        $this->makeSession(['enrollment_id' => $other->id, 'starts_at' => $start, 'ends_at' => $end]);
+        $availability = TeacherAvailability::create(['teacher_id' => $this->teacher->id, 'date' => $start->toDateString(), 'start_time' => '10:00', 'end_time' => '12:00', 'timezone' => 'UTC', 'recurrence_type' => 'none', 'status' => 'active']);
+        $this->postJson('/api/v1/teacher-availabilities/'.$availability->id.'/book', ['enrollment_id' => $this->enrollment->id, 'starts_at' => $start->toISOString(), 'ends_at' => $end->toISOString()])->assertConflict();
     }
 
     public function test_manual_payment_requires_admin_and_activates_once(): void
@@ -114,14 +130,14 @@ class StudentSessionFlowTest extends TestCase
         $other = User::factory()->create(['role' => 'student', 'status' => 'active']);
         Student::create(['user_id' => $other->id, 'status' => 'active']);
         Sanctum::actingAs($other);
-        $this->getJson('/api/v1/student/payments/'.$id)->assertForbidden();
+        $this->getJson('/api/v1/student/payments/'.$id)->assertNotFound();
         $this->postJson($url, ['provider_reference' => 'THIRD'])->assertForbidden();
     }
 
     public function test_teacher_creates_and_lists_only_their_sessions(): void
     {
         Sanctum::actingAs($this->teacher->user);
-        $body = ['type' => 'INDIVIDUAL',
+        $body = ['type' => 'INDIVIDUAL', 'enrollment_id' => $this->enrollment->id,
             'starts_at' => now()->addDays(5)->toISOString(), 'ends_at' => now()->addDays(5)->addHour()->toISOString()];
         $id = $this->postJson('/api/v1/teacher/sessions', $body)->assertCreated()->assertJsonPath('data.teacher_id', $this->teacher->id)->json('data.id');
         $this->getJson('/api/v1/teacher/sessions')->assertOk()->assertJsonPath('meta.total', 1);
@@ -131,6 +147,4 @@ class StudentSessionFlowTest extends TestCase
         $this->postJson('/api/v1/teacher/sessions', array_merge($body, ['teacher_id' => $this->teacher->id]))->assertUnprocessable();
         $this->getJson('/api/v1/teacher/sessions')->assertJsonPath('meta.total', 0);
     }
-
-
 }

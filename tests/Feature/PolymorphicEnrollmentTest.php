@@ -61,6 +61,7 @@ class PolymorphicEnrollmentTest extends TestCase
             $this->postJson('/api/v1/'.$path.'/'.$model->id.'/enroll')->assertConflict()
                 ->assertJsonPath('code', 'ALREADY_ENROLLED')->assertJsonPath('enrollment_id', $result->json('data.id'));
         }
+        Enrollment::where('student_id', $student->id)->update(['status' => 'active']);
         foreach ([['units', $coveredUnit, 'SUBJECT'], ['contents', $subjectContent, 'SUBJECT'], ['contents', $unitContent, 'UNIT']] as [$path, $model, $scope]) {
             $this->postJson('/api/v1/'.$path.'/'.$model->id.'/enroll')->assertConflict()->assertJsonPath('code', 'ALREADY_COVERED_BY_'.$scope);
         }
@@ -111,7 +112,7 @@ class PolymorphicEnrollmentTest extends TestCase
             if ($model === $subject) {
                 $response->assertCreated()->assertJsonPath('message', 'Enrollment added to group successfully.');
             } else {
-                $response->assertUnprocessable()->assertJsonPath('code', 'ENROLLMENT_SUBJECT_MISMATCH');
+                $response->assertUnprocessable()->assertJsonValidationErrors('enrollment_id');
             }
         }
         $this->assertDatabaseCount('group_enrollments', 1);

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\GroupEnrollment;
+use App\Models\Teacher;
 use App\Models\TeacherSubject;
+use App\Services\GroupMembershipRules;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -45,8 +47,13 @@ class GroupEnrollmentController extends ApiController
         ]);
 
         $result = DB::transaction(function () use ($validated) {
+            $owner = Group::with('teacherSubject')->findOrFail($validated['group_id']);
+            Teacher::whereKey($owner->teacherSubject->teacher_id)->lockForUpdate()->firstOrFail();
             $group = Group::query()->lockForUpdate()->findOrFail($validated['group_id']);
-            $enrollment = Enrollment::findOrFail($validated['enrollment_id']);
+            $enrollment = Enrollment::whereKey($validated['enrollment_id'])->lockForUpdate()->firstOrFail();
+            $this->authorize('manage', $group);
+            $this->authorize('manage', $enrollment);
+            app(GroupMembershipRules::class)->validate($group, $enrollment);
 
             if ($group->status === 'closed') {
                 return ['error' => 'Closed groups cannot accept enrollments.'];
@@ -102,6 +109,7 @@ class GroupEnrollmentController extends ApiController
         ]);
 
         $result = DB::transaction(function () use ($teacher, $validated, $id) {
+            Teacher::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
             $group = Group::query()->lockForUpdate()->with('teacherSubject')->findOrFail($id);
             $teacherSubject = $group->teacherSubject;
 
@@ -115,7 +123,10 @@ class GroupEnrollmentController extends ApiController
                 return ['error' => ['Closed groups cannot accept enrollments.', 'GROUP_CLOSED', 422]];
             }
 
-            $enrollment = Enrollment::findOrFail($validated['enrollment_id']);
+            $enrollment = Enrollment::whereKey($validated['enrollment_id'])->lockForUpdate()->firstOrFail();
+            $this->authorize('manage', $group);
+            $this->authorize('manage', $enrollment);
+            app(GroupMembershipRules::class)->validate($group, $enrollment);
             if ($enrollment->status !== 'active') {
                 return ['error' => ['Only active enrollments can join a group.', 'ENROLLMENT_NOT_ACTIVE', 422]];
             }
@@ -198,6 +209,7 @@ class GroupEnrollmentController extends ApiController
         }
 
         $result = DB::transaction(function () use ($teacher, $id, $enrollment) {
+            Teacher::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
             $group = Group::query()->lockForUpdate()->with('teacherSubject')->findOrFail($id);
             if ((int) $group->teacherSubject->teacher_id !== (int) $teacher->id) {
                 return ['error' => ['This group does not belong to the authenticated teacher.', 'GROUP_FORBIDDEN', 403]];

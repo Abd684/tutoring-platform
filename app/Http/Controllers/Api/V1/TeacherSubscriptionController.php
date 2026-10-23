@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\SubscriptionPlan;
+use App\Models\Teacher;
 use App\Models\TeacherSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,6 +31,11 @@ class TeacherSubscriptionController extends ApiController
         }
 
         $result = DB::transaction(function () use ($teacher, $subscriptionPlan, $validatedData): array {
+            // Serialize first subscriptions as well as upgrades, even when no current subscription row exists.
+            $lockedTeacher = Teacher::whereKey($teacher->id)->lockForUpdate()->firstOrFail();
+            abort_unless($lockedTeacher->status === 'active' && $lockedTeacher->user?->status === 'active', 403);
+            $subscriptionPlan = SubscriptionPlan::whereKey($subscriptionPlan->id)->lockForUpdate()->firstOrFail();
+            abort_unless($subscriptionPlan->status === 'active', 422, 'This subscription plan is not available.');
             $now = now();
 
             TeacherSubscription::query()

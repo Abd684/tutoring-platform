@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Content;
+use App\Models\Enrollment;
 use App\Models\Lesson;
 use App\Models\Question;
 use App\Models\Quiz;
@@ -91,8 +92,8 @@ class StudentQuizAttemptTest extends TestCase
             'price' => 10,
             'status' => 'active',
         ]);
-        $unit = Unit::create(['teacher_subject_id' => $teacherSubject->id, 'title' => 'Unit']);
-        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson']);
+        $unit = Unit::create(['teacher_subject_id' => $teacherSubject->id, 'title' => 'Unit', 'status' => 'published']);
+        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson', 'status' => 'published']);
         $content = Content::create([
             'lesson_id' => $lesson->id,
             'type' => 'quiz',
@@ -113,6 +114,10 @@ class StudentQuizAttemptTest extends TestCase
             'rubric_json' => ['options' => ['3', '4']],
             'order_no' => 1,
         ]);
+
+        foreach (Student::all() as $student) {
+            Enrollment::create(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'enrollable_type' => $teacherSubject->getMorphClass(), 'enrollable_id' => $teacherSubject->id, 'status' => 'active']);
+        }
 
         return [$quiz, $question];
     }

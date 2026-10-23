@@ -119,4 +119,13 @@ class SessionPolicy
         return $user->status === 'active' && $user->role === 'teacher'
             && $user->teacher?->status === 'active';
     }
+
+    public function studentView(User $user, Session $session): Response
+    {
+        $studentId = $user->student?->id;
+        $owns = $studentId && ((int) $session->enrollment?->student_id === (int) $studentId
+            || $session->group?->groupEnrollments()->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $studentId))->exists());
+
+        return $this->book($user) && $owns ? Response::allow() : Response::denyAsNotFound();
+    }
 }

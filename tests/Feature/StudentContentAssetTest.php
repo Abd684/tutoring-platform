@@ -86,9 +86,9 @@ class StudentContentAssetTest extends TestCase
             'price' => 10,
             'status' => 'active',
         ]);
-        $unit = Unit::create(['teacher_subject_id' => $teacherSubject->id, 'title' => 'Unit']);
-        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson']);
-        $content = Content::create(['lesson_id' => $lesson->id, 'type' => 'pdf', 'title' => 'Content']);
+        $unit = Unit::create(['teacher_subject_id' => $teacherSubject->id, 'title' => 'Unit', 'status' => 'published']);
+        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson', 'status' => 'published']);
+        $content = Content::create(['lesson_id' => $lesson->id, 'type' => 'pdf', 'title' => 'Content', 'status' => 'published']);
         $path = "teachers/{$teacher->id}/contents/{$content->id}/lesson.pdf";
         Storage::disk('local')->put($path, 'private lesson');
         $asset = ContentAsset::create([

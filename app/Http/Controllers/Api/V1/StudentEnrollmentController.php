@@ -144,8 +144,7 @@ class StudentEnrollmentController extends ApiController
 
         $coveredBySubject = $this->existingEnrollment(
             $student,
-            $unit->teacherSubject
-        );
+            $unit->teacherSubject, true);
 
         if ($coveredBySubject) {
             return response()->json([
@@ -214,7 +213,7 @@ class StudentEnrollmentController extends ApiController
 
         $coveredBySubject = $this->existingEnrollment(
             $student,
-            $teacherSubject
+            $teacherSubject, true
         );
 
         if ($coveredBySubject) {
@@ -225,7 +224,7 @@ class StudentEnrollmentController extends ApiController
             ], 409);
         }
 
-        $coveredByUnit = $this->existingEnrollment($student, $unit);
+        $coveredByUnit = $this->existingEnrollment($student, $unit, true);
 
         if ($coveredByUnit) {
             return response()->json([
@@ -265,13 +264,16 @@ class StudentEnrollmentController extends ApiController
 
     private function existingEnrollment(
         Student $student,
-        Model $enrollable
+        Model $enrollable, bool $coverage = false
     ): ?Enrollment {
         return Enrollment::query()
             ->where('student_id', $student->id)
             ->where('enrollable_type', $enrollable->getMorphClass())
             ->where('enrollable_id', $enrollable->getKey())
-            ->whereIn('status', ['pending', 'active'])
+            ->whereIn('status', $coverage ? ['active'] : ['pending', 'active'])
+            ->where(fn ($q) => $q->where('status', 'pending')->orWhere(fn ($q) => $q
+                ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+                ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))))
             ->latest('id')
             ->first();
     }
