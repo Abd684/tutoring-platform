@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Teacher;
 use App\Models\Enrollment;
 use App\Models\TeacherSubject;
+use App\Services\CurriculumVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -157,6 +158,8 @@ class TeacherSubjectController extends ApiController
 
     public function getSubjectsByTeacher(Teacher $teacher): JsonResponse
     {
+        abort_unless(app(CurriculumVisibility::class)->teacher($teacher), 404);
+
         $subjects = $teacher->teacherSubjects()
             ->where('status', 'active')
             ->whereHas('subject', fn ($query) => $query->where('status', 'active'))
@@ -169,6 +172,8 @@ class TeacherSubjectController extends ApiController
 
     public function units(TeacherSubject $teacherSubject): JsonResponse
     {
+        abort_unless(app(CurriculumVisibility::class)->course($teacherSubject), 404);
+
         $units = $teacherSubject->units()
             ->where('status', 'published')
             ->orderBy('order_no')

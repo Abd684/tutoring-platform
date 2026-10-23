@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Lesson;
+use App\Services\CurriculumVisibility;
 use Illuminate\Http\JsonResponse;
 
 class CurriculumBrowseController extends ApiController
 {
     public function lessonContents(Lesson $lesson): JsonResponse
     {
+        abort_unless(app(CurriculumVisibility::class)->lesson($lesson), 404);
+
         $contents = $lesson->contents()
             ->where('status', 'published')
             ->withCount(['assets', 'quizzes'])

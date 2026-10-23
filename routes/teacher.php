@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\TeacherAuthController;
 use App\Http\Controllers\Api\V1\TeacherAvailabilityController;
 use App\Http\Controllers\Api\V1\TeacherContentAssetController;
 use App\Http\Controllers\Api\V1\TeacherContentController;
+use App\Http\Controllers\Api\V1\TeacherSubjectManagementController;
 use App\Http\Controllers\Api\V1\TeacherSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
 
 Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
+    Route::apiResource('subjects', TeacherSubjectManagementController::class)
+        ->names('teacher.subjects')
+        ->parameters(['subjects' => 'teacherSubject']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/subscription-plans', [SubscriptionPlanController::class, 'available']);

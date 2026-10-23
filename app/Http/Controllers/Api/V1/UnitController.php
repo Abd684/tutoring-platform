@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Unit;
+use App\Services\CurriculumVisibility;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -72,6 +73,8 @@ class UnitController extends ApiController
 
     public function lessons(Unit $unit): JsonResponse
     {
+        abort_unless(app(CurriculumVisibility::class)->unit($unit), 404);
+
         $lessons = $unit->lessons()
             ->where('status', 'published')
             ->orderBy('order_no')

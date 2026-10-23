@@ -83,4 +83,34 @@ class CurriculumBrowseTest extends TestCase
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
+
+    public function test_public_browsing_checks_every_parent_status(): void
+    {
+        $user = User::factory()->create(['role' => 'teacher']);
+        $teacher = Teacher::create(['user_id' => $user->id, 'status' => 'active']);
+        $subject = Subject::create(['name' => 'Math', 'status' => 'active']);
+        $course = TeacherSubject::create(['teacher_id' => $teacher->id, 'subject_id' => $subject->id, 'price' => 10]);
+        $unit = Unit::create(['teacher_subject_id' => $course->id, 'title' => 'Unit', 'status' => 'published']);
+        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson', 'status' => 'published']);
+        Content::create(['lesson_id' => $lesson->id, 'title' => 'Video', 'type' => 'video', 'status' => 'published']);
+        $urls = [
+            "/api/v1/teachers/{$teacher->id}/subjects",
+            "/api/v1/teacher/subjects/{$course->id}/units",
+            "/api/v1/units/{$unit->id}/lessons",
+            "/api/v1/lessons/{$lesson->id}/contents",
+        ];
+
+        foreach ([[$user, 'suspended', 0], [$teacher, 'pending_review', 0], [$teacher, 'suspended', 0],
+            [$subject, 'inactive', 1], [$course, 'inactive', 1], [$unit, 'draft', 2], [$lesson, 'draft', 3]] as [$model, $status, $start]) {
+            $original = $model->fresh()->status;
+            $model->update(['status' => $status]);
+            foreach (array_slice($urls, $start) as $url) {
+                $this->getJson($url)->assertNotFound();
+            }
+            $model->update(['status' => $original]);
+        }
+        foreach ($urls as $url) {
+            $this->getJson($url)->assertOk()->assertJsonCount(1, 'data');
+        }
+    }
 }
