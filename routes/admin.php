@@ -1,0 +1,81 @@
+<?php
+
+use App\Http\Controllers\Admin\AccountsController;
+use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\FinanceController;
+use App\Http\Controllers\Admin\GroupsController;
+use App\Http\Controllers\Admin\OverviewController;
+use App\Http\Controllers\Admin\SearchController;
+use App\Http\Controllers\Admin\SessionsController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SubscriptionsController;
+use App\Http\Middleware\AdminLocale;
+use App\Http\Middleware\EnsureAdministrator;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(function () {
+    Route::get('login', [AuthController::class, 'form'])->name('login');
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login.store');
+    Route::middleware(EnsureAdministrator::class)->group(function () {
+        Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('/', OverviewController::class)->name('overview');
+        Route::get('search', SearchController::class)->name('search');
+        foreach (['students' => 'student', 'teachers' => 'teacher'] as $path => $kind) {
+            Route::get($path, [AccountsController::class, 'index'])->defaults('kind', $kind)->name($path.'.index');
+            Route::get($path.'/create', [AccountsController::class, 'create'])->defaults('kind', $kind)->name($path.'.create');
+            Route::post($path, [AccountsController::class, 'store'])->defaults('kind', $kind)->name($path.'.store');
+            Route::get($path.'/{user}', [AccountsController::class, 'show'])->whereNumber('user')->defaults('kind', $kind)->name($path.'.show');
+            Route::get($path.'/{user}/edit', [AccountsController::class, 'edit'])->whereNumber('user')->defaults('kind', $kind)->name($path.'.edit');
+            Route::put($path.'/{user}', [AccountsController::class, 'update'])->whereNumber('user')->defaults('kind', $kind)->name($path.'.update');
+            Route::patch($path.'/{user}/status', [AccountsController::class, 'status'])->whereNumber('user')->defaults('kind', $kind)->name($path.'.status');
+        }
+        Route::get('groups', [GroupsController::class, 'index'])->name('groups.index');
+        Route::get('groups/create', [GroupsController::class, 'create'])->name('groups.create');
+        Route::post('groups', [GroupsController::class, 'store'])->name('groups.store');
+        Route::get('groups/{group}', [GroupsController::class, 'show'])->whereNumber('group')->name('groups.show');
+        Route::get('groups/{group}/edit', [GroupsController::class, 'edit'])->whereNumber('group')->name('groups.edit');
+        Route::put('groups/{group}', [GroupsController::class, 'update'])->whereNumber('group')->name('groups.update');
+        Route::post('groups/{group}/members', [GroupsController::class, 'add'])->name('groups.members.add');
+        Route::delete('groups/{group}/members/{membership}', [GroupsController::class, 'remove'])->name('groups.members.remove');
+        Route::get('sessions', [SessionsController::class, 'index'])->name('sessions.index');
+        Route::get('sessions/create', [SessionsController::class, 'create'])->name('sessions.create');
+        Route::post('sessions', [SessionsController::class, 'store'])->name('sessions.store');
+        Route::get('sessions/{session}', [SessionsController::class, 'show'])->whereNumber('session')->name('sessions.show');
+        Route::post('sessions/{session}/cancel', [SessionsController::class, 'cancel'])->name('sessions.cancel');
+        Route::get('payments', [FinanceController::class, 'payments'])->name('payments.index');
+        Route::get('payments/{payment}', [FinanceController::class, 'payment'])->whereNumber('payment')->name('payments.show');
+        Route::post('payments/{payment}/review', [FinanceController::class, 'review'])->name('payments.review');
+        Route::get('payments/{payment}/proof', [FinanceController::class, 'proof'])->name('payments.proof');
+        Route::get('refunds', [FinanceController::class, 'refunds'])->name('refunds.index');
+        Route::get('refunds/{refund}', [FinanceController::class, 'refund'])->whereNumber('refund')->name('refunds.show');
+        Route::post('refunds/{refund}/review', [FinanceController::class, 'reviewRefund'])->name('refunds.review');
+        Route::post('refunds/{refund}/complete', [FinanceController::class, 'completeRefund'])->name('refunds.complete');
+        Route::get('subscriptions', [SubscriptionsController::class, 'index'])->name('subscriptions.index');
+        Route::post('subscriptions', [SubscriptionsController::class, 'store'])->name('subscriptions.store');
+        Route::post('subscriptions/{subscription}/cancel', [SubscriptionsController::class, 'cancel'])->name('subscriptions.cancel');
+        Route::get('plans', [SubscriptionsController::class, 'plans'])->name('plans.index');
+        Route::get('plans/create', [SubscriptionsController::class, 'createPlan'])->name('plans.create');
+        Route::post('plans', [SubscriptionsController::class, 'storePlan'])->name('plans.store');
+        Route::get('plans/{plan}/edit', [SubscriptionsController::class, 'editPlan'])->name('plans.edit');
+        Route::put('plans/{plan}', [SubscriptionsController::class, 'updatePlan'])->name('plans.update');
+        Route::get('content', [ContentController::class, 'index'])->name('content.index');
+        Route::get('content/create', [ContentController::class, 'create'])->name('content.create');
+        Route::post('content', [ContentController::class, 'store'])->name('content.store');
+        Route::get('content/{content}/edit', [ContentController::class, 'edit'])->name('content.edit');
+        Route::put('content/{content}', [ContentController::class, 'update'])->name('content.update');
+        Route::post('content/{content}/archive', [ContentController::class, 'archive'])->name('content.archive');
+        Route::get('content/{content}/quiz', [ContentController::class, 'quiz'])->name('content.quiz');
+        Route::put('content/{content}/quiz', [ContentController::class, 'saveQuiz'])->name('content.quiz.save');
+        Route::get('content-assets/{asset}', [ContentController::class, 'asset'])->name('content.asset');
+        Route::post('curriculum', [ContentController::class, 'hierarchy'])->name('curriculum.store');
+        Route::put('curriculum/{kind}/{item}', [ContentController::class, 'updateHierarchy'])->where('kind', 'unit|lesson')->whereNumber('item')->name('curriculum.update');
+        Route::get('settings', [SettingsController::class, 'index'])->name('settings');
+        Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::patch('settings/profile', [SettingsController::class, 'profile'])->name('settings.profile');
+        Route::get('payment-settings', [FinanceController::class, 'paymentSettings'])->name('payment-settings');
+        Route::put('payment-settings', [FinanceController::class, 'savePaymentSettings'])->name('payment-settings.update');
+        Route::get('payment-settings/qr',[FinanceController::class, 'qr'])->name('payment-settings.qr');
+        Route::get('audit',[SettingsController::class, 'auditLog'])->name('audit');
+    });
+});

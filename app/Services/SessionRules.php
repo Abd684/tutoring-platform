@@ -14,8 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 class SessionRules
 {
-    public function validate(array $state): array
+    public function validate(array $state, bool $administrator = false): array
     {
+        if ($administrator) {
+            Gate::authorize('administer', Session::class);
+        }
         $fail = fn ($key, $message) => throw ValidationException::withMessages([$key => [$message]]);
         $start = Carbon::parse($state['starts_at']);
         $end = Carbon::parse($state['ends_at']);
@@ -29,7 +32,9 @@ class SessionRules
                 $fail('group_id', 'Group sessions require a group and no individual enrollment.');
             }
             $group = Group::whereKey($state['group_id'])->lockForUpdate()->firstOrFail();
-            Gate::authorize('manage', $group);
+            if (! $administrator) {
+                Gate::authorize('manage', $group);
+            }
             if ($group->status === 'closed') {
                 $fail('group_id', 'Group is closed.');
             }
@@ -54,7 +59,9 @@ class SessionRules
             if ($enrollment->enrollable_type === 'paid_booking') {
                 $fail('enrollment_id', 'Paid lesson sessions are created and rescheduled only by their payment workflow.');
             }
-            Gate::authorize('manage', $enrollment);
+            if (! $administrator) {
+                Gate::authorize('manage', $enrollment);
+            }
             if (! $this->active($enrollment, $start, $end) || (int) $enrollment->teacher_id !== (int) $state['teacher_id']) {
                 $fail('enrollment_id', 'Enrollment is not valid for the session.');
             }
@@ -62,8 +69,11 @@ class SessionRules
         }
         if (! empty($state['availability_id'])) {
             $availability = TeacherAvailability::findOrFail($state['availability_id']);
-            Gate::authorize('update', $availability);
-            if (! app(AvailabilityBooking::class)->contains($availability, $start, $end)) {
+            if (! $administrator) {
+                Gate::authorize('update', $availability);
+            }
+            if ((int) $availability->teacher_id !== (int) $state['teacher_id']
+                || ! app(AvailabilityBooking::class)->contains($availability, $start, $end)) {
                 $fail('availability_id', 'Session is outside active availability.');
             }
         }

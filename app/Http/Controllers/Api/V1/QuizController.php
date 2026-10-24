@@ -53,6 +53,11 @@ class QuizController extends ApiController
             ->orderBy('order_no')
             ->orderBy('id')]);
 
+        // A student's question payload contains choices, never grading references.
+        $quiz->questions->each(function ($question) {
+            $question->rubric_json = $question->rubric_json === null ? null : array_intersect_key($question->rubric_json, ['options' => true]);
+        });
+
         $attemptsUsed = $quiz->attempts()->where('student_id', $student->id)->count();
         $activeAttempt = $quiz->attempts()
             ->where('student_id', $student->id)

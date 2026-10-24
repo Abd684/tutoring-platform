@@ -8,6 +8,11 @@ use Illuminate\Auth\Access\Response;
 
 class SessionPolicy
 {
+    public function administer(User $user): bool
+    {
+        return $user->role === 'company_admin' && $user->status === 'active';
+    }
+
     /**
      * Teacher can view his sessions list.
      */

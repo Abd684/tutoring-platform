@@ -11,11 +11,11 @@ class Content extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['lesson_id', 'type', 'title', 'description', 'learning_objectives', 'price', 'order_no', 'status', 'published_at'];
+    protected $fillable = ['lesson_id', 'type', 'title', 'description', 'learning_objectives', 'price', 'order_no', 'status', 'published_at', 'scheduled_publish_at'];
 
     protected function casts(): array
     {
-        return ['learning_objectives' => 'array', 'price' => 'decimal:2', 'published_at' => 'datetime'];
+        return ['learning_objectives' => 'array', 'price' => 'decimal:2', 'published_at' => 'datetime', 'scheduled_publish_at' => 'datetime'];
     }
 
     public function lesson(): BelongsTo

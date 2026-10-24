@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\AuditLog;
+use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\DeviceTransferRequest;
 use App\Models\Enrollment;
@@ -13,7 +15,9 @@ use App\Services\VideoMetadata;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Validator;
 
 Artisan::command('devices:resolve-transfers', function () {
     $count = 0;
@@ -90,3 +94,39 @@ Artisan::command('student:grant-trial {student_user : User ID or email} {teacher
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Artisan::command('content:publish-scheduled', function () {
+    $count = 0;
+    Content::where('status', 'draft')->whereNotNull('scheduled_publish_at')->where('scheduled_publish_at', '<=', now())->select('id')->chunkById(100, function ($items) use (&$count) {
+        foreach ($items as $item) {
+            DB::transaction(function () use ($item, &$count) {
+                $content = Content::whereKey($item->id)->lockForUpdate()->firstOrFail();
+                if ($content->status !== 'draft' || ! $content->scheduled_publish_at || $content->scheduled_publish_at->isFuture()) {
+                    return;
+                }
+                $content->update(['status' => 'published', 'published_at' => now(), 'scheduled_publish_at' => null]);
+                AuditLog::create(['user_id' => null, 'action' => 'content.scheduled_published', 'entity_type' => Content::class, 'entity_id' => $content->id, 'created_at' => now()]);
+                $count++;
+            });
+        }
+    });
+    $this->info("Published {$count} scheduled contents.");
+});
+Schedule::command('content:publish-scheduled')->everyMinute()->withoutOverlapping();
+
+Artisan::command('admin:create {--name=} {--email=} {--phone=}', function () {
+    $name = $this->option('name') ?: $this->ask('Administrator name');
+    $email = $this->option('email') ?: $this->ask('Administrator email');
+    $phone = $this->option('phone') ?: $this->ask('Administrator phone');
+    $password = $this->secret('Password (at least 12 characters)');
+    $confirmation = $this->secret('Confirm password');
+    $validator = Validator::make(compact('name', 'email', 'phone', 'password') + ['password_confirmation' => $confirmation], [
+        'name' => 'required|string|max:255', 'email' => 'required|email|max:255|unique:users,email', 'phone' => 'required|string|max:20|unique:users,phone', 'password' => 'required|string|min:12|confirmed']);
+    if ($validator->fails()) {
+        $this->error($validator->errors()->first());
+
+        return 1;
+    }
+    $user = User::create(['name' => $name, 'email' => $email, 'phone' => $phone, 'password_hash' => Hash::make($password), 'role' => 'company_admin', 'status' => 'active']);
+    $this->info('Administrator created: '.$user->id.'. Existing accounts were not modified.');
+});
