@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Content;
 use App\Models\Enrollment;
+use App\Models\PaidBooking;
 use App\Models\Student;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
@@ -290,6 +291,7 @@ class StudentEnrollmentController extends ApiController
             (new TeacherSubject)->getMorphClass() => 'subject',
             (new Unit)->getMorphClass() => 'unit',
             (new Content)->getMorphClass() => 'content',
+            'paid_booking' => 'paid_booking',
             default => 'unknown',
         };
 
@@ -297,7 +299,9 @@ class StudentEnrollmentController extends ApiController
         $title = null;
         $subjectName = null;
 
-        if ($item instanceof TeacherSubject) {
+        if ($item instanceof PaidBooking) {
+            $title = 'درس مدفوع';
+        } elseif ($item instanceof TeacherSubject) {
             $title = $item->subject?->name;
             $subjectName = $item->subject?->name;
         } elseif ($item instanceof Unit) {

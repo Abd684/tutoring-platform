@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\Enrollment;
 use App\Models\Payment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,11 @@ class PaymentController extends ApiController
     {
         $this->authorize('create', Payment::class);
 
-        if ($request->input('payable_type') === (new \App\Models\Enrollment)->getMorphClass()) {
+        if ($request->input('provider') === 'sham_cash') {
+            return $this->businessError('Sham Cash payments must use checkout and proof submission.', 422);
+        }
+
+        if ($request->input('payable_type') === (new Enrollment)->getMorphClass()) {
             return $this->businessError('Enrollment payments must use the student submission and administrator review endpoints.', 422);
         }
         $payment = Payment::create($request->validate([
@@ -56,8 +61,12 @@ class PaymentController extends ApiController
     {
         $this->authorize('update', $payment);
 
-        if ($payment->payable_type === (new \App\Models\Enrollment)->getMorphClass()
-            || $request->input('payable_type') === (new \App\Models\Enrollment)->getMorphClass()) {
+        if ($payment->provider === 'sham_cash' || $request->input('provider') === 'sham_cash') {
+            return $this->businessError('Sham Cash financial records cannot be edited through CRUD.', 422);
+        }
+
+        if ($payment->payable_type === (new Enrollment)->getMorphClass()
+            || $request->input('payable_type') === (new Enrollment)->getMorphClass()) {
             return $this->businessError('Enrollment payments must use the administrator review endpoint.', 422);
         }
         $payment->update($request->validate([
@@ -78,6 +87,10 @@ class PaymentController extends ApiController
     public function destroy(Payment $payment): JsonResponse
     {
         $this->authorize('delete', $payment);
+
+        if ($payment->provider === 'sham_cash' || $payment->payable_type === (new Enrollment)->getMorphClass()) {
+            return $this->businessError('Payment attempts must be retained for audit.', 409);
+        }
 
         if ($payment->status === 'succeeded') {
             return $this->businessError('Succeeded payments must not be deleted. Use refund/reversal business logic instead.', 409);

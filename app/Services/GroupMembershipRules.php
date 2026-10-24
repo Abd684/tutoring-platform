@@ -21,6 +21,7 @@ class GroupMembershipRules
             throw ValidationException::withMessages(['enrollment_id' => ['An active full-subject enrollment for the same group subject and teacher is required.']]);
         }
         foreach (Session::where('group_id', $group->id)->whereIn('status', ['scheduled', 'ongoing'])->get() as $session) {
+            abort_if(app(PaidLessonBookings::class)->holdConflicts($session->teacher_id, [$enrollment->student_id], $session->starts_at, $session->ends_at), 409, 'Student has an overlapping paid lesson hold.');
             if (! app(SessionRules::class)->active($enrollment, $session->starts_at, $session->ends_at)) {
                 throw ValidationException::withMessages(['enrollment_id' => ['Enrollment must cover all scheduled group sessions.']]);
             }

@@ -7,9 +7,13 @@ use App\Http\Controllers\Api\V1\FeaturedTeacherController;
 use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileAvatarController;
+use App\Http\Controllers\Api\V1\RefundController;
+use App\Http\Controllers\Api\V1\ShamCashPaymentController;
+use App\Http\Controllers\Api\V1\ShamCashSettingController;
 use App\Http\Controllers\Api\V1\TeacherDirectoryController;
 use App\Http\Controllers\Api\V1\TeacherSubjectController;
 use App\Http\Controllers\Api\V1\UnitController;
+use App\Http\Middleware\StudentDeviceWhenRequired;
 use Illuminate\Support\Facades\Route;
 
 // use App\Http\Controllers\Api\V1\AiEvaluationController;
@@ -95,6 +99,11 @@ Route::prefix('v1')->group(function (): void {
 // });
 
 Route::prefix('v1/admin')->middleware(['auth:sanctum', 'role:company_admin'])->group(function () {
+    Route::put('/payment-settings', [ShamCashSettingController::class, 'update']);
+    Route::get('/payments', [ShamCashPaymentController::class, 'index']);
+    Route::get('/refunds', [RefundController::class, 'index']);
+    Route::post('/refunds/{refund}/review', [RefundController::class, 'review']);
+    Route::post('/refunds/{refund}/complete', [RefundController::class, 'complete']);
     Route::post('/payments/{payment}/review', [EnrollmentPaymentController::class, 'review']);
     // Existing generic admin endpoints remain available. Student targets are
     // automatically delegated to the stricter student security flow.
@@ -105,6 +114,13 @@ Route::prefix('v1/admin')->middleware(['auth:sanctum', 'role:company_admin'])->g
     Route::patch('/students/{user}/suspend', [AdminController::class, 'suspendStudent']);
     Route::patch('/students/{user}/activate', [AdminController::class, 'activateStudent']);
 
+});
+
+Route::prefix('v1')->middleware(['auth:sanctum', 'role:student,company_admin', StudentDeviceWhenRequired::class])->group(function () {
+    Route::get('/payment-settings', [ShamCashSettingController::class, 'show']);
+    Route::get('/payment-settings/qr', [ShamCashSettingController::class, 'qr'])->name('payment-settings.qr');
+    Route::get('/payment-proofs/{payment}', [ShamCashPaymentController::class, 'proof'])->name('payments.proof');
+    Route::get('/refunds/{refund}', [RefundController::class, 'show'])->whereNumber('refund');
 });
 
 // Financial records cannot be created or edited anonymously.

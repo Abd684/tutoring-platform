@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Enrollment extends Model
 {
-    public const ALLOWED_ENROLLABLE_TYPES = ['teacher_subject', 'unit', 'content'];
+    public const ALLOWED_ENROLLABLE_TYPES = ['teacher_subject', 'unit', 'content', 'paid_booking'];
 
     protected static function booted(): void
     {

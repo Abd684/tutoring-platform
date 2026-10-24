@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "Liqaa - Paid Lessons and Manual Refunds",
+    "description": "Use existing device-bound student and active admin tokens. Copy slot times, checkout_id, payment_id, booking_id, and refund_id into variables. Approve OR reject a request. Refund completion only records a transfer the administrator has already performed manually. No money is sent by this API. See docs/paid-bookings-and-refunds-api.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {"type":"bearer","bearer":[{"key":"token","value":"{{student_token}}","type":"string"}]},
+  "variable": [
+    {"key":"base_url","value":"http://127.0.0.1:8000"},
+    {"key":"student_token","value":""}, {"key":"admin_token","value":""},
+    {"key":"teacher_id","value":"1"}, {"key":"availability_id","value":"1"},
+    {"key":"starts_at","value":""}, {"key":"ends_at","value":""},
+    {"key":"checkout_id","value":""}, {"key":"payment_id","value":""},
+    {"key":"booking_id","value":""}, {"key":"refund_id","value":""},
+    {"key":"student_account","value":""}, {"key":"incoming_reference","value":""},
+    {"key":"outgoing_reference","value":""}
+  ],
+  "item": [
+    {"name":"1. Find paid slots (copy availability and times)","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/api/v1/teachers/{{teacher_id}}/paid-slots"}},
+    {
+      "name":"2. Start lesson checkout (copy checkout_id)",
+      "request":{"method":"POST","header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],
+        "url":"{{base_url}}/api/v1/payments/checkout",
+        "body":{"mode":"raw","raw":"{\"service_type\":\"lesson_booking\",\"service_id\":{{availability_id}},\"starts_at\":\"{{starts_at}}\",\"ends_at\":\"{{ends_at}}\"}","options":{"raw":{"language":"json"}}}}
+    },
+    {
+      "name":"3. Submit proof (copy payment_id and booking.id)",
+      "request":{"method":"POST","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/api/v1/student/payments",
+        "body":{"mode":"formdata","formdata":[{"key":"checkout_id","value":"{{checkout_id}}","type":"text"},{"key":"provider_reference","value":"{{incoming_reference}}","type":"text"},{"key":"proof","type":"file","src":""}]}}
+    },
+    {
+      "name":"4. Admin confirm after checking incoming transfer",
+      "request":{"method":"POST","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{admin_token}}","type":"string"}]},
+        "header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],"url":"{{base_url}}/api/v1/admin/payments/{{payment_id}}/review",
+        "body":{"mode":"raw","raw":"{\"decision\":\"confirm\"}","options":{"raw":{"language":"json"}}}}
+    },
+    {"name":"5. My paid bookings","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/api/v1/student/paid-bookings"}},
+    {"name":"6. Paid booking details","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/api/v1/student/paid-bookings/{{booking_id}}"}},
+    {
+      "name":"Alternative: reschedule after original slot cannot be fulfilled (choose new slot variables)",
+      "request":{"method":"POST","header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],
+        "url":"{{base_url}}/api/v1/student/paid-bookings/{{booking_id}}/reschedule",
+        "body":{"mode":"raw","raw":"{\"availability_id\":{{availability_id}},\"starts_at\":\"{{starts_at}}\",\"ends_at\":\"{{ends_at}}\"}","options":{"raw":{"language":"json"}}}}
+    },
+    {
+      "name":"7. Student request manual refund (copy refund_id)",
+      "request":{"method":"POST","header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],"url":"{{base_url}}/api/v1/refunds",
+        "body":{"mode":"raw","raw":"{\"payment_id\":{{payment_id}},\"account_id\":\"{{student_account}}\",\"reason_code\":\"exceptional\",\"reason\":\"Please review this refund request.\"}","options":{"raw":{"language":"json"}}}}
+    },
+    {"name":"8. My refunds","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/api/v1/refunds/my"}},
+    {"name":"9. Refund details","request":{"method":"GET","header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/api/v1/refunds/{{refund_id}}"}},
+    {
+      "name":"10. Admin pending refunds",
+      "request":{"method":"GET","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{admin_token}}","type":"string"}]},"header":[{"key":"Accept","value":"application/json"}],"url":"{{base_url}}/api/v1/admin/refunds?status=PENDING_REVIEW"}
+    },
+    {
+      "name":"11. Admin approve refund (does NOT transfer money)",
+      "request":{"method":"POST","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{admin_token}}","type":"string"}]},
+        "header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],"url":"{{base_url}}/api/v1/admin/refunds/{{refund_id}}/review",
+        "body":{"mode":"raw","raw":"{\"decision\":\"approve\",\"review_note\":\"Eligibility and recipient account verified manually.\"}","options":{"raw":{"language":"json"}}}}
+    },
+    {
+      "name":"Alternative: reject refund with reason",
+      "request":{"method":"POST","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{admin_token}}","type":"string"}]},
+        "header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],"url":"{{base_url}}/api/v1/admin/refunds/{{refund_id}}/review",
+        "body":{"mode":"raw","raw":"{\"decision\":\"reject\",\"review_note\":\"Reason for rejection.\"}","options":{"raw":{"language":"json"}}}}
+    },
+    {
+      "name":"12. AFTER transferring manually: record actual outgoing transfer",
+      "request":{"method":"POST","auth":{"type":"bearer","bearer":[{"key":"token","value":"{{admin_token}}","type":"string"}]},
+        "header":[{"key":"Accept","value":"application/json"},{"key":"Content-Type","value":"application/json"}],"url":"{{base_url}}/api/v1/admin/refunds/{{refund_id}}/complete",
+        "body":{"mode":"raw","raw":"{\"transfer_reference\":\"{{outgoing_reference}}\"}","options":{"raw":{"language":"json"}}}}
+    }
+  ]
+}

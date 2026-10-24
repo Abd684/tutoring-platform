@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Content;
+use App\Models\PaidBooking;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -24,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
             'teacher_subject' => TeacherSubject::class,
             'unit' => Unit::class,
             'content' => Content::class,
+            'paid_booking' => PaidBooking::class,
         ]);
 
         RateLimiter::for('api', function (Request $request) {

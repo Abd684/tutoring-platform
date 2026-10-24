@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\PaidBooking;
 use App\Models\TeacherAvailability;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -49,6 +50,7 @@ class TeacherAvailabilityController extends ApiController
         $teacherId = $this->currentTeacherId($request);
 
         $validated = $request->validate([
+            'price' => ['sometimes', 'nullable', 'numeric', 'min:0.01', 'max:9999999999.99'],
             'weekday' => [
                 'nullable',
                 'integer',
@@ -122,6 +124,7 @@ class TeacherAvailabilityController extends ApiController
         $this->authorize('update', $teacherAvailability);
 
         $validated = $request->validate([
+            'price' => ['sometimes', 'nullable', 'numeric', 'min:0.01', 'max:9999999999.99'],
             'weekday' => [
                 'sometimes',
                 'nullable',
@@ -201,6 +204,8 @@ class TeacherAvailabilityController extends ApiController
         TeacherAvailability $teacherAvailability
     ): JsonResponse {
         $this->authorize('delete', $teacherAvailability);
+
+        abort_if(PaidBooking::where('availability_id', $teacherAvailability->id)->exists(), 409, 'Availability linked to payment history cannot be deleted. Disable it instead.');
 
         $teacherAvailability->delete();
 

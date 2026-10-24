@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\PaidBooking;
 use App\Models\Session;
 use App\Models\Teacher;
 use App\Models\TeacherAvailability;
@@ -41,6 +42,8 @@ class AvailableSessionController extends ApiController
                     ->where(fn ($q) => $q->where('teacher_id', $teacher->id)
                         ->orWhereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))
                         ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))))->get();
+                $busy = $busy->concat(PaidBooking::holding()->where('starts_at', '<', $end->copy()->setTimezone(config('app.timezone')))->where('ends_at', '>', $start->copy()->setTimezone(config('app.timezone')))
+                    ->where(fn ($q) => $q->where('teacher_id', $teacher->id)->orWhere('student_id', $student->id))->get());
                 foreach ($busy as $session) {
                     $next = [];
                     foreach ($windows as [$left, $right]) {

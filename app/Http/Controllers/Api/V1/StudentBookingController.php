@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Content;
 use App\Models\Enrollment;
+use App\Models\PaidBooking;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\TeacherSubject;
@@ -189,6 +190,12 @@ class StudentBookingController extends ApiController
         }
 
         $enrollable = $enrollment->enrollable;
+
+        if ($enrollable instanceof PaidBooking) {
+            return ['id' => $enrollment->id, 'enrollable_id' => $enrollment->enrollable_id,
+                'status' => $enrollment->status, 'type' => 'paid_booking', 'subject' => null,
+                'item' => ['title' => 'درس مدفوع', 'booking_id' => $enrollable->id]];
+        }
 
         /*
          * اشتراك بالمادة كاملة

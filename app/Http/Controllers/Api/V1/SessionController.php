@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Services\PaidLessonBookings;
 use App\Services\SessionRules;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -98,6 +99,10 @@ class SessionController extends ApiController
         $session = Session::findOrFail($id);
         $this->authorize('studentView', $session);
 
+        if ($session->enrollment?->enrollable_type === 'paid_booking') {
+            return $this->success(app(PaidLessonBookings::class)->cancelSession($session, 'student', $request->user()->id), 'Paid lesson cancelled.');
+        }
+
         return DB::transaction(function () use ($session) {
             Teacher::whereKey($session->teacher_id)->lockForUpdate()->firstOrFail();
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
@@ -120,6 +125,10 @@ class SessionController extends ApiController
         Session $session
     ): JsonResponse {
         $this->authorize('cancel', $session);
+
+        if ($session->enrollment?->enrollable_type === 'paid_booking') {
+            return $this->success(app(PaidLessonBookings::class)->cancelSession($session, 'teacher', request()->user()->id), 'Paid lesson cancelled.');
+        }
 
         $result = DB::transaction(
             function () use ($session) {
@@ -244,6 +253,8 @@ class SessionController extends ApiController
     public function destroy(Session $session): JsonResponse
     {
         $this->authorize('delete', $session);
+
+        abort_if($session->enrollment?->enrollable_type === 'paid_booking', 409, 'Paid lesson history must be retained. Use cancellation.');
 
         $session->delete();
 

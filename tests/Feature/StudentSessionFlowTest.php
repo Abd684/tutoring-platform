@@ -118,9 +118,11 @@ class StudentSessionFlowTest extends TestCase
     {
         $this->enrollment->update(['status' => 'pending']);
         $url = '/api/v1/student/enrollments/'.$this->enrollment->id.'/payments';
-        $payment = $this->postJson($url, ['provider_reference' => 'TRANSFER-100', 'amount' => 1, 'status' => 'succeeded'])
-            ->assertCreated()->assertJsonPath('data.amount', '100.00')->assertJsonPath('data.status', 'pending')->json('data.id');
-        $this->postJson($url, ['provider_reference' => 'TRANSFER-100'])->assertOk()->assertJsonPath('data.id', $payment);
+        // Historical manual transfers remain reviewable; proof-free submissions are retired.
+        $this->postJson($url, ['provider_reference' => 'TRANSFER-100'])->assertStatus(410);
+        $payment = Payment::create(['payer_id' => $this->user->id, 'payable_type' => $this->enrollment->getMorphClass(),
+            'payable_id' => $this->enrollment->id, 'amount' => 100, 'currency' => 'SYP', 'provider' => 'manual_transfer',
+            'provider_reference' => 'TRANSFER-100', 'status' => 'pending'])->id;
         $this->assertSame('pending', $this->enrollment->fresh()->status);
         $review = '/api/v1/admin/payments/'.$payment.'/review';
         $this->postJson($review, ['decision' => 'confirm'])->assertForbidden();
@@ -133,15 +135,17 @@ class StudentSessionFlowTest extends TestCase
         $this->patchJson('/api/v1/payments/'.$payment, ['status' => 'pending'])->assertUnprocessable();
     }
 
-    public function test_payment_rejection_allows_retry_and_other_students_cannot_access(): void
+    public function test_historical_payment_rejection_and_other_students_cannot_access(): void
     {
         $this->enrollment->update(['status' => 'pending']);
         $url = '/api/v1/student/enrollments/'.$this->enrollment->id.'/payments';
-        $id = $this->postJson($url, ['provider_reference' => 'FIRST'])->assertCreated()->json('data.id');
+        $id = Payment::create(['payer_id' => $this->user->id, 'payable_type' => $this->enrollment->getMorphClass(),
+            'payable_id' => $this->enrollment->id, 'amount' => 100, 'currency' => 'SYP', 'provider' => 'manual_transfer',
+            'provider_reference' => 'FIRST', 'status' => 'pending'])->id;
         Sanctum::actingAs(User::factory()->create(['role' => 'company_admin', 'status' => 'active']));
         $this->postJson('/api/v1/admin/payments/'.$id.'/review', ['decision' => 'reject'])->assertOk()->assertJsonPath('data.payment.status', 'failed');
         Sanctum::actingAs($this->user);
-        $this->postJson($url, ['provider_reference' => 'SECOND'])->assertCreated();
+        $this->postJson($url, ['provider_reference' => 'SECOND'])->assertStatus(410);
         $other = User::factory()->create(['role' => 'student', 'status' => 'active']);
         Student::create(['user_id' => $other->id, 'status' => 'active']);
         Sanctum::actingAs($other);

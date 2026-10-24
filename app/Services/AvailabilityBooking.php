@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Enrollment;
+use App\Models\PaidBooking;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -47,6 +48,7 @@ class AvailabilityBooking
             Gate::authorize('book', $availability);
             $enrollment = Enrollment::whereKey($data['enrollment_id'])->lockForUpdate()->firstOrFail();
             Gate::authorize('pay', $enrollment);
+            abort_if($enrollment->enrollable_type === 'paid_booking', 409, 'Paid lessons must use their payment and rescheduling workflow.');
             $start = Carbon::parse($data['starts_at'])->utc();
             $end = Carbon::parse($data['ends_at'])->utc();
             if ($start->lte(now()) || ! $this->contains($availability, $start, $end)
@@ -66,13 +68,15 @@ class AvailabilityBooking
     public function slots(Teacher $teacher, Student $student, Carbon $from, Carbon $to): array
     {
         $result = [];
-        $enrollments = app(ContentAccess::class)->enrollments($student)->where('teacher_id', $teacher->id)->get();
+        $enrollments = app(ContentAccess::class)->enrollments($student)->where('teacher_id', $teacher->id)->where('enrollable_type', '!=', 'paid_booking')->get();
         if ($enrollments->isEmpty()) {
             return [];
         }
         $busy = Session::whereIn('status', ['scheduled', 'ongoing'])->where('starts_at', '<', $to)->where('ends_at', '>', $from)
             ->where(fn ($q) => $q->where('teacher_id', $teacher->id)->orWhereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))
                 ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))))->get();
+        $busy = $busy->concat(PaidBooking::holding()->where('starts_at', '<', $to)->where('ends_at', '>', $from)
+            ->where(fn ($q) => $q->where('teacher_id', $teacher->id)->orWhere('student_id', $student->id))->get());
         foreach (TeacherAvailability::where('teacher_id', $teacher->id)->where('status', 'active')->get() as $availability) {
             for ($day = $from->copy()->setTimezone($availability->timezone)->startOfDay(); $day->lt($to); $day->addDay()) {
                 $start = Carbon::parse($day->toDateString().' '.$availability->start_time, $availability->timezone)->utc();

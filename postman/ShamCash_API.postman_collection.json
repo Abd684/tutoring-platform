@@ -1,0 +1,86 @@
+{
+  "info": {
+    "name": "Liqaa - Sham Cash (Phase 1)",
+    "description": "Manual transfers only. Use an active administrator token and a student device-bound token. Select QR/proof files before sending. Choose approve OR reject for each payment. Paid booking holds and manual refunds are in the companion PaidBookings_Refunds_API collection. Notifications are deferred. See docs/sham-cash-api.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://127.0.0.1:8000"},
+    {"key": "student_token", "value": ""},
+    {"key": "admin_token", "value": ""},
+    {"key": "account_id", "value": ""},
+    {"key": "service_id", "value": "1"},
+    {"key": "content_id", "value": "1"},
+    {"key": "checkout_id", "value": ""},
+    {"key": "payment_id", "value": ""},
+    {"key": "transfer_reference", "value": ""}
+  ],
+  "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{student_token}}", "type": "string"}]},
+  "item": [
+    {
+      "name": "1. Configure account and QR (select local image)",
+      "request": {
+        "method": "POST",
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{admin_token}}", "type": "string"}]},
+        "header": [{"key": "Accept", "value": "application/json"}],
+        "url": "{{base_url}}/api/v1/admin/payment-settings",
+        "body": {"mode": "formdata", "formdata": [
+          {"key": "_method", "value": "PUT", "type": "text"},
+          {"key": "account_id", "value": "{{account_id}}", "type": "text"},
+          {"key": "qr_image", "type": "file", "src": ""}
+        ]}
+      }
+    },
+    {"name": "2. Read settings", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/payment-settings"}},
+    {
+      "name": "3. Start checkout (copy data.checkout_id to variable)",
+      "request": {
+        "method": "POST", "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}],
+        "url": "{{base_url}}/api/v1/payments/checkout",
+        "body": {"mode": "raw", "raw": "{\"service_type\":\"teacher_subject\",\"service_id\":{{service_id}}}", "options": {"raw": {"language": "json"}}}
+      }
+    },
+    {"name": "4. Read checkout QR", "request": {"method": "GET", "url": "{{base_url}}/api/v1/payments/checkout/{{checkout_id}}/qr"}},
+    {
+      "name": "5. Submit transfer (select proof; copy data.id to payment_id)",
+      "request": {
+        "method": "POST", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/student/payments",
+        "body": {"mode": "formdata", "formdata": [
+          {"key": "checkout_id", "value": "{{checkout_id}}", "type": "text"},
+          {"key": "provider_reference", "value": "{{transfer_reference}}", "type": "text"},
+          {"key": "proof", "type": "file", "src": ""}
+        ]}
+      }
+    },
+    {"name": "6. Student history", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/student/payments?per_page=20"}},
+    {"name": "7. Payment details", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/student/payments/{{payment_id}}"}},
+    {"name": "8. Private payment proof", "request": {"method": "GET", "url": "{{base_url}}/api/v1/payment-proofs/{{payment_id}}"}},
+    {
+      "name": "9. Administrator pending payments",
+      "request": {
+        "method": "GET", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{admin_token}}", "type": "string"}]},
+        "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/admin/payments?payment_status=PENDING_REVIEW"
+      }
+    },
+    {
+      "name": "10. Confirm after manually verifying transfer",
+      "request": {
+        "method": "POST", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{admin_token}}", "type": "string"}]},
+        "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}],
+        "url": "{{base_url}}/api/v1/admin/payments/{{payment_id}}/review",
+        "body": {"mode": "raw", "raw": "{\"decision\":\"confirm\"}", "options": {"raw": {"language": "json"}}}
+      }
+    },
+    {
+      "name": "Alternative to confirm: reject with reason",
+      "request": {
+        "method": "POST", "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{admin_token}}", "type": "string"}]},
+        "header": [{"key": "Accept", "value": "application/json"}, {"key": "Content-Type", "value": "application/json"}],
+        "url": "{{base_url}}/api/v1/admin/payments/{{payment_id}}/review",
+        "body": {"mode": "raw", "raw": "{\"decision\":\"reject\",\"rejection_reason\":\"Transfer was not received\"}", "options": {"raw": {"language": "json"}}}
+      }
+    },
+    {"name": "11. Student notifications", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/student/notifications"}},
+    {"name": "12. Verify content access after approval", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": "{{base_url}}/api/v1/contents/{{content_id}}/assets"}}
+  ]
+}

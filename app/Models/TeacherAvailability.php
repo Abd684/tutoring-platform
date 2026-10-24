@@ -21,11 +21,11 @@ class TeacherAvailability extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['teacher_id', 'weekday', 'date', 'start_time', 'end_time', 'recurrence_type', 'timezone', 'status'];
+    protected $fillable = ['teacher_id', 'weekday', 'date', 'start_time', 'end_time', 'recurrence_type', 'timezone', 'status', 'price'];
 
     protected function casts(): array
     {
-        return ['date' => 'date', 'weekday' => 'integer'];
+        return ['date' => 'date', 'weekday' => 'integer', 'price' => 'decimal:2'];
     }
 
     public function teacher(): BelongsTo

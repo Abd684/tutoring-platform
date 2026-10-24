@@ -3,10 +3,12 @@
 use App\Models\ContentAsset;
 use App\Models\DeviceTransferRequest;
 use App\Models\Enrollment;
+use App\Models\PaidBooking;
 use App\Models\Student;
 use App\Models\TeacherSubject;
 use App\Models\User;
 use App\Services\DeviceTransfers;
+use App\Services\PaidLessonBookings;
 use App\Services\VideoMetadata;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -25,6 +27,20 @@ Artisan::command('devices:resolve-transfers', function () {
     $this->info("Resolved {$count} device transfer requests.");
 });
 Schedule::command('devices:resolve-transfers')->everyMinute()->withoutOverlapping();
+
+Artisan::command('payments:expire-holds', function () {
+    $count = 0;
+    PaidBooking::where('status', 'HELD')->where('hold_expires_at', '<=', now())
+        ->select('id', 'payment_id')->chunkById(100, function ($bookings) use (&$count) {
+            foreach ($bookings as $booking) {
+                if (app(PaidLessonBookings::class)->expire($booking)) {
+                    $count++;
+                }
+            }
+        });
+    $this->info("Expired {$count} paid booking holds. Payment decisions are unchanged.");
+});
+Schedule::command('payments:expire-holds')->everyMinute()->withoutOverlapping();
 
 Artisan::command('media:probe-durations', function () {
     $count = 0;

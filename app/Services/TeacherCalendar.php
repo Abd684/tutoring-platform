@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Enrollment;
+use App\Models\PaidBooking;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -37,7 +38,10 @@ class TeacherCalendar
         $teacherBusy = (clone $base)->where('teacher_id', $teacher->id)->get(['starts_at', 'ends_at', 'type', 'status']);
         $studentBusy = (clone $base)->where(fn ($q) => $q->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))
             ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))))->get(['starts_at', 'ends_at']);
-        $enrollments = Enrollment::where('student_id', $student->id)->where('teacher_id', $teacher->id)->where('status', 'active')
+        $holds = PaidBooking::holding()->where('starts_at', '<', $to)->where('ends_at', '>', $from);
+        $teacherBusy = $teacherBusy->concat((clone $holds)->where('teacher_id', $teacher->id)->get());
+        $studentBusy = $studentBusy->concat((clone $holds)->where('student_id', $student->id)->get());
+        $enrollments = Enrollment::where('student_id', $student->id)->where('teacher_id', $teacher->id)->where('status', 'active')->where('enrollable_type', '!=', 'paid_booking')
             ->with(['student.user', 'teacher.user'])->get();
         $points = [$from->timestamp, $to->timestamp];
         foreach ($windows as $window) {

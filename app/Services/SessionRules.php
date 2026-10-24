@@ -51,6 +51,9 @@ class SessionRules
                 $fail('enrollment_id', 'Individual sessions require an enrollment and no group.');
             }
             $enrollment = Enrollment::findOrFail($state['enrollment_id']);
+            if ($enrollment->enrollable_type === 'paid_booking') {
+                $fail('enrollment_id', 'Paid lesson sessions are created and rescheduled only by their payment workflow.');
+            }
             Gate::authorize('manage', $enrollment);
             if (! $this->active($enrollment, $start, $end) || (int) $enrollment->teacher_id !== (int) $state['teacher_id']) {
                 $fail('enrollment_id', 'Enrollment is not valid for the session.');
@@ -87,6 +90,9 @@ class SessionRules
         $ids = ! empty($state['enrollment_id']) ? [Enrollment::findOrFail($state['enrollment_id'])->student_id]
             : Group::findOrFail($state['group_id'])->groupEnrollments()->where('status', 'active')->with('enrollment')->get()->pluck('enrollment.student_id')->filter()->all();
         Student::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
+        if (app(PaidLessonBookings::class)->holdConflicts($state['teacher_id'], $ids, $state['starts_at'], $state['ends_at'])) {
+            return true;
+        }
 
         return $query->where(fn ($q) => $q->whereHas('enrollment', fn ($q) => $q->whereIn('student_id', $ids))
             ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->whereIn('student_id', $ids))))->exists();
