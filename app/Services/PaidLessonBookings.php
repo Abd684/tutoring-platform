@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AuditLog;
 use App\Models\Enrollment;
+use App\Models\Individual;
 use App\Models\PaidBooking;
 use App\Models\Payment;
 use App\Models\RefundRequest;
@@ -11,6 +12,7 @@ use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeacherAvailability;
+use App\Models\TeacherSubject;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -53,8 +55,7 @@ class PaidLessonBookings
         return Session::whereIn('status', ['scheduled', 'ongoing'])->where('starts_at', '<', $end)->where('ends_at', '>', $start)
             ->when($exceptSession, fn ($q) => $q->whereKeyNot($exceptSession))
             ->where(fn ($q) => $q->where('teacher_id', $teacherId)
-                ->orWhereHas('enrollment', fn ($q) => $q->where('student_id', $studentId))
-                ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $studentId))))->exists();
+                ->orWhere(fn ($q) => $q->forStudent($studentId)))->exists();
     }
 
     /** Must run inside a transaction. All paid schedule writers use this lock order. */
@@ -76,7 +77,14 @@ class PaidLessonBookings
     public function fulfill(PaidBooking $booking, Enrollment $enrollment): void
     {
         $availability = TeacherAvailability::whereKey($booking->availability_id)->lockForUpdate()->firstOrFail();
-        $available = $booking->starts_at->isFuture() && $availability->status === 'active'
+        $courseId = $booking->teacher_subject_id;
+        if (! $courseId) {
+            $courses = TeacherSubject::where('teacher_id', $booking->teacher_id)->pluck('id');
+            abort_unless($courses->count() === 1, 409, 'Assign a subject to this legacy paid booking before approval.');
+            $courseId = $courses->first();
+        }
+        $course = TeacherSubject::where('teacher_id', $booking->teacher_id)->findOrFail($courseId);
+        $available = $booking->starts_at->isFuture() && $availability->status === 'active' && $course->status === 'active'
             && $availability->teacher?->status === 'active' && $availability->teacher?->user?->status === 'active'
             && $booking->student?->status === 'active' && $booking->student?->user?->status === 'active'
             && app(AvailabilityBooking::class)->contains($availability, $booking->starts_at, $booking->ends_at)
@@ -87,10 +95,15 @@ class PaidLessonBookings
             return;
         }
         $enrollment->update(['status' => 'active', 'starts_at' => $booking->starts_at, 'expires_at' => $booking->ends_at]);
+        $individual = $booking->individual_id ? Individual::findOrFail($booking->individual_id)
+            : Individual::create(['student_id' => $booking->student_id, 'teacher_subject_id' => $courseId, 'status' => 'active']);
+        abort_unless((int) $individual->student_id === (int) $booking->student_id
+            && (int) $individual->teacherSubject->teacher_id === (int) $booking->teacher_id
+            && app(SessionRules::class)->active($individual, $booking->starts_at, $booking->ends_at), 409, 'Individual teaching does not match booking.');
         $session = Session::create(['teacher_id' => $booking->teacher_id, 'availability_id' => $booking->availability_id,
-            'type' => 'INDIVIDUAL', 'enrollment_id' => $enrollment->id, 'group_id' => null,
+            'type' => 'individual', 'type_id' => $individual->id,
             'starts_at' => $booking->starts_at, 'ends_at' => $booking->ends_at, 'capacity' => 1, 'status' => 'scheduled']);
-        $booking->update(['status' => 'CONFIRMED', 'session_id' => $session->id, 'cancelled_by_role' => null]);
+        $booking->update(['teacher_subject_id' => $courseId, 'individual_id' => $individual->id, 'status' => 'CONFIRMED', 'session_id' => $session->id, 'cancelled_by_role' => null]);
     }
 
     public function reschedule(PaidBooking $seed, array $data, int $userId): PaidBooking

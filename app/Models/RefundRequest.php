@@ -9,11 +9,11 @@ class RefundRequest extends Model
 {
     protected $guarded = [];
 
-    protected $hidden = ['active_payment_id'];
+    protected $hidden = ['active_payment_id', 'refund_proof_path', 'original_proof_path'];
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2', 'reviewed_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['payout_details_required' => 'boolean', 'refund_transferred_at' => 'datetime', 'original_transfer_date' => 'datetime', 'amount' => 'decimal:2', 'reviewed_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
     public function payment(): BelongsTo

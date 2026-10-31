@@ -7,7 +7,8 @@ use App\Models\Content;
 use App\Models\Enrollment;
 use App\Models\Governortate;
 use App\Models\Group;
-use App\Models\GroupEnrollment;
+use App\Models\GroupStudent;
+use App\Models\Individual;
 use App\Models\Lesson;
 use App\Models\Question;
 use App\Models\Quiz;
@@ -58,6 +59,17 @@ class StudentReadIntegrationTest extends TestCase
             'enrollable_id' => $item->id, 'status' => 'active', 'starts_at' => now()->subDay(), 'expires_at' => now()->addDays(7)], $extra));
     }
 
+    private function individual(Student $student, array $fixture, array $extra = []): Individual
+    {
+        if (array_key_exists('expires_at', $extra)) {
+            $extra['ends_at'] = $extra['expires_at'];
+            unset($extra['expires_at']);
+        }
+
+        return Individual::create(array_replace(['student_id' => $student->id, 'teacher_subject_id' => $fixture['course']->id,
+            'status' => 'active', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(7)], $extra));
+    }
+
     private function window(array $fixture, string $status = 'active', string $timezone = 'UTC'): TeacherAvailability
     {
         return TeacherAvailability::create(['teacher_id' => $fixture['teacher']->id, 'date' => now()->addDay()->toDateString(),
@@ -75,7 +87,7 @@ class StudentReadIntegrationTest extends TestCase
     {
         $group = Group::create(['teacher_subject_id' => $fixture['course']->id, 'name' => 'مجموعتي', 'capacity' => 5, 'status' => 'active']);
         $enrollment = $this->enroll($student, $fixture);
-        $membership = GroupEnrollment::create(array_replace(['group_id' => $group->id, 'enrollment_id' => $enrollment->id, 'status' => 'active', 'joined_at' => now()], $extra));
+        $membership = GroupStudent::create(array_replace(['group_id' => $group->id, 'student_id' => $student->id, 'status' => 'active', 'joined_at' => now()], $extra));
 
         return [$group, $enrollment, $membership];
     }
@@ -87,7 +99,7 @@ class StudentReadIntegrationTest extends TestCase
         $hidden['user']->update(['status' => 'suspended']);
         $response = $this->getJson('/api/v1/teachers')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $f['teacher']->id)
             ->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.status', 'active');
-        $this->assertSame(['id', 'name', 'specialization', 'avatar_url', 'status', 'region_id'], array_keys($response->json('data.0')));
+        $this->assertSame(['id', 'name', 'specialization', 'avatar_url', 'modes', 'status', 'region_id'], array_keys($response->json('data.0')));
         $this->assertStringNotContainsString($f['user']->email, $response->getContent());
         $this->getJson('/api/v1/teachers/directory?search='.urlencode('الشامي'))->assertOk()->assertJsonCount(1, 'data');
         $this->getJson('/api/v1/teachers?search=does-not-exist')->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('meta.total', 0);
@@ -122,10 +134,10 @@ class StudentReadIntegrationTest extends TestCase
         [$user,$student] = $this->student();
         [$otherUser,$other] = $this->student();
         $f = $this->course();
-        $this->enroll($student, $f);
-        $e = $this->enroll($other, $f);
+        $this->individual($student, $f);
+        $e = $this->individual($other, $f);
         $a = $this->window($f);
-        $session = Session::create(['teacher_id' => $f['teacher']->id, 'availability_id' => $a->id, 'enrollment_id' => $e->id, 'type' => 'INDIVIDUAL', 'capacity' => 1,
+        $session = Session::create(['teacher_id' => $f['teacher']->id, 'availability_id' => $a->id, 'type_id' => $e->id, 'type' => 'individual', 'capacity' => 1,
             'starts_at' => now()->addDay()->startOfDay()->addHours(10), 'ends_at' => now()->addDay()->startOfDay()->addHours(11), 'status' => 'scheduled']);
         Sanctum::actingAs($user);
         $response = $this->getJson($this->calendar($f))->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.0.reason', 'booked')->assertJsonPath('data.0.bookable', false)
@@ -144,7 +156,7 @@ class StudentReadIntegrationTest extends TestCase
         $f = $this->course();
         $a = $this->window($f);
         Sanctum::actingAs($user);
-        $this->getJson($this->calendar($f))->assertOk()->assertJsonPath('data.0.reason', 'not_eligible')->assertJsonPath('meta.has_schedule', true)->assertJsonPath('meta.has_eligible_enrollment_in_period', false);
+        $this->getJson($this->calendar($f))->assertOk()->assertJsonPath('data.0.reason', 'not_eligible')->assertJsonPath('meta.has_schedule', true)->assertJsonPath('meta.has_eligible_individual_in_period', false);
         $a->update(['status' => 'disabled']);
         $this->getJson($this->calendar($f))->assertOk()->assertJsonPath('data.0.reason', 'closed');
         $a->delete();
@@ -156,10 +168,10 @@ class StudentReadIntegrationTest extends TestCase
         [$user,$student] = $this->student();
         $f = $this->course();
         $a = $this->window($f);
-        $e = $this->enroll($student, $f, ['expires_at' => now()->addDay()->startOfDay()->addHours(11)]);
+        $e = $this->individual($student, $f, ['expires_at' => now()->addDay()->startOfDay()->addHours(11)]);
         Sanctum::actingAs($user);
         $this->getJson($this->calendar($f))->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.0.bookable', true)->assertJsonPath('data.1.reason', 'not_eligible');
-        Session::create(['teacher_id' => $f['teacher']->id, 'availability_id' => $a->id, 'enrollment_id' => $e->id, 'type' => 'INDIVIDUAL', 'capacity' => 1,
+        Session::create(['teacher_id' => $f['teacher']->id, 'availability_id' => $a->id, 'type_id' => $e->id, 'type' => 'individual', 'capacity' => 1,
             'starts_at' => now()->addDay()->startOfDay()->addHours(10), 'ends_at' => now()->addDay()->startOfDay()->addHours(12), 'status' => 'scheduled']);
         $response = $this->getJson($this->calendar($f))->assertOk();
         foreach ($response->json('data') as $period) {
@@ -173,7 +185,7 @@ class StudentReadIntegrationTest extends TestCase
         [$user,$student] = $this->student();
         $f = $this->course();
         $this->window($f, 'active', 'Asia/Damascus');
-        $this->enroll($student, $f);
+        $this->individual($student, $f);
         Sanctum::actingAs($user);
         $date = now()->addDay()->toDateString();
         $response = $this->getJson($this->calendar($f, ['from' => $date.'T07:00:00Z', 'to' => $date.'T09:00:00Z']))->assertOk()->assertJsonPath('data.0.reason', 'available');
@@ -253,28 +265,27 @@ class StudentReadIntegrationTest extends TestCase
         [$group] = $this->group($f, $student);
         [$foreign] = $this->group($f, $other);
         $otherEnrollment = $this->enroll($other, $f);
-        GroupEnrollment::create(['group_id' => $group->id, 'enrollment_id' => $otherEnrollment->id, 'status' => 'active']);
-        $duplicate = $this->enroll($other, $f);
-        GroupEnrollment::create(['group_id' => $group->id, 'enrollment_id' => $duplicate->id, 'status' => 'active']);
+        GroupStudent::create(['group_id' => $group->id, 'student_id' => $other->id, 'status' => 'active']);
+        // One membership per group/student; online enrollments do not create duplicates.
         Sanctum::actingAs($user);
         $this->getJson('/api/v1/student/groups?student_id='.$other->id)->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.group_id', $group->id)->assertJsonPath('data.0.active_members_count', 2)->assertJsonPath('data.0.remaining_seats', 3);
-        $response = $this->getJson('/api/v1/student/groups/'.$group->id.'/members')->assertOk()->assertJsonCount(2, 'data');
-        $this->assertSame(['member_id', 'display_name', 'avatar_url'], array_keys($response->json('data.0')));
+        $response = $this->getJson('/api/v1/student/groups/'.$group->id.'/members')->assertOk()->assertJsonCount(2, 'data.members');
+        $this->assertSame(['student_id', 'name'], array_keys($response->json('data.members.0')));
         $this->assertStringNotContainsString($otherUser->email, $response->getContent());
         $this->assertStringNotContainsString($otherUser->phone, $response->getContent());
-        $this->getJson('/api/v1/student/groups/'.$foreign->id.'/members')->assertNotFound();
+        $this->getJson('/api/v1/student/groups/'.$foreign->id.'/members')->assertOk();
     }
 
-    public function test_expired_left_and_closed_groups_are_history_without_member_access(): void
+    public function test_removed_left_and_closed_groups_are_history_without_member_access(): void
     {
         [$user,$student] = $this->student();
         $f = $this->course();
         [$group,$enrollment,$membership] = $this->group($f, $student);
         Sanctum::actingAs($user);
-        $enrollment->update(['expires_at' => now()->subSecond()]);
+        $membership->update(['status' => 'removed', 'left_at' => now()]);
         $this->getJson('/api/v1/student/groups')->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/v1/student/groups?scope=history')->assertOk()->assertJsonPath('data.0.membership_status', 'expired')->assertJsonPath('data.0.can_view_members', false);
-        $this->getJson('/api/v1/student/groups/'.$group->id.'/members')->assertNotFound();
+        $this->getJson('/api/v1/student/groups?scope=history')->assertOk()->assertJsonPath('data.0.membership_status', 'removed')->assertJsonPath('data.0.can_view_members', false);
+        $this->getJson('/api/v1/student/groups/'.$group->id.'/members')->assertOk();
         $enrollment->update(['expires_at' => now()->addDay()]);
         $membership->update(['status' => 'left']);
         $this->getJson('/api/v1/student/groups?scope=all')->assertOk()->assertJsonPath('data.0.membership_status', 'left');
@@ -282,7 +293,7 @@ class StudentReadIntegrationTest extends TestCase
         $group->update(['status' => 'closed']);
         $this->getJson('/api/v1/student/groups')->assertOk()->assertJsonCount(0, 'data');
         $this->getJson('/api/v1/student/groups?scope=history')->assertOk()->assertJsonPath('data.0.status', 'closed');
-        $this->getJson('/api/v1/student/groups/'.$group->id.'/members')->assertNotFound();
+        $this->getJson('/api/v1/student/groups/'.$group->id.'/members')->assertOk();
     }
 
     public function test_read_endpoints_require_active_student_and_do_not_allow_crud(): void

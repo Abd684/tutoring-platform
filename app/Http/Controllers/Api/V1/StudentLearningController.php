@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Content;
 use App\Models\ContentCompletion;
+use App\Models\LessonCompletion;
+use App\Models\QuizAttempt;
+use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use App\Models\User;
@@ -17,12 +20,21 @@ class StudentLearningController extends ApiController
     public function complete(Request $request, Content $content, ContentAccess $access)
     {
         $this->authorize('accessStudent', Content::class);
-        $this->authorize('access', $content);
-        $course = $content->lesson->unit->teacherSubject;
-        abort_unless($access->published($course)->whereKey($content->id)->exists(), 404);
-        $completion = ContentCompletion::firstOrCreate(['student_id' => $request->user()->student->id, 'content_id' => $content->id], ['completed_at' => now()]);
 
-        return $this->success([...$this->progressData($request, $course, $access), 'content_id' => $content->id, 'completed' => true, 'completed_at' => $completion->completed_at->toIso8601String()], 'Content completed successfully.');
+        return DB::transaction(function () use ($request, $content, $access) {
+            $course = $content->lesson->unit->teacherSubject;
+            Teacher::whereKey($course->teacher_id)->lockForUpdate()->firstOrFail();
+            Student::whereKey($request->user()->student->id)->lockForUpdate()->firstOrFail();
+            $this->authorize('access', $content);
+            abort_unless($access->published($course)->whereKey($content->id)->exists(), 404);
+            $completion = ContentCompletion::firstOrCreate(['student_id' => $request->user()->student->id, 'content_id' => $content->id], ['completed_at' => now()]);
+            $required = $content->lesson->contents()->where('status', 'published')->where('type', '!=', 'quiz')->pluck('id');
+            if ($required->isNotEmpty() && ContentCompletion::where('student_id', $request->user()->student->id)->whereIn('content_id', $required)->count() === $required->count()) {
+                LessonCompletion::firstOrCreate(['student_id' => $request->user()->student->id, 'lesson_id' => $content->lesson_id], ['completed_at' => now()]);
+            }
+
+            return $this->success([...$this->progressData($request, $course, $access), 'content_id' => $content->id, 'completed' => true, 'completed_at' => $completion->completed_at->toIso8601String()]);
+        });
     }
 
     public function progress(Request $request, TeacherSubject $teacherSubject, ContentAccess $access)
@@ -66,7 +78,7 @@ class StudentLearningController extends ApiController
             'units_count' => $units->count(), 'lessons_count' => $lessons->count(), 'contents_count' => $contents->count(),
             'progress' => $this->progressData($request, $teacherSubject, $access),
             'units' => $units->map(fn ($unit) => ['id' => $unit->id, 'title' => $unit->title, 'price' => $unit->price,
-                'lessons' => $unit->lessons->map(fn ($lesson) => ['id' => $lesson->id, 'title' => $lesson->title,
+                'lessons' => $unit->lessons->map(fn ($lesson) => ['id' => $lesson->id, 'title' => $lesson->title, 'price' => $lesson->price,
                     'contents' => $lesson->contents->map(fn ($content) => [
                         ...$content->only(['id', 'type', 'title', 'description', 'learning_objectives', 'price']),
                         'duration_seconds' => $content->assets->where('status', 'active')->sortByDesc('id')->first(fn ($asset) => $asset->videoAsset !== null)?->videoAsset?->duration_seconds,
@@ -91,6 +103,8 @@ class StudentLearningController extends ApiController
 
         return $this->success(['id' => $teacher->id, 'name' => $teacher->user->name, 'avatar_url' => $teacher->user->avatar_url,
             'bio' => $teacher->bio, 'specialization' => $teacher->specialization, 'experience_years' => $teacher->experience_years,
+            'completed_lessons_count' => LessonCompletion::whereHas('lesson.unit.teacherSubject', fn ($q) => $q->where('teacher_id', $teacher->id))->count(),
+            'graded_quiz_attempts_count' => QuizAttempt::whereNotNull('score')->whereIn('status', ['submitted', 'graded'])->whereHas('quiz.content.lesson.unit.teacherSubject', fn ($q) => $q->where('teacher_id', $teacher->id))->count(),
             'students_count' => $students, 'completion_rate' => $total ? round($completed * 100 / $total, 2) : null]);
     }
 

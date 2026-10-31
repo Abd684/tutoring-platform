@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Attendance;
-use App\Models\GroupEnrollment;
 use App\Models\Session;
+use App\Models\Teacher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +27,7 @@ class AttendanceController extends ApiController
 
         $attendance = Attendance::create($request->validate([
             'session_id' => ['required', 'integer', 'exists:sessions,id'],
-            'enrollment_id' => ['required', 'integer', 'exists:enrollments,id'],
+            'student_id' => ['required', 'integer', 'exists:students,id'],
             'status' => ['required', 'string', 'max:50'],
             'check_in_at' => ['nullable', 'date'],
             'check_out_at' => ['nullable', 'date', 'after_or_equal:check_in_at'],
@@ -40,120 +40,34 @@ class AttendanceController extends ApiController
     /** POST /api/v1/sessions/{id}/attendance */
     public function recordForSession(Request $request, int $id): JsonResponse
     {
-        $teacher = $request->user()?->teacher;
-        if (! $teacher) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Teacher account not found.',
-                'code' => 'TEACHER_PROFILE_NOT_FOUND',
-            ], 403);
-        }
-
-        $validated = $request->validate([
-            'records' => ['required', 'array', 'min:1'],
-            'records.*.enrollment_id' => ['required', 'integer', 'exists:enrollments,id'],
-            'records.*.status' => ['required', Rule::in(['present', 'absent', 'late', 'excused'])],
-            'records.*.check_in_at' => ['nullable', 'date'],
-            'records.*.check_out_at' => ['nullable', 'date'],
-            'records.*.note' => ['nullable', 'string'],
-        ]);
-
         $session = Session::findOrFail($id);
-
-        if ((int) $session->teacher_id !== (int) $teacher->id) {
-            return response()->json([
-                'status' => false,
-                'message' => 'This session does not belong to the authenticated teacher.',
-                'code' => 'SESSION_FORBIDDEN',
-            ], 403);
-        }
-
         $this->authorize('recordAttendance', $session);
+        $data = $request->validate(['records' => ['required', 'array', 'min:1'],
+            'records.*.student_id' => ['required', 'distinct', 'integer', 'exists:students,id'],
+            'records.*.enrollment_id' => ['prohibited'],
+            'records.*.status' => ['required', Rule::in(['present', 'absent', 'late', 'excused'])],
+            'records.*.check_in_at' => ['nullable', 'date'], 'records.*.check_out_at' => ['nullable', 'date'],
+            'records.*.note' => ['nullable', 'string', 'max:10000']]);
 
-        if ($session->status === 'cancelled') {
-            return response()->json([
-                'status' => false,
-                'message' => 'Attendance cannot be recorded for a cancelled session.',
-                'code' => 'SESSION_CANCELLED',
-            ], 422);
-        }
-
-        if ($session->type === 'INDIVIDUAL') {
-            if ($session->enrollment_id === null) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'The individual session has no booked enrollment.',
-                    'code' => 'SESSION_NOT_BOOKED',
-                ], 422);
+        return DB::transaction(function () use ($session, $data) {
+            Teacher::whereKey($session->teacher_id)->lockForUpdate()->firstOrFail();
+            $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            abort_if($session->status === 'cancelled', 422, 'Attendance cannot be recorded for a cancelled session.');
+            $allowed = $session->participantIds();
+            foreach ($data['records'] as $record) {
+                abort_unless(in_array((int) $record['student_id'], $allowed, true), 422, 'Student does not belong to this session.');
+                abort_if(! empty($record['check_in_at']) && ! empty($record['check_out_at'])
+                    && strtotime($record['check_out_at']) < strtotime($record['check_in_at']), 422, 'Check-out must follow check-in.');
             }
-            $allowedEnrollmentIds = collect([(int) $session->enrollment_id]);
-        } elseif ($session->type === 'GROUP') {
-            if ($session->group_id === null) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'The group session has no group assigned.',
-                    'code' => 'SESSION_GROUP_MISSING',
-                ], 422);
-            }
-
-            $allowedEnrollmentIds = GroupEnrollment::query()
-                ->where('group_id', $session->group_id)
-                ->where('status', 'active')
-                ->pluck('enrollment_id')
-                ->map(fn ($value) => (int) $value);
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Unsupported session type.',
-                'code' => 'SESSION_TYPE_INVALID',
-            ], 422);
-        }
-
-        foreach ($validated['records'] as $record) {
-            if (! $allowedEnrollmentIds->contains((int) $record['enrollment_id'])) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'One of the enrollments does not belong to this session.',
-                    'code' => 'ENROLLMENT_NOT_IN_SESSION',
-                    'enrollment_id' => (int) $record['enrollment_id'],
-                ], 422);
-            }
-
-            if (! empty($record['check_in_at']) && ! empty($record['check_out_at'])
-                && strtotime($record['check_out_at']) < strtotime($record['check_in_at'])) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'check_out_at must be after or equal to check_in_at.',
-                    'code' => 'INVALID_ATTENDANCE_TIME',
-                    'enrollment_id' => (int) $record['enrollment_id'],
-                ], 422);
-            }
-        }
-
-        $attendance = DB::transaction(function () use ($validated, $session) {
             $saved = collect();
-
-            foreach ($validated['records'] as $record) {
-                $model = Attendance::updateOrCreate(
-                    [
-                        'session_id' => $session->id,
-                        'enrollment_id' => $record['enrollment_id'],
-                    ],
-                    [
-                        'status' => $record['status'],
-                        'check_in_at' => $record['check_in_at'] ?? null,
-                        'check_out_at' => $record['check_out_at'] ?? null,
-                        'note' => $record['note'] ?? null,
-                    ]
-                );
-
-                $saved->push($model->fresh()->load('enrollment.student'));
+            foreach ($data['records'] as $record) {
+                $saved->push(Attendance::updateOrCreate(['session_id' => $session->id, 'student_id' => $record['student_id']],
+                    ['status' => $record['status'], 'check_in_at' => $record['check_in_at'] ?? null,
+                        'check_out_at' => $record['check_out_at'] ?? null, 'note' => $record['note'] ?? null])->load('student'));
             }
 
-            return $saved;
+            return $this->success($saved, 'Attendance recorded successfully.');
         });
-
-        return $this->success($attendance, 'Attendance recorded successfully.');
     }
 
     public function show(Attendance $attendance): JsonResponse
@@ -169,7 +83,7 @@ class AttendanceController extends ApiController
 
         $attendance->update($request->validate([
             'session_id' => ['sometimes', 'integer', 'exists:sessions,id'],
-            'enrollment_id' => ['sometimes', 'integer', 'exists:enrollments,id'],
+            'student_id' => ['sometimes', 'integer', 'exists:students,id'],
             'status' => ['sometimes', 'string', 'max:50'],
             'check_in_at' => ['sometimes', 'nullable', 'date'],
             'check_out_at' => ['sometimes', 'nullable', 'date', 'after_or_equal:check_in_at'],
@@ -190,7 +104,7 @@ class AttendanceController extends ApiController
 
     public function percentage(Request $request): JsonResponse
     {
-        $this->authorize('accessStudent', \App\Models\Attendance::class);
+        $this->authorize('accessStudent', Attendance::class);
 
         $student = $request->user()->student;
 
@@ -201,9 +115,7 @@ class AttendanceController extends ApiController
         }
 
         $query = Attendance::query()
-            ->whereHas('enrollment', function ($query) use ($student) {
-                $query->where('student_id', $student->id);
-            })
+            ->where('student_id', $student->id)
             ->whereHas('session', function ($query) {
                 $query->where('ends_at', '<=', now());
             });
@@ -231,5 +143,4 @@ class AttendanceController extends ApiController
             ],
         ]);
     }
-
 }

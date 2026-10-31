@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Enrollment;
 use App\Models\Governortate;
 use App\Models\Group;
+use App\Models\Individual;
 use App\Models\Region;
 use App\Models\Session;
 use App\Models\Student;
@@ -42,14 +43,14 @@ class TeacherFrontendIntegrationTest extends TestCase
         return SubscriptionPlan::create(array_replace(['name' => 'Monthly', 'price' => 10, 'billing_cycle' => 'monthly', 'max_ai_usage' => 5, 'max_students' => 2, 'max_group_size' => 3, 'status' => 'active'], $extra));
     }
 
-    public function test_registration_keeps_legacy_message_and_does_not_issue_tokens(): void
+    public function test_registration_issues_tokens_but_pending_teacher_cannot_use_teaching_routes(): void
     {
         $data = ['name' => 'QA Teacher', 'email' => 'qa@example.invalid', 'phone' => 'qa123', 'password' => 'Password123!', 'password_confirmation' => 'Password123!', 'region_id' => $this->region()->id];
-        $this->postJson('/api/v1/teacher/register', $data)->assertCreated()->assertExactJson(['message' => 'Teacher registered successfully']);
+        $this->postJson('/api/v1/teacher/register', $data)->assertCreated()->assertJsonPath('user.teacher_status', 'pending_review')->assertJsonPath('user.can_teach', false)->assertJsonStructure(['access_token', 'refresh_token']);
         $this->assertDatabaseHas('teachers', ['status' => 'pending_review']);
-        $this->assertDatabaseCount('personal_access_tokens', 0);
+        $this->assertDatabaseCount('personal_access_tokens', 1);
         $this->postJson('/api/v1/teacher/register', $data)->assertUnprocessable()->assertJsonValidationErrors(['email', 'phone']);
-        $this->postJson('/api/v1/teacher/login', ['email' => $data['email'], 'password' => $data['password']])->assertOk()->assertJsonPath('user.teacher_status', 'pending_review');
+        $this->postJson('/api/v1/teacher/login', ['phone' => $data['phone'], 'password' => $data['password']])->assertOk()->assertJsonPath('user.teacher_status', 'pending_review');
     }
 
     public function test_me_preserves_top_level_user_and_nested_teacher_without_secrets(): void
@@ -168,8 +169,8 @@ class TeacherFrontendIntegrationTest extends TestCase
         for ($i = 0; $i < 2; $i++) {
             Enrollment::create(['teacher_id' => $t->id, 'student_id' => $student->id, 'enrollable_type' => 'teacher_subject', 'enrollable_id' => $course->id, 'status' => 'active']);
         }
-        Session::create(['teacher_id' => $t->id, 'enrollment_id' => Enrollment::where('teacher_id', $t->id)->firstOrFail()->id,
-            'type' => 'INDIVIDUAL', 'capacity' => 1, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'status' => 'scheduled']);
+        Session::create(['teacher_id' => $t->id, 'type_id' => Individual::create(['student_id' => $student->id, 'teacher_subject_id' => $course->id, 'status' => 'active'])->id,
+            'type' => 'individual', 'capacity' => 1, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'status' => 'scheduled']);
         $p = $this->plan();
         TeacherSubscription::create(['teacher_id' => $t->id, 'plan_id' => $p->id, 'starts_at' => now()->subDay(), 'ends_at' => now()->addDay(), 'status' => 'active']);
         Sanctum::actingAs($u);

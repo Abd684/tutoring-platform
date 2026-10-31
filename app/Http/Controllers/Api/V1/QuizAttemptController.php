@@ -132,7 +132,7 @@ class QuizAttemptController extends ApiController
             ));
             $attempt->update([
                 'submitted_at' => now(),
-                'status' => 'submitted',
+                'status' => $attempt->quiz->quiz_type === 'simple' && ! $pending ? 'graded' : 'submitted',
                 'score' => $score,
             ]);
 

@@ -40,8 +40,7 @@ class AvailableSessionController extends ApiController
                     ->where('starts_at', '<', $end->copy()->setTimezone(config('app.timezone')))
                     ->where('ends_at', '>', $start->copy()->setTimezone(config('app.timezone')))
                     ->where(fn ($q) => $q->where('teacher_id', $teacher->id)
-                        ->orWhereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))
-                        ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))))->get();
+                        ->orWhere(fn ($q) => $q->forStudent($student->id)))->get();
                 $busy = $busy->concat(PaidBooking::holding()->where('starts_at', '<', $end->copy()->setTimezone(config('app.timezone')))->where('ends_at', '>', $start->copy()->setTimezone(config('app.timezone')))
                     ->where(fn ($q) => $q->where('teacher_id', $teacher->id)->orWhere('student_id', $student->id))->get());
                 foreach ($busy as $session) {
@@ -66,11 +65,11 @@ class AvailableSessionController extends ApiController
                         continue;
                     }
                     $candidate = new Session(['teacher_id' => $teacher->id, 'starts_at' => $left, 'ends_at' => $right]);
-                    $ids = $eligibility->enrollments($student->id, $candidate)->orderBy('id')->pluck('id');
+                    $ids = $eligibility->individuals($student->id, $candidate)->orderBy('id')->pluck('id');
                     if ($ids->isNotEmpty()) {
                         $slots->push(['availability_id' => $availability->id, 'teacher_id' => $teacher->id,
                             'starts_at' => $left->copy()->utc()->toIso8601String(), 'ends_at' => $right->copy()->utc()->toIso8601String(),
-                            'eligible_enrollment_ids' => $ids]);
+                            'eligible_individual_ids' => $ids]);
                     }
                 }
             }

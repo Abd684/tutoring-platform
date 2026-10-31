@@ -1,0 +1,501 @@
+{
+  "note": "Local changes for this delivery; DESIGN.md excluded as pre-existing. No commit or live migration executed.",
+  "files": [
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Admin/AccountsController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Admin/AuthController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Admin/ContentController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Admin/GroupsController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Admin/SessionsController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/AdminController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/AnswerController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/AttendanceController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/AuthController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/AvailabilityBookingController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/AvailableSessionController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/GroupController.php"
+    },
+    {
+      "status": " D",
+      "path": "app/Http/Controllers/Api/V1/GroupEnrollmentController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/IndividualBookingController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/PaidLessonController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/QuizAttemptController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/QuizController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/RefundController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/SessionController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/ShamCashPaymentController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentAuthController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentBookingController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentEnrollmentController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentGroupReadController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentLearningController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentProfileController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentQuizReadController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/TeacherAuthController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/TeacherCalendarController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/TeacherDirectoryController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Middleware/RoleMiddleware.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Attendance.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Enrollment.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Group.php"
+    },
+    {
+      "status": " D",
+      "path": "app/Models/GroupEnrollment.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Lesson.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Notification.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/PaidBooking.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/PaymentCheckout.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Quiz.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/RefundRequest.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Session.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/Student.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/TeacherSubject.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Policies/AttendancePolicy.php"
+    },
+    {
+      "status": " D",
+      "path": "app/Policies/GroupEnrollmentPolicy.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Policies/QuizPolicy.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Policies/SessionPolicy.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Providers/AppServiceProvider.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/AvailabilityBooking.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/ContentAccess.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/GroupMembershipRules.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/IndividualBooking.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/PaidLessonBookings.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/SessionEligibility.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/SessionRules.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/ShamCashPayments.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/StudentGroupAccess.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Services/TeacherCalendar.php"
+    },
+    {
+      "status": " M",
+      "path": "bootstrap/app.php"
+    },
+    {
+      "status": " M",
+      "path": "routes/api.php"
+    },
+    {
+      "status": " M",
+      "path": "routes/console.php"
+    },
+    {
+      "status": " M",
+      "path": "routes/student.php"
+    },
+    {
+      "status": " M",
+      "path": "routes/teacher.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/AdminDashboardTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/CriticalBusinessRulesTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/DeviceTransferApprovalTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/PaidBookingRefundTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/PolymorphicEnrollmentTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/ReleaseMergeCompatibilityTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/StudentFeaturesTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/StudentReadIntegrationTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/StudentSessionFlowTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/TeacherAuthTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/TeacherFrontendIntegrationTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/TeacherGroupListingTest.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/TeacherSubjectManagementTest.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/GroupStudentController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/IndividualController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/IndividualOfferController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/LegacyPricingAllocationController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/OnlineLearningController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/PhysicalAvailabilityController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/StudentNotificationController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/TeacherGroupMembersController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/TeachingContentController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Models/GroupStudent.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Models/Individual.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Models/IndividualOffer.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Models/LessonCompletion.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Models/PaymentLessonAllocation.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Models/RefundLessonItem.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Policies/GroupStudentPolicy.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Policies/IndividualOfferPolicy.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Policies/IndividualPolicy.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Policies/LessonCompletionPolicy.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Policies/PaymentLessonAllocationPolicy.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Policies/RefundLessonItemPolicy.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Services/OnlinePricing.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Services/OnlineRefunds.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Services/TeachingScope.php"
+    },
+    {
+      "status": "??",
+      "path": "config/teaching.php"
+    },
+    {
+      "status": "??",
+      "path": "database/migrations/2026_10_31_000001_use_phone_for_authentication.php"
+    },
+    {
+      "status": "??",
+      "path": "database/migrations/2026_10_31_000002_separate_teaching_sessions_from_enrollments.php"
+    },
+    {
+      "status": "??",
+      "path": "database/migrations/2026_10_31_000003_complete_online_and_cash_teaching.php"
+    },
+    {
+      "status": "??",
+      "path": "docs/APIS_FULL_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/API_OPERATIONS_CURRENT.json"
+    },
+    {
+      "status": "??",
+      "path": "docs/API_ROUTES_CURRENT.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/DATABASE_REFERENCE_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/DATABASE_SCHEMA_CURRENT.json"
+    },
+    {
+      "status": "??",
+      "path": "docs/FRONTEND_CONTRACT_FINAL_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/FRONTEND_HANDOFF_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/FRONTEND_REQUIREMENTS_REVIEW_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/IMPLEMENTATION_CHANGELOG_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/LIQAA_OPENAPI_2026-10-31.json"
+    },
+    {
+      "status": "??",
+      "path": "docs/LIQAA_POSTMAN_2026-10-31.json"
+    },
+    {
+      "status": "??",
+      "path": "docs/PHONE_AUTH.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/PRODUCT_DECISIONS_2026-10-31_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/TEACHING_SESSIONS.md"
+    },
+    {
+      "status": "??",
+      "path": "tests/Feature/OnlineUpgradeAccessTest.php"
+    },
+    {
+      "status": "??",
+      "path": "tests/Feature/PhoneAuthenticationTest.php"
+    },
+    {
+      "status": "??",
+      "path": "tests/Feature/TeachingMigrationTest.php"
+    }
+  ]
+}

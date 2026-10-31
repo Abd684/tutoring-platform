@@ -2,143 +2,170 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\AuditLog;
 use App\Models\Payment;
 use App\Models\RefundRequest;
-use App\Models\Session;
-use App\Services\PaidLessonBookings;
-use App\Services\ShamCashPayments;
-use Illuminate\Database\UniqueConstraintViolationException;
+use App\Services\OnlinePricing;
+use App\Services\OnlineRefunds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class RefundController extends ApiController
 {
-    public function store(Request $request)
+    private function payload(RefundRequest $r): array
     {
-        $data = $request->validate(['payment_id' => ['required', 'integer'],
-            'account_id' => ['required', 'string', 'max:255', 'regex:/\S/u'],
-            'reason_code' => ['required', 'in:hold_expired,teacher_cancelled,service_unavailable,exceptional'],
-            'reason' => ['required', 'string', 'max:2000', 'regex:/\S/u']]);
-        $seed = Payment::whereKey($data['payment_id'])->where('payer_id', $request->user()->id)->firstOrFail();
-
-        return DB::transaction(function () use ($seed, $request, $data) {
-            [$payment] = app(PaidLessonBookings::class)->lockPayment($seed);
-            if ($payment->provider !== 'sham_cash' || $payment->status !== 'succeeded') {
-                app(ShamCashPayments::class)->fail('REFUND_NOT_ALLOWED', 'Only approved Sham Cash payments can be refunded.');
-            }
-            if (RefundRequest::where('active_payment_id', $payment->id)->exists()) {
-                app(ShamCashPayments::class)->fail('REFUND_ALREADY_EXISTS', 'A pending, approved, or completed refund already exists.');
-            }
-            $refund = RefundRequest::create(['payment_id' => $payment->id, 'active_payment_id' => $payment->id,
-                'user_id' => $request->user()->id, 'amount' => $payment->amount, 'currency' => $payment->currency,
-                'account_id' => trim($data['account_id']), 'reason_code' => $data['reason_code'], 'reason' => trim($data['reason']), 'status' => 'PENDING_REVIEW']);
-            $this->audit('refund.requested', $refund, $request);
-
-            return $this->success($refund, 'Refund request submitted for manual review.', 201);
-        });
+        return $r->toArray() + ['refund_status' => match ($r->status) {
+            'PENDING_REVIEW' => 'pending_review','APPROVED' => 'approved','COMPLETED' => 'refund_sent','REJECTED' => $r->rejection_code ?: 'rejected',default => strtolower($r->status)
+        }, 'refund_proof_url' => $r->refund_proof_path ? route('refunds.proof', ['refund' => $r->id, 'kind' => 'refund']) : null, 'original_proof_url' => $r->original_proof_path ? route('refunds.proof', ['refund' => $r->id, 'kind' => 'original']) : null, 'refunded_amount' => $r->status === 'COMPLETED' ? $r->amount : '0.00'];
     }
 
-    public function index(Request $request)
+    public function eligibility(Request $r, OnlineRefunds $service)
     {
-        abort_unless($request->user()->status === 'active', 403);
-        $data = $request->validate(['status' => ['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED,COMPLETED']]);
-        $query = RefundRequest::query();
-        if ($request->user()->role === 'student') {
-            $query->where('user_id', $request->user()->id);
-        } else {
-            $query->with('user:id,name');
+        $d = $r->validate(['payment_id' => ['sometimes', 'integer', 'min:1']]);
+        $q = Payment::where('payer_id', $r->user()->id)->where('provider', 'sham_cash')->where('status', 'succeeded');
+        if (isset($d['payment_id'])) {
+            return $this->success($service->eligibility($q->findOrFail($d['payment_id'])));
         }
-        if (isset($data['status'])) {
-            $query->where('status', $data['status']);
+        $p = $q->orderByDesc('id')->paginate($this->perPage($r));
+        $p->setCollection($p->getCollection()->map(fn ($x) => $service->eligibility($x)));
+
+        return $this->paginated($p);
+    }
+
+    public function store(Request $r, OnlineRefunds $service)
+    {
+        $d = $r->validate(['payment_id' => ['required', 'integer'], 'account_id' => ['required', 'string', 'max:255', 'regex:/\S/u'],
+            'reason_code' => ['sometimes', 'in:exceptional,service_unavailable,teacher_suspended'], 'reason' => ['sometimes', 'string', 'max:2000'],
+            'original_transfer_date' => ['nullable', 'date', 'before_or_equal:now'], 'original_transfer_number' => ['nullable', 'string', 'max:255'],
+            'original_proof' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120']]);
+        $seed = Payment::where('payer_id', $r->user()->id)->findOrFail($d['payment_id']);
+        $path = null;
+        try {
+            $refund = DB::transaction(function () use ($r, $service, $seed, $d, &$path) {
+                [$p,$e] = $service->lock($seed);
+                $data = $d;
+                if ($r->hasFile('original_proof')) {
+                    $path = $r->file('original_proof')->store('refund-original-proofs/'.$r->user()->id, 'local');
+                    $data['original_proof_path'] = $path;
+                    $data['original_proof_mime'] = $r->file('original_proof')->getMimeType();
+                }
+
+                return $service->request($p, $e, $data, $r->user()->id);
+            });
+        } catch (\Throwable $error) {
+            if ($path) {
+                Storage::disk('local')->delete($path);
+            }throw $error;
         }
 
-        return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
+        return $this->success($this->payload($refund), 'تم تقديم طلب الاسترداد للمراجعة.', 201);
+    }
+
+    public function index(Request $r)
+    {
+        abort_unless($r->user()->status === 'active', 403);
+        $d = $r->validate(['status' => ['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED,COMPLETED']]);
+        $q = RefundRequest::query()->when($r->user()->role === 'student', fn ($q) => $q->where('user_id', $r->user()->id))->when(isset($d['status']), fn ($q) => $q->where('status', $d['status']));
+        $p = $q->orderByDesc('id')->paginate($this->perPage($r));
+        $p->setCollection($p->getCollection()->map(fn ($x) => $this->payload($x)));
+
+        return $this->paginated($p);
     }
 
     public function show(RefundRequest $refund)
     {
         $this->authorize('view', $refund);
 
-        return $this->success($refund);
+        return $this->success($this->payload($refund));
     }
 
-    public function review(Request $request, RefundRequest $refund)
+    public function payout(Request $r, RefundRequest $refund)
     {
-        $this->authorize('update', $refund);
-        $data = $request->validate(['decision' => ['required', 'in:approve,reject'],
-            'review_note' => ['required', 'string', 'max:2000', 'regex:/\S/u']]);
+        abort_unless($refund->user_id === $r->user()->id, 404);
+        $d = $r->validate(['account_id' => ['required', 'string', 'max:255', 'regex:/\S/u']]);
 
-        return DB::transaction(function () use ($request, $refund, $data) {
-            [$payment, , $booking] = app(PaidLessonBookings::class)->lockPayment($refund->payment);
-            $refund = RefundRequest::whereKey($refund->id)->lockForUpdate()->firstOrFail();
-            if ($refund->status !== 'PENDING_REVIEW' || $payment->status !== 'succeeded') {
-                return $this->businessError('Only a pending refund for an approved payment may be reviewed.', 409);
+        return DB::transaction(function () use ($refund, $d) {
+            $x = RefundRequest::whereKey($refund->id)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($x->status, ['PENDING_REVIEW', 'APPROVED'], true), 409);
+            $x->update(['account_id' => trim($d['account_id']), 'payout_details_required' => false]);
+
+            return $this->success($this->payload($x));
+        });
+    }
+
+    public function review(Request $r, RefundRequest $refund, ?OnlineRefunds $service = null)
+    {
+        $service ??= app(OnlineRefunds::class);
+        $this->authorize('update', $refund);
+        $d = $r->validate(['decision' => ['required', 'in:approve,reject'], 'review_note' => ['required', 'string', 'max:2000', 'regex:/\S/u'], 'rejection_code' => ['required_if:decision,reject', 'nullable', 'in:rejected_no_balance,rejected_invalid_data,rejected']]);
+
+        return DB::transaction(function () use ($r, $refund, $service, $d) {
+            [$p,$e] = $service->lock($refund->payment);
+            $x = RefundRequest::whereKey($refund->id)->lockForUpdate()->firstOrFail();
+            abort_unless($x->status === 'PENDING_REVIEW' && $p->status === 'succeeded', 409, 'تمت معالجة هذا الطلب بالفعل.');
+            $approve = $d['decision'] === 'approve';
+            if ($approve) {
+                $fresh = $service->eligibility($p, $x->id);
+                abort_if(($fresh['code'] ?? null) === 'PRICING_SNAPSHOT_REQUIRED' || OnlinePricing::cents($x->amount) > OnlinePricing::cents($fresh['refundable_amount']), 409, 'تغير الرصيد القابل للاسترداد أو تحتاج الدفعة مراجعة أسعار. أعد مراجعة الطلب.');
             }
-            $approve = $data['decision'] === 'approve';
-            // Codes describing system events must match server state; exceptional requests require explicit admin approval.
-            if ($approve && $refund->reason_code === 'hold_expired' && (! $booking || $booking->status !== 'NEEDS_RESCHEDULE' || $booking->hold_expires_at->isFuture())) {
-                return $this->businessError('This booking does not require an alternative after hold expiry.', 409);
-            }
-            if ($approve && $refund->reason_code === 'teacher_cancelled' && (! $booking || $booking->status !== 'CANCELLED' || $booking->cancelled_by_role !== 'teacher')) {
-                return $this->businessError('This lesson was not cancelled by its teacher.', 409);
-            }
-            $refund->update(['status' => $approve ? 'APPROVED' : 'REJECTED', 'review_note' => trim($data['review_note']),
-                'reviewed_by' => $request->user()->id, 'reviewed_at' => now(), 'active_payment_id' => $approve ? $payment->id : null]);
-            if ($approve && $booking) {
-                if ($booking->session_id) {
-                    Session::whereKey($booking->session_id)->whereIn('status', ['scheduled', 'ongoing'])->update(['status' => 'cancelled']);
+            $x->update(['status' => $approve ? 'APPROVED' : 'REJECTED', 'review_note' => trim($d['review_note']), 'rejection_code' => $approve ? null : $d['rejection_code'], 'reviewed_by' => $r->user()->id, 'reviewed_at' => now(), 'active_payment_id' => $approve ? $p->id : null]);
+            if (! $approve) {
+                $e->update(['access_frozen_at' => null]);
+            }$service->audit('refund.'.$d['decision'], $x, $r->user()->id);
+            $service->notify($x->user_id, $approve ? 'refund_approved' : $x->rejection_code, $approve ? 'تمت الموافقة على الاسترداد' : 'نتيجة مراجعة الاسترداد', $approve ? 'تمت الموافقة على الطلب، وسيظهر إثبات التحويل بعد إعادة المبلغ.' : ($x->rejection_code === 'rejected_no_balance' ? 'تمت مراجعة حسابك، ولم نجد مبلغاً مستحقاً للاسترداد حالياً.' : $x->review_note), $x);
+
+            return $this->success($this->payload($x));
+        });
+    }
+
+    public function complete(Request $r, RefundRequest $refund, ?OnlineRefunds $service = null)
+    {
+        $service ??= app(OnlineRefunds::class);
+        $this->authorize('update', $refund);
+        $d = $r->validate(['transfer_reference' => ['nullable', 'string', 'max:255', Rule::unique('refund_requests', 'transfer_reference')],
+            'refund_transferred_at' => ['required', 'date', 'before_or_equal:now'], 'refund_proof' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:5120']]);
+        $path = null;
+        try {
+            $x = DB::transaction(function () use ($r, $refund, $service, $d, &$path) {
+                [$p,$e] = $service->lock($refund->payment);
+                $x = RefundRequest::whereKey($refund->id)->lockForUpdate()->firstOrFail();
+                abort_unless($x->status === 'APPROVED' && $p->status === 'succeeded', 409, 'يجب اعتماد الاسترداد وتحويل المبلغ أولاً.');
+                abort_if($x->payout_details_required || trim($x->account_id) === '', 422, 'أكمل رقم حساب الطالب أولاً.');
+                if (! empty($d['transfer_reference'])) {
+                    abort_if($d['transfer_reference'] === $p->provider_reference, 422, 'رقم التحويل الأصلي ليس رقم تحويل الاسترداد.');
                 }
-                $booking->update(['status' => 'CANCELLED', 'cancelled_by_role' => 'refund']);
-            }
-            $this->audit('refund.'.$data['decision'], $refund, $request);
+                $fresh = $service->eligibility($p, $x->id);
+                abort_if(($fresh['code'] ?? null) === 'PRICING_SNAPSHOT_REQUIRED' || OnlinePricing::cents($x->amount) > OnlinePricing::cents($fresh['refundable_amount']), 409, 'تغير الرصيد القابل للاسترداد؛ يجب إعادة مراجعة الطلب قبل التحويل.');
+                $already = RefundRequest::where('payment_id', $p->id)->where('status', 'COMPLETED')->get()->sum(fn ($z) => OnlinePricing::cents($z->amount));
+                abort_if($already + OnlinePricing::cents($x->amount) > OnlinePricing::cents($p->amount), 409, 'المبلغ يتجاوز المتبقي من الدفعة.');
+                $path = $r->file('refund_proof')->store('refund-proofs/'.$x->user_id, 'local');
+                abort_unless($path, 500, 'تعذر حفظ مستند التحويل.');
+                $x->update(['status' => 'COMPLETED', 'active_payment_id' => null, 'transfer_reference' => $d['transfer_reference'] ?? null, 'refund_proof_path' => $path, 'refund_proof_mime' => $r->file('refund_proof')->getMimeType(), 'refund_transferred_at' => $d['refund_transferred_at'], 'completed_by' => $r->user()->id, 'completed_at' => now()]);
+                $allReturned = $already + OnlinePricing::cents($x->amount) >= OnlinePricing::cents($p->amount);
+                $e->update(['access_frozen_at' => null, 'status' => $allReturned ? 'cancelled' : $e->status]);
+                $service->audit('refund.completed', $x, $r->user()->id);
+                $service->notify($x->user_id, 'refund_sent', 'تم الاسترداد', 'تمت إعادة المبلغ إلى حساب شام كاش الخاص بك. يمكنك عرض إثبات التحويل.', $x);
+                $service->notify($e->teacher->user_id, 'student_refund_completed', 'اكتمال استرداد لطالب', 'اكتملت إعادة قيمة المحتوى غير المستهلك للطالب.', $x);
 
-            return $this->success($refund->fresh(), $approve ? 'Refund approved. Transfer the money manually before recording completion.' : 'Refund rejected.');
-        });
-    }
-
-    public function complete(Request $request, RefundRequest $refund)
-    {
-        $this->authorize('update', $refund);
-        if (is_string($request->input('transfer_reference'))) {
-            $request->merge(['transfer_reference' => trim($request->input('transfer_reference'))]);
+                return $x;
+            });
+        } catch (\Throwable $error) {
+            if ($path) {
+                Storage::disk('local')->delete($path);
+            }throw $error;
         }
-        $data = $request->validate(['transfer_reference' => ['required', 'string', 'max:255', Rule::unique('refund_requests', 'transfer_reference')]]);
 
-        return DB::transaction(function () use ($request, $refund, $data) {
-            [$payment, $enrollment, $booking] = app(PaidLessonBookings::class)->lockPayment($refund->payment);
-            $refund = RefundRequest::whereKey($refund->id)->lockForUpdate()->firstOrFail();
-            if ($refund->status !== 'APPROVED' || $payment->status !== 'succeeded') {
-                return $this->businessError('Approve the refund and manually transfer the money before recording completion.', 409);
-            }
-            if ($data['transfer_reference'] === $payment->provider_reference) {
-                return $this->businessError('The refund requires its own actual transfer reference.', 422);
-            }
-            // A distinct outgoing reference is claimed atomically; the original payment is untouched.
-            try {
-                $refund->update(['status' => 'COMPLETED', 'transfer_reference' => $data['transfer_reference'],
-                    'completed_by' => $request->user()->id, 'completed_at' => now()]);
-            } catch (UniqueConstraintViolationException $error) {
-                app(ShamCashPayments::class)->fail('REFUND_TRANSFER_ALREADY_USED', 'This refund transfer reference was already recorded.');
-            }
-            $enrollment->update(['status' => 'cancelled']);
-            Session::where('enrollment_id', $enrollment->id)->whereIn('status', ['scheduled', 'ongoing'])->update(['status' => 'cancelled']);
-            $enrollment->groupEnrollments()->where('status', 'active')->update(['status' => 'removed', 'left_at' => now()]);
-            if ($booking) {
-                $booking->update(['status' => 'REFUNDED']);
-            }
-            $this->audit('refund.completed', $refund, $request);
-
-            return $this->success($refund->fresh(), 'Manual refund transfer recorded.');
-        });
+        return $this->success($this->payload($x), 'تم تسجيل تحويل مبلغ الاسترداد وإثباته.');
     }
 
-    private function audit(string $action, RefundRequest $refund, Request $request): void
+    public function proof(Request $r, RefundRequest $refund, string $kind)
     {
-        AuditLog::create(['user_id' => $request->user()->id, 'action' => $action,
-            'entity_type' => RefundRequest::class, 'entity_id' => $refund->id,
-            'metadata_json' => ['payment_id' => $refund->payment_id, 'status' => $refund->status, 'review_note' => $refund->review_note],
-            'ip' => $request->ip(), 'created_at' => now()]);
+        $this->authorize('view', $refund);
+        abort_unless(in_array($kind, ['refund', 'original'], true), 404);
+        $path = $kind === 'refund' ? $refund->refund_proof_path : $refund->original_proof_path;
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, ['Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
     }
 }

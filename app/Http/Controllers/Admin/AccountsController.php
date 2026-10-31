@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Enrollment;
 use App\Models\Group;
-use App\Models\GroupEnrollment;
+use App\Models\GroupStudent;
 use App\Models\Payment;
 use App\Models\RefreshToken;
 use App\Models\Region;
@@ -16,6 +16,7 @@ use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use App\Models\User;
 use App\Services\GroupMembershipRules;
+use App\Services\OnlineRefunds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -104,7 +105,7 @@ class AccountsController extends AdminController
             abort_unless($user->role === $role, 404);
         }
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'], 'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
+            'name' => ['required', 'string', 'max:255'], 'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user?->id)],
             'password' => [$user ? 'prohibited' : 'required', 'string', 'min:8', 'max:255', 'confirmed'],
             'status' => ['required', 'in:active,suspended'], 'region_id' => ['nullable', 'integer', 'exists:regions,id'],
@@ -129,7 +130,14 @@ class AccountsController extends AdminController
                 $target = User::create([...$identity, 'password_hash' => Hash::make($data['password']), 'role' => $role, 'status' => $data['status']]);
             }
             if ($isTeacher) {
+                $previousTeacherStatus = $target->teacher?->status;
                 $target->teacher()->updateOrCreate(['user_id' => $target->id], array_intersect_key($data, array_flip(['specialization', 'bio', 'experience_years'])) + ['status' => $data['teacher_status'] ?? 'pending_review']);
+                $target->unsetRelation('teacher');
+                if (($data['teacher_status'] ?? null) === 'suspended' && $previousTeacherStatus !== 'suspended') {
+                    app(OnlineRefunds::class)->teacherSuspended($target->teacher()->firstOrFail(), $request->user()->id);
+                    $target->tokens()->delete();
+                    RefreshToken::where('user_id', $target->id)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+                }
                 if (! $user) {
                     foreach (array_unique($data['subject_ids'] ?? []) as $id) {
                         $target->teacher->teacherSubjects()->create(['subject_id' => $id, 'price' => $data['subject_price'] ?? 0, 'status' => 'active']);
@@ -155,11 +163,11 @@ class AccountsController extends AdminController
                     'status' => 'active', 'price' => 0, 'starts_at' => now(), 'expires_at' => $data['expires_at'] ?? null]);
                 if (! empty($data['group_id'])) {
                     $group = Group::whereKey($data['group_id'])->lockForUpdate()->firstOrFail();
-                    app(GroupMembershipRules::class)->validate($group, $enrollment);
-                    if (! in_array($group->status, ['active', 'forming'], true) || $group->groupEnrollments()->where('status', 'active')->count() >= $group->capacity) {
+                    app(GroupMembershipRules::class)->validate($group, $target->student);
+                    if (! in_array($group->status, ['active', 'forming'], true) || $group->groupStudents()->where('status', 'active')->count() >= $group->capacity) {
                         throw ValidationException::withMessages(['group_id' => ['المجموعة مغلقة أو ممتلئة.']]);
                     }
-                    GroupEnrollment::create(['group_id' => $group->id, 'enrollment_id' => $enrollment->id, 'status' => 'active', 'joined_at' => now()]);
+                    GroupStudent::create(['group_id' => $group->id, 'student_id' => $target->student->id, 'status' => 'active', 'joined_at' => now()]);
                 }
                 $this->audit('access.granted', $enrollment, ['reason' => $data['grant_reason']]);
             }
@@ -181,7 +189,7 @@ class AccountsController extends AdminController
         $enrollments = $isTeacher ? Enrollment::where('teacher_id', $account->id) : Enrollment::where('student_id', $account->id);
         $payments = Payment::with('payer')->where('payable_type', (new Enrollment)->getMorphClass())->whereIn('payable_id', (clone $enrollments)->select('id'))->latest('id')->limit(20)->get();
         $courses = $isTeacher ? $account->teacherSubjects()->with('subject')->get() : $account->enrollments()->with(['teacher.user', 'enrollable'])->latest('id')->limit(30)->get();
-        $sessions = Session::with(['teacher.user', 'group'])->when($isTeacher, fn ($q) => $q->where('teacher_id', $account->id), fn ($q) => $q->where(fn ($q) => $q->whereHas('enrollment', fn ($q) => $q->where('student_id', $account->id))->orWhereHas('group.groupEnrollments.enrollment', fn ($q) => $q->where('student_id', $account->id))))->latest('starts_at')->limit(20)->get();
+        $sessions = Session::with(['teacher.user', 'target'])->when($isTeacher, fn ($q) => $q->where('teacher_id', $account->id), fn ($q) => $q->forStudent($account->id))->latest('starts_at')->limit(20)->get();
         $subscriptions = $isTeacher ? $account->subscriptions()->with('plan')->latest('starts_at')->get() : collect();
         $availability = $isTeacher ? $account->availabilities()->orderBy('date')->limit(20)->get() : collect();
 
@@ -199,14 +207,14 @@ class AccountsController extends AdminController
             if ($response->getStatusCode() < 400) {
                 if ($data['status'] !== 'active') {
                     $user->tokens()->delete();
-                    RefreshToken::where('user_id',$user->id)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+                    RefreshToken::where('user_id', $user->id)->whereNull('revoked_at')->update(['revoked_at' => now()]);
                 }
-                $this->audit('account.status_updated',$user,['status' => $data['status']]);
+                $this->audit('account.status_updated', $user, ['status' => $data['status']]);
             }
 
             return $response;
         });
 
-        return $this->apiResult($response,'تم تحديث حالة الحساب.');
+        return $this->apiResult($response, 'تم تحديث حالة الحساب.');
     }
 }

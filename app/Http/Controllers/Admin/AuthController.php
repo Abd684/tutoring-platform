@@ -21,10 +21,10 @@ class AuthController extends AdminController
 
     public function login(Request $request)
     {
-        $data = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
-        $user = User::where('email', $data['email'])->first();
+        $data = $request->validate(['phone' => ['required', 'string', 'max:30'], 'password' => ['required', 'string']]);
+        $user = User::where('phone', $data['phone'])->first();
         if (! $user || ! Hash::check($data['password'], $user->password_hash) || $user->role !== 'company_admin' || $user->status !== 'active') {
-            throw ValidationException::withMessages(['email' => ['بيانات الدخول غير صحيحة أو الحساب غير مخوّل للإدارة.']]);
+            throw ValidationException::withMessages(['phone' => ['بيانات الدخول غير صحيحة أو الحساب غير مخوّل للإدارة.']]);
         }
         Auth::guard('web')->login($user);
         $request->session()->regenerate();

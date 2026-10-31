@@ -85,6 +85,16 @@ class AnswerController extends ApiController
                 ],
             );
 
+            if ($quizAttempt->quiz->quiz_type === 'simple') {
+                $question = $quizAttempt->quiz->questions()->findOrFail($validated['question_id']);
+                $rubric = $question->rubric_json ?? [];
+                if ($question->type !== 'essay' && array_key_exists('correct_answer', $rubric)) {
+                    $expected = is_bool($rubric['correct_answer']) ? ($rubric['correct_answer'] ? 'true' : 'false') : (string) $rubric['correct_answer'];
+                    $actual = trim((string) $validated['answer_text']);
+                    $answer->update(['score' => mb_strtolower($actual) === mb_strtolower(trim($expected)) ? $question->points : 0, 'status' => 'auto_graded']);
+                }
+            }
+
             return $this->success(
                 $answer->fresh(),
                 $answer->wasRecentlyCreated ? 'Answer submitted successfully.' : 'Answer updated successfully.',

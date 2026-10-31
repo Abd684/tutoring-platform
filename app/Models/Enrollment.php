@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Enrollment extends Model
 {
-    public const ALLOWED_ENROLLABLE_TYPES = ['teacher_subject', 'unit', 'content', 'paid_booking'];
+    public const ALLOWED_ENROLLABLE_TYPES = ['teacher_subject', 'unit', 'content', 'lesson', 'paid_booking'];
 
     protected static function booted(): void
     {
@@ -23,17 +23,17 @@ class Enrollment extends Model
     public function setEnrollableTypeAttribute($value): void
     {
         $this->attributes['enrollable_type'] = match ($value) {
-            TeacherSubject::class => 'teacher_subject', Unit::class => 'unit', Content::class => 'content', default => $value,
+            TeacherSubject::class => 'teacher_subject', Unit::class => 'unit', Content::class => 'content', Lesson::class => 'lesson', default => $value,
         };
     }
 
     public $timestamps = false;
 
-    protected $fillable = ['student_id', 'teacher_id', 'enrollable_type', 'enrollable_id', 'price', 'status', 'starts_at', 'expires_at'];
+    protected $fillable = ['student_id', 'teacher_id', 'enrollable_type', 'enrollable_id', 'price', 'status', 'starts_at', 'expires_at', 'access_frozen_at'];
 
     protected function casts(): array
     {
-        return ['price' => 'decimal:2', 'starts_at' => 'datetime', 'expires_at' => 'datetime'];
+        return ['price' => 'decimal:2', 'starts_at' => 'datetime', 'expires_at' => 'datetime', 'access_frozen_at' => 'datetime'];
     }
 
     public function student(): BelongsTo
@@ -49,21 +49,6 @@ class Enrollment extends Model
     public function enrollable(): MorphTo
     {
         return $this->morphTo();
-    }
-
-    public function groupEnrollments(): HasMany
-    {
-        return $this->hasMany(GroupEnrollment::class);
-    }
-
-    public function sessions(): HasMany
-    {
-        return $this->hasMany(Session::class);
-    }
-
-    public function attendance(): HasMany
-    {
-        return $this->hasMany(Attendance::class);
     }
 
     public function escrowTransactions(): HasMany

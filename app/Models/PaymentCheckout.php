@@ -18,6 +18,6 @@ class PaymentCheckout extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2', 'expires_at' => 'datetime', 'created_at' => 'datetime', 'booking_starts_at' => 'datetime', 'booking_ends_at' => 'datetime'];
+        return ['pricing_snapshot' => 'array', 'amount' => 'decimal:2', 'expires_at' => 'datetime', 'created_at' => 'datetime', 'booking_starts_at' => 'datetime', 'booking_ends_at' => 'datetime'];
     }
 }

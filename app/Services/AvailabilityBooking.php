@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Enrollment;
+use App\Models\Individual;
 use App\Models\PaidBooking;
 use App\Models\Session;
 use App\Models\Student;
@@ -46,18 +46,17 @@ class AvailabilityBooking
             Student::whereKey($student->id)->lockForUpdate()->firstOrFail();
             $availability = TeacherAvailability::whereKey($availability->id)->lockForUpdate()->firstOrFail();
             Gate::authorize('book', $availability);
-            $enrollment = Enrollment::whereKey($data['enrollment_id'])->lockForUpdate()->firstOrFail();
-            Gate::authorize('pay', $enrollment);
-            abort_if($enrollment->enrollable_type === 'paid_booking', 409, 'Paid lessons must use their payment and rescheduling workflow.');
+            $individual = Individual::whereKey($data['individual_id'])->where('student_id', $student->id)->lockForUpdate()->firstOrFail();
+            abort_if(PaidBooking::where('individual_id', $individual->id)->exists(), 409, 'Paid teaching must use its payment workflow.');
             $start = Carbon::parse($data['starts_at'])->utc();
             $end = Carbon::parse($data['ends_at'])->utc();
             if ($start->lte(now()) || ! $this->contains($availability, $start, $end)
-                || (int) $enrollment->teacher_id !== (int) $availability->teacher_id
-                || ! app(SessionRules::class)->active($enrollment, $start, $end)) {
-                throw ValidationException::withMessages(['starts_at' => ['A future interval inside active availability and a valid enrollment are required.']]);
+                || (int) $individual->teacherSubject?->teacher_id !== (int) $availability->teacher_id
+                || ! app(SessionRules::class)->active($individual, $start, $end)) {
+                throw ValidationException::withMessages(['individual_id' => ['Active individual teaching and a future available interval are required.']]);
             }
             $state = ['teacher_id' => $availability->teacher_id, 'availability_id' => $availability->id,
-                'enrollment_id' => $enrollment->id, 'group_id' => null, 'type' => 'INDIVIDUAL', 'capacity' => 1,
+                'type_id' => $individual->id, 'type' => 'individual', 'capacity' => 1,
                 'starts_at' => $start, 'ends_at' => $end, 'status' => 'scheduled'];
             abort_if(app(SessionRules::class)->conflicts($state), 409, 'Teacher or student already has an overlapping session.');
 
@@ -68,13 +67,12 @@ class AvailabilityBooking
     public function slots(Teacher $teacher, Student $student, Carbon $from, Carbon $to): array
     {
         $result = [];
-        $enrollments = app(ContentAccess::class)->enrollments($student)->where('teacher_id', $teacher->id)->where('enrollable_type', '!=', 'paid_booking')->get();
-        if ($enrollments->isEmpty()) {
+        $individuals = Individual::whereDoesntHave('paidBookings')->where('student_id', $student->id)->where('status', 'active')->whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $teacher->id))->get();
+        if ($individuals->isEmpty()) {
             return [];
         }
         $busy = Session::whereIn('status', ['scheduled', 'ongoing'])->where('starts_at', '<', $to)->where('ends_at', '>', $from)
-            ->where(fn ($q) => $q->where('teacher_id', $teacher->id)->orWhereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))
-                ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))))->get();
+            ->where(fn ($q) => $q->where('teacher_id', $teacher->id)->orWhere(fn ($q) => $q->forStudent($student->id)))->get();
         $busy = $busy->concat(PaidBooking::holding()->where('starts_at', '<', $to)->where('ends_at', '>', $from)
             ->where(fn ($q) => $q->where('teacher_id', $teacher->id)->orWhere('student_id', $student->id))->get());
         foreach (TeacherAvailability::where('teacher_id', $teacher->id)->where('status', 'active')->get() as $availability) {
@@ -104,11 +102,11 @@ class AvailabilityBooking
                     }
                     $ranges = $next;
                 }
-                // Split at enrollment boundaries so partial validity never hides a bookable interval.
+                // Split at individual teaching date boundaries so partial validity never hides a bookable interval.
                 foreach ($ranges as [$a,$b]) {
                     $points = [$a, $b];
-                    foreach ($enrollments as $enrollment) {
-                        foreach ([$enrollment->starts_at, $enrollment->expires_at] as $boundary) {
+                    foreach ($individuals as $individual) {
+                        foreach ([$individual->starts_at, $individual->ends_at] as $boundary) {
                             if ($boundary && $boundary->timestamp > $a && $boundary->timestamp < $b) {
                                 $points[] = $boundary->timestamp;
                             }
@@ -119,9 +117,9 @@ class AvailabilityBooking
                     for ($i = 0; $i < count($points) - 1; $i++) {
                         $s = Carbon::createFromTimestampUTC($points[$i]);
                         $e = Carbon::createFromTimestampUTC($points[$i + 1]);
-                        $ids = $enrollments->filter(fn ($enrollment) => app(SessionRules::class)->active($enrollment, $s, $e))->pluck('id')->values();
+                        $ids = $individuals->filter(fn ($individual) => app(SessionRules::class)->active($individual, $s, $e))->pluck('id')->values();
                         if ($ids->isNotEmpty()) {
-                            $result[] = ['availability_id' => $availability->id, 'starts_at' => $s->toIso8601String(), 'ends_at' => $e->toIso8601String(), 'eligible_enrollment_ids' => $ids];
+                            $result[] = ['availability_id' => $availability->id, 'starts_at' => $s->toIso8601String(), 'ends_at' => $e->toIso8601String(), 'eligible_individual_ids' => $ids];
                         }
                     }
                 }

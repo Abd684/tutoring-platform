@@ -10,6 +10,7 @@ class TeacherDirectoryController extends ApiController
     public function index(Request $request)
     {
         $data = $request->validate([
+            'mode' => ['sometimes', 'in:online,physical'],
             'search' => ['sometimes', 'nullable', 'string', 'max:100'],
             'specialization' => ['sometimes', 'nullable', 'string', 'max:100'],
             'region_id' => ['sometimes', 'integer', 'min:1'], 'subject_id' => ['sometimes', 'integer', 'min:1'],
@@ -38,7 +39,7 @@ class TeacherDirectoryController extends ApiController
         $page = $query->orderBy('id')->paginate($data['per_page'] ?? 20);
         $page->setCollection($page->getCollection()->map(fn ($teacher) => [
             'id' => $teacher->id, 'name' => $teacher->user->name, 'specialization' => $teacher->specialization,
-            'avatar_url' => $teacher->user->avatar_url, 'status' => $teacher->status, 'region_id' => $teacher->user->region_id,
+            'avatar_url' => $teacher->user->avatar_url, 'modes' => ['online', 'physical'], 'status' => $teacher->status, 'region_id' => $teacher->user->region_id,
         ]));
 
         return $this->paginated($page);

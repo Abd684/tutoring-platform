@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Group;
 use App\Models\TeacherSubject;
+use App\Services\TeachingScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,7 +18,7 @@ class GroupController extends ApiController
         $query = Group::query()
             ->whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $request->user()->teacher->id))
             ->with(['teacherSubject.subject:id,name'])
-            ->withCount(['groupEnrollments as active_enrollments_count' => fn ($q) => $q->where('status', 'active')]);
+            ->withCount(['groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active')]);
 
         $query->when($request->filled('teacher_subject_id'), fn ($q) => $q->where('teacher_subject_id', $request->integer('teacher_subject_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
@@ -32,7 +33,7 @@ class GroupController extends ApiController
 
         $query = Group::query()
             ->with(['teacherSubject.subject:id,name'])
-            ->withCount(['groupEnrollments as active_enrollments_count' => fn ($q) => $q->where('status', 'active')]);
+            ->withCount(['groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active')]);
 
         $query->when($request->filled('teacher_subject_id'), fn ($q) => $q->where('teacher_subject_id', $request->integer('teacher_subject_id')))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
@@ -47,15 +48,14 @@ class GroupController extends ApiController
 
         $validated = $request->validate([
             'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'],
+            'teaching_scope_type' => ['sometimes', 'in:subject,unit,lesson'], 'teaching_scope_id' => ['required_with:teaching_scope_type', 'integer'],
+            'session_price' => ['required', 'numeric', 'between:0,9999999999.99'], 'starts_at' => ['nullable', 'date'], 'ends_at' => array_merge(['nullable', 'date'], $request->filled('starts_at') ? ['after:starts_at'] : []),
             'name' => ['required', 'string', 'max:255'],
             'capacity' => ['required', 'integer', 'min:1', 'max:100000'],
             'status' => ['sometimes', Rule::in(['forming', 'active', 'closed'])],
         ]);
 
         $teacherSubject = TeacherSubject::findOrFail($validated['teacher_subject_id']);
-        if (!$teacherSubject->group_enabled) {
-            return $this->businessError('Groups are disabled for this teacher subject.');
-        }
         if ($teacherSubject->max_group_size !== null && $validated['capacity'] > $teacherSubject->max_group_size) {
             return $this->businessError('Group capacity exceeds the teacher subject maximum group size.');
         }
@@ -79,6 +79,8 @@ class GroupController extends ApiController
 
         $validated = $request->validate([
             'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'],
+            'teaching_scope_type' => ['sometimes', 'in:subject,unit,lesson'], 'teaching_scope_id' => ['required_with:teaching_scope_type', 'integer'],
+            'session_price' => ['required', 'numeric', 'between:0,9999999999.99'], 'starts_at' => ['nullable', 'date'], 'ends_at' => array_merge(['nullable', 'date'], $request->filled('starts_at') ? ['after:starts_at'] : []),
             'name' => ['required', 'string', 'max:255'],
             'capacity' => ['required', 'integer', 'min:1', 'max:100000'],
             'status' => ['sometimes', Rule::in(['forming', 'active', 'closed'])],
@@ -102,14 +104,6 @@ class GroupController extends ApiController
             ], 422);
         }
 
-        if (! $teacherSubject->group_enabled) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Groups are disabled for this teacher subject.',
-                'code' => 'GROUPS_DISABLED',
-            ], 422);
-        }
-
         if ($teacherSubject->max_group_size !== null && $validated['capacity'] > $teacherSubject->max_group_size) {
             return response()->json([
                 'status' => false,
@@ -120,6 +114,9 @@ class GroupController extends ApiController
 
         $this->authorize('manage', $teacherSubject);
 
+        app(TeachingScope::class)->resolve($teacherSubject, $validated['teaching_scope_type'] ?? 'subject', $validated['teaching_scope_id'] ?? $teacherSubject->id);
+        $validated['teaching_scope_type'] ??= 'subject';
+        $validated['teaching_scope_id'] ??= $teacherSubject->id;
         $validated['status'] ??= 'forming';
         $group = Group::create($validated);
 
@@ -135,7 +132,7 @@ class GroupController extends ApiController
         $this->authorize('view', $group);
 
         return $this->success($group->load('teacherSubject.subject:id,name')->loadCount([
-            'groupEnrollments as active_enrollments_count' => fn ($q) => $q->where('status', 'active'),
+            'groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active'),
         ]));
     }
 
@@ -154,14 +151,11 @@ class GroupController extends ApiController
         $capacity = $validated['capacity'] ?? $group->capacity;
         $teacherSubject = TeacherSubject::findOrFail($teacherSubjectId);
 
-        if (!$teacherSubject->group_enabled) {
-            return $this->businessError('Groups are disabled for this teacher subject.');
-        }
         if ($teacherSubject->max_group_size !== null && $capacity > $teacherSubject->max_group_size) {
             return $this->businessError('Group capacity exceeds the teacher subject maximum group size.');
         }
 
-        $activeCount = $group->groupEnrollments()->where('status', 'active')->count();
+        $activeCount = $group->groupStudents()->where('status', 'active')->count();
         if ($capacity < $activeCount) {
             return $this->businessError('Group capacity cannot be lower than the current active enrollment count.');
         }

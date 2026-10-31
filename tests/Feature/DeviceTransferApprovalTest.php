@@ -28,7 +28,7 @@ class DeviceTransferApprovalTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
 
-        return $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'Password123!',
+        return $this->postJson('/api/v1/auth/login', ['phone' => $user->phone, 'password' => 'Password123!',
             'device_uuid' => $uuid, 'platform' => 'android'])->assertOk()->json();
     }
 
@@ -36,7 +36,7 @@ class DeviceTransferApprovalTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
 
-        return $this->postJson('/api/v1/auth/device/transfer', ['email' => $user->email, 'password' => 'Password123!',
+        return $this->postJson('/api/v1/auth/device/transfer', ['phone' => $user->phone, 'password' => 'Password123!',
             'device_uuid' => $uuid, 'platform' => 'android'])->assertStatus(202)->assertJsonPath('data.status', 'pending')->json('data');
     }
 
@@ -99,7 +99,7 @@ class DeviceTransferApprovalTest extends TestCase
         $user = $this->student();
         $this->login($user);
         $transfer = $this->requestTransfer($user);
-        $this->postJson('/api/v1/auth/device/transfer', ['email' => $user->email, 'password' => 'Password123!', 'device_uuid' => 'another-device', 'platform' => 'android'])->assertConflict();
+        $this->postJson('/api/v1/auth/device/transfer', ['phone' => $user->phone, 'password' => 'Password123!', 'device_uuid' => 'another-device', 'platform' => 'android'])->assertConflict();
         $other = $this->student();
         $otherLogin = $this->login($other, 'other-device');
         $this->authenticated($otherLogin['access_token'])->postJson('/api/v1/student/device-transfer-requests/'.$transfer['id'].'/approve')->assertNotFound();
@@ -150,7 +150,7 @@ class DeviceTransferApprovalTest extends TestCase
             ->postJson('/api/v1/auth/device/transfer-requests/'.$transfer['id'].'/claim')->assertOk()->json('access_token');
         // Login on a revoked binding must request transfer, rather than permanently banning the device.
         $this->app['auth']->forgetGuards();
-        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'Password123!', 'device_uuid' => 'phone-a', 'platform' => 'android'])
+        $this->postJson('/api/v1/auth/login', ['phone' => $user->phone, 'password' => 'Password123!', 'device_uuid' => 'phone-a', 'platform' => 'android'])
             ->assertConflict()->assertJsonPath('code', 'DEVICE_TRANSFER_REQUIRED');
         $back = $this->requestTransfer($user, 'phone-a');
         $this->authenticated($new)->postJson('/api/v1/student/device-transfer-requests/'.$back['id'].'/approve')->assertOk();
@@ -166,7 +166,7 @@ class DeviceTransferApprovalTest extends TestCase
         $user = $this->student();
         $this->login($user, 'safe-phone');
         Device::create(['device_uuid' => 'blocked-phone', 'platform' => 'android', 'status' => 'blocked']);
-        $body = ['email' => $user->email, 'password' => 'Password123!', 'device_uuid' => 'blocked-phone', 'platform' => 'android'];
+        $body = ['phone' => $user->phone, 'password' => 'Password123!', 'device_uuid' => 'blocked-phone', 'platform' => 'android'];
         $this->app['auth']->forgetGuards();
         $this->postJson('/api/v1/auth/login', $body)->assertForbidden()->assertJsonPath('code', 'DEVICE_BLOCKED');
         $this->postJson('/api/v1/auth/device/transfer', $body)->assertForbidden()->assertJsonPath('code', 'DEVICE_BLOCKED');

@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Enrollment;
 use App\Models\Group;
+use App\Models\Individual;
+use App\Models\PaidBooking;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\TeacherAvailability;
-use App\Models\TeacherSubject;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -27,43 +27,34 @@ class SessionRules
         if ($end->lte($start)) {
             $fail('ends_at', 'End must follow start.');
         }
-        if ($state['type'] === 'GROUP') {
-            if (empty($state['group_id']) || ! empty($state['enrollment_id'])) {
-                $fail('group_id', 'Group sessions require a group and no individual enrollment.');
+        if (! in_array($state['type'] ?? null, ['group', 'individual'], true) || empty($state['type_id'])) {
+            $fail('type_id', 'A group or individual target is required.');
+        }
+        $target = ($state['type'] === 'group' ? Group::query() : Individual::query())->whereKey($state['type_id'])->lockForUpdate()->firstOrFail();
+        if (! $administrator) {
+            Gate::authorize('manage', $target);
+        }
+        $course = $target->teacherSubject;
+        if ((int) $course?->teacher_id !== (int) $state['teacher_id'] || $course?->status !== 'active'
+            || $course->teacher?->status !== 'active' || $course->teacher?->user?->status !== 'active') {
+            $fail('type_id', 'Target must belong to this active teacher and subject.');
+        }
+        if ($target instanceof Group) {
+            if (! in_array($target->status, ['active', 'forming'], true)) {
+                $fail('type_id', 'Group is closed.');
             }
-            $group = Group::whereKey($state['group_id'])->lockForUpdate()->firstOrFail();
-            if (! $administrator) {
-                Gate::authorize('manage', $group);
+            $state['capacity'] = $state['capacity'] ?? $target->capacity;
+            if ($target->groupStudents()->where('status', 'active')->whereHas('student', fn ($q) => $q->where('status', '!=', 'active')->orWhereHas('user', fn ($q) => $q->where('status', '!=', 'active')))->exists()) {
+                $fail('type_id', 'Group contains an inactive student.');
             }
-            if ($group->status === 'closed') {
-                $fail('group_id', 'Group is closed.');
-            }
-            foreach ($group->groupEnrollments()->where('status', 'active')->with('enrollment')->get() as $membership) {
-                $member = $membership->enrollment;
-                if (! $member || ! $this->active($member, $start, $end)
-                    || $member->enrollable_type !== (new TeacherSubject)->getMorphClass()
-                    || (int) $member->enrollable_id !== (int) $group->teacher_subject_id
-                    || (int) $member->teacher_id !== (int) $state['teacher_id']) {
-                    $fail('group_id', 'Every active member must have a matching full-subject enrollment covering the session.');
-                }
-            }
-            $state['capacity'] = $state['capacity'] ?? $group->capacity;
-            if ($state['capacity'] > $group->capacity) {
-                $fail('capacity', 'Session capacity exceeds group capacity.');
+            $members = $target->groupStudents()->where('status', 'active')->count();
+            if ($state['capacity'] > $target->capacity || $state['capacity'] < $members) {
+                $fail('capacity', 'Capacity must cover members without exceeding group capacity.');
             }
         } else {
-            if (empty($state['enrollment_id']) || ! empty($state['group_id'])) {
-                $fail('enrollment_id', 'Individual sessions require an enrollment and no group.');
-            }
-            $enrollment = Enrollment::findOrFail($state['enrollment_id']);
-            if ($enrollment->enrollable_type === 'paid_booking') {
-                $fail('enrollment_id', 'Paid lesson sessions are created and rescheduled only by their payment workflow.');
-            }
-            if (! $administrator) {
-                Gate::authorize('manage', $enrollment);
-            }
-            if (! $this->active($enrollment, $start, $end) || (int) $enrollment->teacher_id !== (int) $state['teacher_id']) {
-                $fail('enrollment_id', 'Enrollment is not valid for the session.');
+            abort_if(PaidBooking::where('individual_id', $target->id)->exists(), 409, 'Paid teaching must use the paid booking workflow.');
+            if (! $this->active($target, $start, $end)) {
+                $fail('type_id', 'Individual teaching is inactive or outside its dates.');
             }
             $state['capacity'] = 1;
         }
@@ -72,8 +63,7 @@ class SessionRules
             if (! $administrator) {
                 Gate::authorize('update', $availability);
             }
-            if ((int) $availability->teacher_id !== (int) $state['teacher_id']
-                || ! app(AvailabilityBooking::class)->contains($availability, $start, $end)) {
+            if ((int) $availability->teacher_id !== (int) $state['teacher_id'] || ! app(AvailabilityBooking::class)->contains($availability, $start, $end)) {
                 $fail('availability_id', 'Session is outside active availability.');
             }
         }
@@ -81,30 +71,23 @@ class SessionRules
         return $state;
     }
 
-    public function active(Enrollment $enrollment, Carbon $start, Carbon $end): bool
+    public function active(Individual $individual, Carbon $start, Carbon $end): bool
     {
-        return $enrollment->status === 'active'
-            && (! $enrollment->starts_at || $enrollment->starts_at->lte($start))
-            && (! $enrollment->expires_at || $enrollment->expires_at->gte($end))
-            && $enrollment->student?->status === 'active' && $enrollment->student?->user?->status === 'active'
-            && $enrollment->teacher?->status === 'active' && $enrollment->teacher?->user?->status === 'active';
+        return $individual->status === 'active' && (! $individual->starts_at || $individual->starts_at->lte($start))
+            && (! $individual->ends_at || $individual->ends_at->gte($end))
+            && $individual->student?->status === 'active' && $individual->student?->user?->status === 'active'
+            && $individual->teacherSubject?->status === 'active' && $individual->teacherSubject?->teacher?->status === 'active'
+            && $individual->teacherSubject?->teacher?->user?->status === 'active';
     }
 
     public function conflicts(array $state, ?int $except = null): bool
     {
-        $query = Session::whereIn('status', ['scheduled', 'ongoing'])->where('starts_at', '<', $state['ends_at'])->where('ends_at', '>', $state['starts_at'])
-            ->when($except, fn ($q) => $q->whereKeyNot($except));
-        if ((clone $query)->where('teacher_id', $state['teacher_id'])->exists()) {
-            return true;
-        }
-        $ids = ! empty($state['enrollment_id']) ? [Enrollment::findOrFail($state['enrollment_id'])->student_id]
-            : Group::findOrFail($state['group_id'])->groupEnrollments()->where('status', 'active')->with('enrollment')->get()->pluck('enrollment.student_id')->filter()->all();
+        $query = Session::whereIn('status', ['scheduled', 'ongoing'])->where('starts_at', '<', $state['ends_at'])->where('ends_at', '>', $state['starts_at'])->when($except, fn ($q) => $q->whereKeyNot($except));
+        $ids = (new Session($state))->participantIds();
         Student::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get();
-        if (app(PaidLessonBookings::class)->holdConflicts($state['teacher_id'], $ids, $state['starts_at'], $state['ends_at'])) {
-            return true;
-        }
 
-        return $query->where(fn ($q) => $q->whereHas('enrollment', fn ($q) => $q->whereIn('student_id', $ids))
-            ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->whereIn('student_id', $ids))))->exists();
+        return (clone $query)->where('teacher_id', $state['teacher_id'])->exists()
+            || app(PaidLessonBookings::class)->holdConflicts($state['teacher_id'], $ids, $state['starts_at'], $state['ends_at'])
+            || $query->forStudents($ids)->exists();
     }
 }

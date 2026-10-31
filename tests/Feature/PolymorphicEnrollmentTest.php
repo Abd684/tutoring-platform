@@ -100,23 +100,14 @@ class PolymorphicEnrollmentTest extends TestCase
         }
     }
 
-    public function test_step_10_group_requires_matching_active_subject_alias(): void
+    public function test_group_membership_is_not_derived_from_online_enrollment_alias(): void
     {
         $student = $this->setupStudent();
         [$subject, $unit, $content, $teacher] = $this->curriculum();
-        $other = TeacherSubject::create(['teacher_id' => $teacher->id, 'subject_id' => Subject::create(['name' => 'Other'])->id, 'price' => 10, 'status' => 'active']);
         $group = Group::create(['teacher_subject_id' => $subject->id, 'name' => 'Group', 'capacity' => 10, 'status' => 'active']);
         Sanctum::actingAs($teacher->user);
-        foreach ([$subject, $unit, $content, $other] as $model) {
-            $enrollment = $model->enrollments()->create(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'status' => 'active']);
-            $response = $this->postJson('/api/v1/teacher/groups/'.$group->id.'/enrollments', ['enrollment_id' => $enrollment->id]);
-            if ($model === $subject) {
-                $response->assertCreated()->assertJsonPath('message', 'Enrollment added to group successfully.');
-            } else {
-                $response->assertUnprocessable()->assertJsonPath('code', 'ENROLLMENT_SUBJECT_MISMATCH');
-            }
-        }
-        $this->assertDatabaseCount('group_enrollments', 1);
+        $this->postJson('/api/v1/teacher/groups/'.$group->id.'/students', ['student_id' => $student->id])->assertCreated();
+        $this->assertDatabaseHas('group_students', ['group_id' => $group->id, 'student_id' => $student->id]);
     }
 
     public function test_enrollment_rejects_types_outside_its_domain(): void

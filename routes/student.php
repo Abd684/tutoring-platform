@@ -7,7 +7,10 @@ use App\Http\Controllers\Api\V1\AvailableSessionController;
 use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
 use App\Http\Controllers\Api\V1\IndividualBookingController;
+use App\Http\Controllers\Api\V1\OnlineLearningController;
 use App\Http\Controllers\Api\V1\PaidLessonController;
+use App\Http\Controllers\Api\V1\PhysicalAvailabilityController;
+use App\Http\Controllers\Api\V1\PhysicalTeachingController;
 use App\Http\Controllers\Api\V1\ProfileAvatarController;
 use App\Http\Controllers\Api\V1\QuizAttemptController;
 use App\Http\Controllers\Api\V1\QuizController;
@@ -20,11 +23,12 @@ use App\Http\Controllers\Api\V1\StudentContentAssetController;
 use App\Http\Controllers\Api\V1\StudentEnrollmentController;
 use App\Http\Controllers\Api\V1\StudentGroupReadController;
 use App\Http\Controllers\Api\V1\StudentLearningController;
+use App\Http\Controllers\Api\V1\StudentNotificationController;
 use App\Http\Controllers\Api\V1\StudentProfileController;
 use App\Http\Controllers\Api\V1\StudentQuizReadController;
 use App\Http\Controllers\Api\V1\TeacherCalendarController;
+use App\Http\Controllers\Api\V1\TeacherDirectoryController;
 use App\Http\Middleware\StudentDeviceWhenRequired;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Student authentication routes.
@@ -50,10 +54,10 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
     Route::get('/student/bookings', [StudentBookingController::class, 'index']);
     Route::post('/student/enrollments/{enrollment}/payments', [EnrollmentPaymentController::class, 'store']);
     Route::post('/payments/checkout', [ShamCashPaymentController::class, 'checkout']);
-    Route::get('/teachers/{teacher}/paid-slots', [PaidLessonController::class, 'slots']);
+    Route::get('/teachers/{teacher}/paid-slots', fn () => response()->json(['status' => false, 'code' => 'PHYSICAL_CASH_ONLY', 'message' => 'دفع الجلسات الفيزيائية لدى الأستاذ. استخدم عروض ومواعيد التدريس الفيزيائي.'], 410));
     Route::get('/student/paid-bookings', [PaidLessonController::class, 'index']);
     Route::get('/student/paid-bookings/{booking}', [PaidLessonController::class, 'show']);
-    Route::post('/student/paid-bookings/{booking}/reschedule', [PaidLessonController::class, 'reschedule']);
+    Route::post('/student/paid-bookings/{booking}/reschedule', fn () => response()->json(['status' => false, 'code' => 'LEGACY_BOOKING_REQUIRES_SUPPORT', 'message' => 'هذا حجز مدفوع قديم. تواصل مع الدعم لمعالجته دون إنشاء دفعة فيزيائية جديدة.'], 410));
     Route::post('/refunds', [RefundController::class, 'store']);
     Route::get('/refunds/my', [RefundController::class, 'index']);
     Route::get('/payments/checkout/{checkout}/qr', [ShamCashPaymentController::class, 'checkoutQr'])->name('payments.checkout.qr');
@@ -101,9 +105,8 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
     Route::get('/student/sessions/{session}', [StudentBookingController::class, 'show']);
     Route::get('/student/device-transfer-requests', [StudentAuthController::class, 'pendingTransfers']);
     Route::post('/student/device-transfer-requests/{transfer}/{decision}', [StudentAuthController::class, 'decideTransfer'])->whereIn('decision', ['approve', 'reject']);
-    Route::get('/student/notifications', function (Request $request) {
-        return response()->json(['status' => true, 'data' => $request->user()->notifications()->orderByDesc('id')->limit(100)->get()]);
-    });
+    Route::get('/student/notifications', [StudentNotificationController::class, 'index']);
+    Route::post('/student/notifications/{notification}/read', [StudentNotificationController::class, 'read']);
     Route::get('/teachers/{teacher}/available-slots', [AvailabilityBookingController::class, 'index']);
     Route::post('/teacher-availabilities/{availability}/book', [AvailabilityBookingController::class, 'store']);
     Route::post('/quiz-attempts/{quizAttempt}/submit', [QuizAttemptController::class, 'submit']);
@@ -119,4 +122,28 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
 Route::middleware(['auth:sanctum', 'role:student,teacher', StudentDeviceWhenRequired::class])->group(function () {
     Route::post('/profile/avatar', [ProfileAvatarController::class, 'store'])->middleware('throttle:20,1');
     Route::delete('/profile/avatar', [ProfileAvatarController::class, 'destroy']);
+});
+
+Route::post('/student/register', [StudentAuthController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/student/login', [StudentAuthController::class, 'studentLogin'])->middleware('throttle:10,1');
+Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(function (): void {
+    Route::get('/student/profile', [StudentAuthController::class, 'studentMe']);
+    Route::match(['PUT', 'PATCH', 'POST'], '/student/profile', [StudentProfileController::class, 'update']);
+    Route::get('/student/teachers', [TeacherDirectoryController::class, 'index']);
+    Route::get('/student/teachers/{teacher}/physical/groups', [PhysicalTeachingController::class, 'groups']);
+    Route::post('/student/groups/{group}/join', [PhysicalTeachingController::class, 'join']);
+    Route::post('/student/groups/{group}/join-request', [PhysicalTeachingController::class, 'join']);
+    Route::post('/student/groups/{group}/withdraw', [PhysicalTeachingController::class, 'withdraw']);
+    Route::get('/student/teachers/{teacher}/physical/individual-offers', [PhysicalTeachingController::class, 'offers']);
+    Route::get('/student/teachers/{teacher}/availability', [PhysicalAvailabilityController::class, 'index']);
+    Route::post('/student/individual-bookings', [PhysicalTeachingController::class, 'book']);
+    Route::get('/student/teachers/{teacher}/online-content', [OnlineLearningController::class, 'tree']);
+    Route::get('/student/lessons/{lesson}/content', [OnlineLearningController::class, 'content']);
+    Route::post('/student/lessons/{lesson}/complete', [OnlineLearningController::class, 'complete']);
+    Route::get('/student/teacher-subjects/{teacherSubject}/learning-summary', [OnlineLearningController::class, 'progress']);
+    Route::get('/student/refunds/eligibility', [RefundController::class, 'eligibility']);
+    Route::get('/student/refunds', [RefundController::class, 'index']);
+    Route::post('/student/refunds', [RefundController::class, 'store']);
+    Route::get('/student/refunds/{refund}', [RefundController::class, 'show'])->whereNumber('refund');
+    Route::patch('/student/refunds/{refund}/payout-details', [RefundController::class, 'payout']);
 });

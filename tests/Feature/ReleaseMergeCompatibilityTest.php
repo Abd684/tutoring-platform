@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Enrollment;
+use App\Models\Individual;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -56,12 +56,11 @@ class ReleaseMergeCompatibilityTest extends TestCase
             'subject_id' => Subject::create(['name' => 'Math', 'status' => 'active'])->id]);
         $user = User::factory()->create(['role' => 'student']);
         $student = Student::create(['user_id' => $user->id, 'status' => 'active']);
-        $enrollment = Enrollment::create(['student_id' => $student->id, 'teacher_id' => $teacher->id,
-            'enrollable_type' => 'teacher_subject', 'enrollable_id' => $course->id, 'status' => 'active']);
+        $individual = Individual::create(['student_id' => $student->id, 'teacher_subject_id' => $course->id, 'status' => 'active']);
         $availability = TeacherAvailability::create(['teacher_id' => $teacher->id,
             'date' => now()->addDay()->toDateString(), 'start_time' => '10:00', 'end_time' => '12:00',
             'timezone' => 'UTC', 'recurrence_type' => 'none', 'status' => 'active']);
-        $body = ['availability_id' => $availability->id, 'enrollment_id' => $enrollment->id,
+        $body = ['availability_id' => $availability->id, 'individual_id' => $individual->id,
             'starts_at' => now()->addDay()->setTime(10, 0)->toIso8601String(),
             'ends_at' => now()->addDay()->setTime(11, 0)->toIso8601String()];
         $old = '/api/v1/teachers/'.$teacher->id.'/bookings';
@@ -74,7 +73,7 @@ class ReleaseMergeCompatibilityTest extends TestCase
         $this->postJson($old, $body)->assertUnprocessable();
         $this->assertDatabaseCount('sessions', 2);
         Sanctum::actingAs($teacherUser);
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'INDIVIDUAL', 'enrollment_id' => $enrollment->id,
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'individual', 'type_id' => $individual->id,
             'starts_at' => now()->addDay()->setTime(10, 0)->setTimezone('Asia/Damascus')->toIso8601String(),
             'ends_at' => now()->addDay()->setTime(11, 0)->setTimezone('Asia/Damascus')->toIso8601String()])->assertConflict();
     }

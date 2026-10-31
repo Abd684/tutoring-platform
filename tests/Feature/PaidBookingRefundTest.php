@@ -2,13 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Models\Answer;
 use App\Models\AuditLog;
 use App\Models\Content;
 use App\Models\Enrollment;
+use App\Models\Group;
+use App\Models\IndividualOffer;
 use App\Models\Lesson;
-use App\Models\PaidBooking;
 use App\Models\Payment;
+use App\Models\PaymentLessonAllocation;
 use App\Models\PaymentSetting;
+use App\Models\Question;
+use App\Models\Quiz;
+use App\Models\RefundRequest;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -26,372 +32,269 @@ class PaidBookingRefundTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $user;
+    private User $studentUser;
 
-    private User $admin;
+    private Student $student;
+
+    private User $teacherUser;
 
     private Teacher $teacher;
 
+    private User $admin;
+
     private TeacherSubject $course;
 
-    private TeacherAvailability $availability;
+    private Unit $unit;
 
-    private Content $content;
+    private Lesson $first;
+
+    private Lesson $second;
+
+    private Content $video;
+
+    private Content $other;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->travelTo(now()->startOfDay()->addHours(8));
         Storage::fake('local');
         Storage::disk('local')->put('qr.png', 'demo');
-        PaymentSetting::find(1)->update(['account_id' => 'DEMO', 'qr_path' => 'qr.png']);
-        $this->user = $this->student();
-        $this->admin = User::factory()->create(['role' => 'company_admin', 'status' => 'active']);
-        $this->teacher = Teacher::create(['user_id' => User::factory()->create(['role' => 'teacher', 'status' => 'active'])->id, 'status' => 'active']);
-        $this->course = TeacherSubject::create(['teacher_id' => $this->teacher->id, 'subject_id' => Subject::create(['name' => 'Math', 'status' => 'active'])->id,
-            'price' => 100, 'status' => 'active']);
-        $unit = Unit::create(['teacher_subject_id' => $this->course->id, 'title' => 'Unit', 'status' => 'published']);
-        $lesson = Lesson::create(['unit_id' => $unit->id, 'title' => 'Lesson', 'status' => 'published']);
-        $this->content = Content::create(['lesson_id' => $lesson->id, 'title' => 'Content', 'type' => 'video', 'status' => 'published']);
-        $this->availability = $this->availability(3);
-        Sanctum::actingAs($this->user);
+        PaymentSetting::findOrFail(1)->update(['account_id' => 'DEMO', 'qr_path' => 'qr.png']);
+        $this->studentUser = User::factory()->create();
+        $this->student = Student::create(['user_id' => $this->studentUser->id, 'status' => 'active']);
+        $this->teacherUser = User::factory()->create(['role' => 'teacher']);
+        $this->teacher = Teacher::create(['user_id' => $this->teacherUser->id, 'status' => 'active']);
+        $this->admin = User::factory()->create(['role' => 'company_admin']);
+        $this->course = TeacherSubject::create(['teacher_id' => $this->teacher->id, 'subject_id' => Subject::create(['name' => 'Math', 'status' => 'active'])->id, 'price' => 100, 'status' => 'active']);
+        $this->unit = Unit::create(['teacher_subject_id' => $this->course->id, 'title' => 'Unit', 'price' => 100, 'status' => 'published']);
+        $this->first = Lesson::create(['unit_id' => $this->unit->id, 'title' => 'First', 'price' => 60, 'status' => 'published']);
+        $this->second = Lesson::create(['unit_id' => $this->unit->id, 'title' => 'Second', 'price' => 140, 'status' => 'published']);
+        $this->video = Content::create(['lesson_id' => $this->first->id, 'type' => 'video', 'title' => 'Video', 'status' => 'published', 'price' => 60]);
+        $this->other = Content::create(['lesson_id' => $this->second->id, 'type' => 'pdf', 'title' => 'PDF', 'status' => 'published', 'price' => 140]);
+        Sanctum::actingAs($this->studentUser);
     }
 
-    private function student(): User
+    private function submit(string $type = 'teacher_subject', ?int $id = null): Payment
     {
-        $user = User::factory()->create(['role' => 'student', 'status' => 'active']);
-        Student::create(['user_id' => $user->id, 'status' => 'active']);
+        $c = $this->postJson('/api/v1/payments/checkout', ['service_type' => $type, 'service_id' => $id ?? $this->course->id])->assertCreated()->json('data.checkout_id');
+        $id = $this->postJson('/api/v1/student/payments', ['checkout_id' => $c, 'provider_reference' => 'IN-'.uniqid(), 'proof' => UploadedFile::fake()->create('proof.pdf', 20, 'application/pdf'), 'amount' => 1])->assertCreated()->assertJsonPath('data.amount', $type === 'lesson' ? '60.00' : '100.00')->json('data.id');
 
-        return $user;
+        return Payment::findOrFail($id);
     }
 
-    private function availability(int $days): TeacherAvailability
-    {
-        return TeacherAvailability::create(['teacher_id' => $this->teacher->id, 'date' => now()->addDays($days)->toDateString(),
-            'start_time' => '10:00', 'end_time' => '11:00', 'timezone' => 'UTC', 'recurrence_type' => 'none', 'status' => 'active', 'price' => 50]);
-    }
-
-    private function interval(?TeacherAvailability $availability = null): array
-    {
-        $availability ??= $this->availability;
-
-        return ['starts_at' => $availability->date->copy()->setTime(10, 0)->toIso8601String(),
-            'ends_at' => $availability->date->copy()->setTime(11, 0)->toIso8601String()];
-    }
-
-    private function submit(string $reference = 'IN-1', ?TeacherAvailability $availability = null): int
-    {
-        $availability ??= $this->availability;
-        $checkout = $this->postJson('/api/v1/payments/checkout', ['service_type' => 'lesson_booking', 'service_id' => $availability->id] + $this->interval($availability))
-            ->assertCreated()->json('data.checkout_id');
-
-        return $this->postJson('/api/v1/student/payments', ['checkout_id' => $checkout, 'provider_reference' => $reference,
-            'proof' => UploadedFile::fake()->create('receipt.pdf', 50, 'application/pdf'), 'amount' => 1, 'status' => 'succeeded'])
-            ->assertCreated()->assertJsonPath('data.amount', '50.00')->assertJsonPath('data.payment_status', 'PENDING_REVIEW')
-            ->assertJsonPath('data.booking.status', 'HELD')->json('data.id');
-    }
-
-    private function approve(int $payment): void
+    private function approve(Payment $p): void
     {
         Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/payments/'.$payment.'/review', ['decision' => 'confirm'])->assertOk()->assertJsonPath('data.payment.payment_status', 'APPROVED');
-        Sanctum::actingAs($this->user);
+        $this->postJson('/api/v1/admin/payments/'.$p->id.'/review', ['decision' => 'confirm'])->assertOk();
+        Sanctum::actingAs($this->studentUser);
     }
 
-    private function requestRefund(int $payment, string $code = 'exceptional'): int
+    private function refund(Payment $p): int
     {
-        return $this->postJson('/api/v1/refunds', ['payment_id' => $payment, 'account_id' => 'STUDENT-ACCOUNT',
-            'reason_code' => $code, 'reason' => 'Please refund this payment.', 'amount' => 1, 'status' => 'COMPLETED'])
-            ->assertCreated()->assertJsonPath('data.status', 'PENDING_REVIEW')->json('data.id');
+        return $this->postJson('/api/v1/student/refunds', ['payment_id' => $p->id, 'account_id' => 'STUDENT-ACCOUNT', 'reason' => 'Unused lessons'])->assertCreated()->json('data.id');
     }
 
-    public function test_checkout_creates_no_hold_and_submission_starts_a_full_24_hour_hold(): void
+    private function approveRefund(int $id): void
     {
-        $this->postJson('/api/v1/payments/checkout', ['service_type' => 'lesson_booking', 'service_id' => $this->availability->id] + $this->interval())->assertCreated();
-        $this->assertDatabaseCount('paid_bookings', 0);
-        $id = $this->submit();
-        $booking = PaidBooking::where('payment_id', $id)->firstOrFail();
-        $this->assertTrue($booking->hold_expires_at->eq(now()->addHours(24)));
-        $this->assertSame('pending', $booking->enrollment->status);
-        $this->assertSame('paid_booking', $booking->enrollment->enrollable_type);
-        $this->assertDatabaseCount('sessions', 0);
-        $other = $this->student();
+        Sanctum::actingAs($this->admin);
+        $this->postJson('/api/v1/admin/refunds/'.$id.'/review', ['decision' => 'approve', 'review_note' => 'Verified'])->assertOk();
+    }
+
+    private function finish(int $id, array $extra = [])
+    {
+        return $this->postJson('/api/v1/admin/refunds/'.$id.'/complete', $extra + ['refund_transferred_at' => now()->toIso8601String(), 'refund_proof' => UploadedFile::fake()->create('refund.pdf', 10, 'application/pdf')]);
+    }
+
+    public function test_purchase_snapshot_allocates_discount_proportionally_and_does_not_change_with_prices(): void
+    {
+        $p = $this->submit();
+        $rows = PaymentLessonAllocation::where('payment_id', $p->id)->orderBy('lesson_id')->get();
+        $this->assertSame(['30.00', '70.00'], $rows->pluck('allocated_amount')->all());
+        $this->first->update(['price' => 999]);
+        $this->second->update(['price' => 1]);
+        $this->approve($p);
+        $this->getJson('/api/v1/student/refunds/eligibility?payment_id='.$p->id)->assertOk()->assertJsonPath('data.refundable_amount', '100.00');
+        $this->getJson('/api/v1/contents/'.$this->video->id.'/assets')->assertOk();
+        $this->assertSame('active', Enrollment::find($p->payable_id)->status);
+    }
+
+    public function test_opening_lesson_does_not_consume_value_but_completion_does(): void
+    {
+        $p = $this->submit();
+        $this->approve($p);
+        $this->getJson('/api/v1/student/lessons/'.$this->first->id.'/content')->assertOk();
+        $this->getJson('/api/v1/student/refunds/eligibility?payment_id='.$p->id)->assertJsonPath('data.refundable_amount', '100.00');
+        $this->postJson('/api/v1/student/contents/'.$this->video->id.'/complete')->assertOk();
+        $this->assertDatabaseHas('lesson_completions', ['student_id' => $this->student->id, 'lesson_id' => $this->first->id]);
+        $this->getJson('/api/v1/student/refunds/eligibility?payment_id='.$p->id)->assertJsonPath('data.refundable_amount', '70.00')->assertJsonPath('data.consumed_amount', '30.00');
+    }
+
+    public function test_refund_reserves_balance_freezes_access_and_rejects_duplicate_requests(): void
+    {
+        $p = $this->submit();
+        $this->approve($p);
+        $this->refund($p);
+        $this->postJson('/api/v1/student/refunds', ['payment_id' => $p->id, 'account_id' => 'A'])->assertConflict();
+        $this->getJson('/api/v1/contents/'.$this->video->id.'/assets')->assertNotFound();
+        $this->getJson('/api/v1/student/refunds/eligibility?payment_id='.$p->id)->assertJsonPath('data.reserved_amount', '100.00')->assertJsonPath('data.eligible', false);
+    }
+
+    public function test_partial_refund_needs_proof_but_transfer_reference_is_optional_and_returned_lessons_are_locked(): void
+    {
+        $p = $this->submit();
+        $this->approve($p);
+        $this->postJson('/api/v1/student/contents/'.$this->video->id.'/complete')->assertOk();
+        $id = $this->refund($p);
+        $this->approveRefund($id);
+        $this->postJson('/api/v1/admin/refunds/'.$id.'/complete', ['refund_transferred_at' => now()->toIso8601String()])->assertUnprocessable()->assertJsonValidationErrors('refund_proof');
+        $res = $this->finish($id)->assertOk()->assertJsonPath('data.amount', '70.00')->assertJsonPath('data.refund_status', 'refund_sent')->assertJsonMissingPath('data.refund_proof_path');
+        $url = $res->json('data.refund_proof_url');
+        Sanctum::actingAs($this->studentUser);
+        $this->get($url)->assertOk();
+        $this->getJson('/api/v1/contents/'.$this->video->id.'/assets')->assertOk();
+        $this->getJson('/api/v1/contents/'.$this->other->id.'/assets')->assertNotFound();
+        $this->getJson('/api/v1/student/payments/'.$p->id)->assertJsonPath('data.financial_status', 'partially_refunded')->assertJsonPath('data.refunded_amount', '70.00');
+        $this->postJson('/api/v1/student/refunds', ['payment_id' => $p->id, 'account_id' => 'A'])->assertConflict();
+        $this->assertSame('succeeded', $p->fresh()->status);
+    }
+
+    public function test_rejected_refund_restores_access_and_allows_new_request(): void
+    {
+        $p = $this->submit();
+        $this->approve($p);
+        $id = $this->refund($p);
+        Sanctum::actingAs($this->admin);
+        $this->postJson('/api/v1/admin/refunds/'.$id.'/review', ['decision' => 'reject', 'review_note' => 'Incorrect account', 'rejection_code' => 'rejected_invalid_data'])->assertOk();
+        Sanctum::actingAs($this->studentUser);
+        $this->getJson('/api/v1/contents/'.$this->video->id.'/assets')->assertOk();
+        $new = $this->refund($p);
+        $this->assertNotSame($id, $new);
+    }
+
+    public function test_refund_proof_is_private_and_foreign_payments_are_not_exposed(): void
+    {
+        $p = $this->submit();
+        $this->approve($p);
+        $id = $this->refund($p);
+        $this->approveRefund($id);
+        $url = $this->finish($id)->assertOk()->json('data.refund_proof_url');
+        $other = User::factory()->create();
+        Student::create(['user_id' => $other->id, 'status' => 'active']);
         Sanctum::actingAs($other);
-        $this->postJson('/api/v1/payments/checkout', ['service_type' => 'lesson_booking', 'service_id' => $this->availability->id] + $this->interval())
-            ->assertConflict()->assertJsonPath('code', 'SLOT_UNAVAILABLE');
-        $this->getJson('/api/v1/teachers/'.$this->teacher->id.'/paid-slots')->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/v1/student/paid-bookings/'.$booking->id)->assertNotFound();
+        $this->getJson('/api/v1/student/refunds/eligibility?payment_id='.$p->id)->assertNotFound();
+        $this->get($url)->assertNotFound();
+        $this->getJson('/api/v1/student/refunds/'.$id)->assertNotFound();
     }
 
-    public function test_expiry_frees_interval_without_deciding_payment_even_before_scheduler_runs(): void
+    public function test_refund_completion_rolls_back_database_and_file_when_audit_fails(): void
     {
-        $id = $this->submit();
-        $this->travel(24)->hours();
-        $this->getJson('/api/v1/student/paid-bookings')->assertOk()->assertJsonPath('data.0.status', 'EXPIRED');
-        $this->getJson('/api/v1/teachers/'.$this->teacher->id.'/paid-slots')->assertOk()->assertJsonCount(1, 'data');
-        $this->artisan('payments:expire-holds')->assertSuccessful();
-        $this->assertDatabaseHas('paid_bookings', ['payment_id' => $id, 'status' => 'EXPIRED']);
-        $this->assertDatabaseHas('payments', ['id' => $id, 'status' => 'pending']);
-        $this->artisan('payments:expire-holds')->assertSuccessful();
-        $this->assertSame(1, AuditLog::where('action', 'booking.hold_expired')->count());
-    }
-
-    public function test_approval_confirms_only_lesson_and_does_not_unlock_course_or_allow_extra_bookings(): void
-    {
-        $id = $this->submit();
-        $this->approve($id);
-        $booking = PaidBooking::where('payment_id', $id)->firstOrFail();
-        $this->assertSame('CONFIRMED', $booking->status);
-        $this->assertSame('scheduled', $booking->session->status);
-        $this->getJson('/api/v1/student/bookings')->assertOk()->assertJsonCount(1, 'data');
-        $this->getJson('/api/v1/contents/'.$this->content->id.'/assets')->assertNotFound();
-        $this->postJson('/api/v1/teacher-availabilities/'.$this->availability->id.'/book', ['enrollment_id' => $booking->enrollment->id] + $this->interval())
-            ->assertConflict();
-        Sanctum::actingAs($this->teacher->user);
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'INDIVIDUAL', 'enrollment_id' => $booking->enrollment->id] + $this->interval())
-            ->assertUnprocessable();
-        Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/payments/'.$id.'/review', ['decision' => 'confirm'])->assertConflict();
-        $this->assertDatabaseCount('sessions', 1);
-    }
-
-    public function test_rejection_releases_hold_preserves_attempt_and_allows_new_submission(): void
-    {
-        $id = $this->submit();
-        Sanctum::actingAs($this->admin);
-        $url = '/api/v1/admin/payments/'.$id.'/review';
-        $this->postJson($url, ['decision' => 'reject'])->assertUnprocessable();
-        $this->postJson($url, ['decision' => 'reject', 'rejection_reason' => 'No transfer'])->assertOk()->assertJsonPath('data.booking.status', 'REJECTED');
-        Sanctum::actingAs($this->user);
-        $this->submit('IN-2');
-        $this->assertDatabaseCount('paid_bookings', 2);
-        $this->assertDatabaseHas('payments', ['id' => $id, 'status' => 'failed']);
-    }
-
-    public function test_late_approval_rechecks_availability_and_can_confirm_a_still_free_interval(): void
-    {
-        $id = $this->submit();
-        $this->travel(25)->hours();
-        $this->artisan('payments:expire-holds')->assertSuccessful();
-        $this->approve($id);
-        $this->assertDatabaseHas('paid_bookings', ['payment_id' => $id, 'status' => 'CONFIRMED']);
-        $this->assertDatabaseCount('sessions', 1);
-    }
-
-    public function test_late_approval_with_conflict_requires_alternative_and_reschedule_is_atomic(): void
-    {
-        $id = $this->submit();
-        $this->travel(25)->hours();
-        $other = $this->student();
-        Sanctum::actingAs($other);
-        $this->submit('OTHER-IN');
-        $this->approve($id);
-        $booking = PaidBooking::where('payment_id', $id)->firstOrFail();
-        $this->assertSame('NEEDS_RESCHEDULE', $booking->status);
-        $this->assertSame('pending', $booking->enrollment->status);
-        $this->assertDatabaseCount('sessions', 0);
-        $alternative = $this->availability(4);
-        $url = '/api/v1/student/paid-bookings/'.$booking->id.'/reschedule';
-        $this->postJson($url, ['availability_id' => $this->availability->id] + $this->interval())->assertConflict();
-        $this->postJson($url, ['availability_id' => $alternative->id] + $this->interval($alternative))->assertOk()->assertJsonPath('data.status', 'CONFIRMED');
-        $this->postJson($url, ['availability_id' => $alternative->id] + $this->interval($alternative))->assertConflict();
-        $this->assertDatabaseCount('sessions', 1);
-        $this->assertDatabaseHas('payments', ['id' => $id, 'amount' => 50, 'status' => 'succeeded']);
-        $this->assertDatabaseHas('audit_logs', ['action' => 'booking.rescheduled', 'entity_id' => $booking->id]);
-    }
-
-    public function test_teacher_cancellation_allows_manual_refund_with_unchanged_original_payment(): void
-    {
-        $id = $this->submit();
-        $this->approve($id);
-        $original = Payment::find($id)->toArray();
-        $booking = PaidBooking::where('payment_id', $id)->firstOrFail();
-        Sanctum::actingAs($this->teacher->user);
-        $this->postJson('/api/v1/teacher/sessions/'.$booking->session_id.'/cancel')->assertOk();
-        $this->assertDatabaseHas('paid_bookings', ['id' => $booking->id, 'status' => 'CANCELLED', 'cancelled_by_role' => 'teacher']);
-        Sanctum::actingAs($this->user);
-        $refund = $this->requestRefund($id, 'teacher_cancelled');
-        $this->getJson('/api/v1/refunds/my')->assertOk()->assertJsonPath('data.0.amount', '50.00');
-        Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'Teacher cancellation verified'])->assertOk();
-        $this->assertDatabaseHas('refund_requests', ['id' => $refund, 'status' => 'APPROVED', 'completed_at' => null]);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/complete', ['transfer_reference' => 'OUT-1'])->assertOk()->assertJsonPath('data.status', 'COMPLETED');
-        $this->assertSame($original, Payment::find($id)->toArray());
-        $this->assertDatabaseHas('paid_bookings', ['id' => $booking->id, 'status' => 'REFUNDED']);
-        $this->assertDatabaseHas('refund_requests', ['id' => $refund, 'completed_by' => $this->admin->id]);
-        Sanctum::actingAs($this->user);
-        $this->getJson('/api/v1/student/payments/'.$id)->assertOk()->assertJsonPath('data.payment_status', 'APPROVED')
-            ->assertJsonPath('data.refund.status', 'COMPLETED')->assertJsonPath('data.can_request_refund', false);
-    }
-
-    public function test_pending_or_unowned_payments_cannot_be_refunded_and_admin_actions_are_protected(): void
-    {
-        $id = $this->submit();
-        $body = ['payment_id' => $id, 'account_id' => 'ACCOUNT', 'reason_code' => 'exceptional', 'reason' => 'Please refund'];
-        $this->postJson('/api/v1/refunds', $body)->assertConflict()->assertJsonPath('code', 'REFUND_NOT_ALLOWED');
-        $this->approve($id);
-        $refund = $this->requestRefund($id);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'anything'])->assertForbidden();
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/complete', ['transfer_reference' => 'OUT'])->assertForbidden();
-        Sanctum::actingAs($this->student());
-        $this->postJson('/api/v1/refunds', $body)->assertNotFound();
-        $this->getJson('/api/v1/refunds/'.$refund)->assertNotFound();
-        $this->getJson('/api/v1/refunds/my?user_id='.$this->user->id)->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/v1/admin/refunds')->assertForbidden();
-    }
-
-    public function test_refund_rejection_preserves_history_and_allows_a_new_request(): void
-    {
-        $id = $this->submit();
-        $this->approve($id);
-        $refund = $this->requestRefund($id);
-        $body = ['payment_id' => $id, 'account_id' => 'ACCOUNT', 'reason_code' => 'exceptional', 'reason' => 'Again'];
-        $this->postJson('/api/v1/refunds', $body)->assertConflict()->assertJsonPath('code', 'REFUND_ALREADY_EXISTS');
-        Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'reject'])->assertUnprocessable();
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'reject', 'review_note' => 'Not eligible'])->assertOk();
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'Again'])->assertConflict();
-        Sanctum::actingAs($this->user);
-        $this->postJson('/api/v1/refunds', $body)->assertCreated();
-        $this->assertDatabaseCount('refund_requests', 2);
-        $this->assertDatabaseHas('refund_requests', ['id' => $refund, 'status' => 'REJECTED', 'active_payment_id' => null]);
-    }
-
-    public function test_completion_requires_manual_approval_and_distinct_actual_transfer_and_cannot_repeat(): void
-    {
-        $id = $this->submit();
-        $this->approve($id);
-        $refund = $this->requestRefund($id);
-        Sanctum::actingAs($this->admin);
-        $url = '/api/v1/admin/refunds/'.$refund.'/complete';
-        $this->postJson($url, ['transfer_reference' => 'OUT'])->assertConflict();
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'Exception approved'])->assertOk();
-        $this->postJson($url, [])->assertUnprocessable();
-        $this->postJson($url, ['transfer_reference' => 'IN-1'])->assertUnprocessable();
-        $this->postJson($url, ['transfer_reference' => 'OUT'])->assertOk();
-        $this->postJson($url, ['transfer_reference' => 'OUT-OTHER'])->assertConflict();
-        Sanctum::actingAs($this->user);
-        $this->postJson('/api/v1/refunds', ['payment_id' => $id, 'account_id' => 'ACCOUNT', 'reason_code' => 'exceptional', 'reason' => 'Again'])->assertConflict();
-    }
-
-    public function test_active_refund_blocks_rescheduling_and_rejection_restores_the_option(): void
-    {
-        $id = $this->submit();
-        $this->availability->update(['status' => 'disabled']);
-        $this->approve($id);
-        $booking = PaidBooking::where('payment_id', $id)->firstOrFail();
-        $refund = $this->requestRefund($id, 'service_unavailable');
-        $alt = $this->availability(4);
-        $url = '/api/v1/student/paid-bookings/'.$booking->id.'/reschedule';
-        $body = ['availability_id' => $alt->id] + $this->interval($alt);
-        $this->postJson($url, $body)->assertConflict()->assertJsonPath('code', 'RESCHEDULE_NOT_ALLOWED');
-        Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'reject', 'review_note' => 'Alternative agreed'])->assertOk();
-        Sanctum::actingAs($this->user);
-        $this->postJson($url, $body)->assertOk();
-    }
-
-    public function test_system_reason_requires_matching_state_and_partial_slots_are_not_underpriced(): void
-    {
-        $interval = $this->interval();
-        $interval['ends_at'] = $this->availability->date->copy()->setTime(10, 30)->toIso8601String();
-        $this->postJson('/api/v1/payments/checkout', ['service_type' => 'lesson_booking', 'service_id' => $this->availability->id] + $interval)
-            ->assertConflict()->assertJsonPath('code', 'SLOT_UNAVAILABLE');
-        $id = $this->submit();
-        $this->approve($id);
-        $refund = $this->requestRefund($id, 'teacher_cancelled');
-        Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'Claim'])->assertConflict();
-        $this->assertDatabaseHas('refund_requests', ['id' => $refund, 'status' => 'PENDING_REVIEW']);
-    }
-
-    public function test_material_refund_uses_original_amount_revokes_access_and_preserves_payment(): void
-    {
-        $checkout = $this->postJson('/api/v1/payments/checkout', ['service_type' => 'teacher_subject', 'service_id' => $this->course->id])->assertCreated()->json('data.checkout_id');
-        $id = $this->postJson('/api/v1/student/payments', ['checkout_id' => $checkout, 'provider_reference' => 'COURSE-IN',
-            'proof' => UploadedFile::fake()->create('receipt.pdf', 50, 'application/pdf')])->assertCreated()->json('data.id');
-        $this->approve($id);
-        $this->getJson('/api/v1/contents/'.$this->content->id.'/assets')->assertOk();
-        $this->course->update(['price' => 500]);
-        $refund = $this->requestRefund($id, 'service_unavailable');
-        $this->assertDatabaseHas('refund_requests', ['id' => $refund, 'amount' => 100, 'currency' => 'SYP']);
-        Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'Service failure verified'])->assertOk();
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/complete', ['transfer_reference' => 'COURSE-OUT'])->assertOk();
-        $this->assertDatabaseHas('payments', ['id' => $id, 'status' => 'succeeded', 'amount' => 100]);
-        Sanctum::actingAs($this->user);
-        $this->getJson('/api/v1/contents/'.$this->content->id.'/assets')->assertNotFound();
-    }
-
-    public function test_refund_completion_rolls_back_if_audit_write_fails(): void
-    {
-        $id = $this->submit();
-        $this->approve($id);
-        $refund = $this->requestRefund($id);
-        Sanctum::actingAs($this->admin);
-        $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'Exception approved'])->assertOk();
-        AuditLog::creating(function () {
-            throw new \RuntimeException('audit failure');
-        });
+        $p = $this->submit();
+        $this->approve($p);
+        $id = $this->refund($p);
+        $this->approveRefund($id);
+        AuditLog::creating(fn () => throw new \RuntimeException('audit failed'));
         try {
-            $this->postJson('/api/v1/admin/refunds/'.$refund.'/complete', ['transfer_reference' => 'OUT'])->assertStatus(500);
+            $this->finish($id)->assertStatus(500);
         } finally {
             AuditLog::flushEventListeners();
         }
-        $this->assertDatabaseHas('refund_requests', ['id' => $refund, 'status' => 'APPROVED', 'transfer_reference' => null]);
-        $this->assertDatabaseHas('payments', ['id' => $id, 'status' => 'succeeded']);
-        $this->assertDatabaseMissing('paid_bookings', ['payment_id' => $id, 'status' => 'REFUNDED']);
+        $this->assertDatabaseHas('refund_requests', ['id' => $id, 'status' => 'APPROVED', 'refund_proof_path' => null]);
+        $this->assertSame([], Storage::disk('local')->allFiles('refund-proofs'));
     }
 
-    public function test_holds_are_respected_by_existing_booking_endpoints_and_calendar(): void
+    public function test_teacher_suspension_creates_refund_review_for_unconsumed_balance_and_requires_payout_details(): void
     {
-        $this->submit();
-        $other = $this->student();
-        $enrollment = Enrollment::create(['student_id' => $other->student->id, 'teacher_id' => $this->teacher->id,
-            'enrollable_type' => 'teacher_subject', 'enrollable_id' => $this->course->id, 'price' => 100, 'status' => 'active']);
+        $p = $this->submit();
+        $this->approve($p);
+        $this->postJson('/api/v1/student/contents/'.$this->video->id.'/complete')->assertOk();
+        Sanctum::actingAs($this->admin);
+        $this->patchJson('/api/v1/admin/users/'.$this->teacherUser->id.'/suspend')->assertOk();
+        $r = RefundRequest::where('payment_id', $p->id)->firstOrFail();
+        $this->assertSame('70.00', $r->amount);
+        $this->assertTrue($r->payout_details_required);
+        Sanctum::actingAs($this->studentUser);
+        $this->patchJson('/api/v1/student/refunds/'.$r->id.'/payout-details', ['account_id' => 'ACCOUNT'])->assertOk();
+        $this->getJson('/api/v1/student/notifications')->assertOk()->assertJsonPath('meta.total', 2);
+    }
+
+    public function test_physical_checkout_is_rejected_and_direct_group_membership_claims_last_seat(): void
+    {
+        $this->postJson('/api/v1/payments/checkout', ['service_type' => 'lesson_booking', 'service_id' => 1])->assertUnprocessable();
+        $g = Group::create(['teacher_subject_id' => $this->course->id, 'name' => 'Group', 'capacity' => 1, 'status' => 'active', 'session_price' => 50, 'teaching_scope_type' => 'lesson', 'teaching_scope_id' => $this->first->id]);
+        $this->postJson('/api/v1/student/groups/'.$g->id.'/join-request')->assertCreated()->assertJsonPath('data.membership.status', 'active')->assertJsonPath('data.requires_teacher_approval', false);
+        $other = User::factory()->create();
+        Student::create(['user_id' => $other->id, 'status' => 'active']);
         Sanctum::actingAs($other);
-        $this->postJson('/api/v1/teacher-availabilities/'.$this->availability->id.'/book', ['enrollment_id' => $enrollment->id] + $this->interval())->assertConflict();
-        $this->getJson('/api/v1/teachers/'.$this->teacher->id.'/available-slots')->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/v1/teachers/'.$this->teacher->id.'/available-sessions')->assertOk()->assertJsonCount(0, 'data');
-        $calendar = $this->getJson('/api/v1/teachers/'.$this->teacher->id.'/calendar')->assertOk()->json('data');
-        $this->assertNotEmpty(array_filter($calendar, fn ($period) => $period['reason'] === 'booked'));
-        foreach ($calendar as $period) {
-            $this->assertArrayNotHasKey('payment_id', $period);
-            $this->assertArrayNotHasKey('student_id', $period);
-        }
+        $this->postJson('/api/v1/student/groups/'.$g->id.'/join')->assertConflict()->assertJsonPath('code', 'GROUP_FULL');
+        $this->getJson('/api/v1/student/groups/'.$g->id.'/members')->assertOk()->assertJsonPath('data.members_count', 1)->assertJsonMissingPath('data.members.0.phone');
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseCount('group_students', 1);
     }
 
-    public function test_non_utc_hold_is_hidden_in_existing_availability_reads(): void
+    public function test_individual_offer_books_a_cash_slot_once_without_enrollment_or_payment(): void
     {
-        $this->availability->update(['timezone' => 'Asia/Damascus']);
-        $start = $this->availability->date->toDateString().'T10:00:00+03:00';
-        $end = $this->availability->date->toDateString().'T11:00:00+03:00';
-        $checkout = $this->postJson('/api/v1/payments/checkout', ['service_type' => 'lesson_booking', 'service_id' => $this->availability->id,
-            'starts_at' => $start, 'ends_at' => $end])->assertCreated()->json('data.checkout_id');
-        $this->postJson('/api/v1/student/payments', ['checkout_id' => $checkout, 'provider_reference' => 'TZ-IN',
-            'proof' => UploadedFile::fake()->create('receipt.pdf', 50, 'application/pdf')])->assertCreated();
-        $this->assertSame('07:00:00', PaidBooking::first()->starts_at->format('H:i:s'));
-        Enrollment::create(['student_id' => $this->user->student->id, 'teacher_id' => $this->teacher->id,
-            'enrollable_type' => 'teacher_subject', 'enrollable_id' => $this->course->id, 'status' => 'active']);
-        $this->getJson('/api/v1/teachers/'.$this->teacher->id.'/available-sessions')->assertOk()->assertJsonCount(0, 'data');
+        $offer = IndividualOffer::create(['teacher_subject_id' => $this->course->id, 'teaching_scope_type' => 'unit', 'teaching_scope_id' => $this->unit->id, 'title' => 'Unit tutoring', 'session_price' => 25, 'status' => 'active']);
+        $a = TeacherAvailability::create(['teacher_id' => $this->teacher->id, 'date' => now()->addDay()->toDateString(), 'start_time' => '10:00', 'end_time' => '11:00', 'recurrence_type' => 'none', 'timezone' => 'UTC', 'status' => 'active']);
+        $body = ['offer_id' => $offer->id, 'availability_id' => $a->id, 'starts_at' => now()->addDay()->setTime(10, 0)->toIso8601String(), 'ends_at' => now()->addDay()->setTime(11, 0)->toIso8601String()];
+        $this->postJson('/api/v1/student/individual-bookings', $body)->assertCreated()->assertJsonPath('data.payment_method', 'cash_to_teacher')->assertJsonPath('data.session.type', 'individual');
+        $other = User::factory()->create();
+        Student::create(['user_id' => $other->id, 'status' => 'active']);
+        Sanctum::actingAs($other);
+        $this->postJson('/api/v1/student/individual-bookings', $body)->assertUnprocessable();
+        $this->assertDatabaseCount('sessions', 1);
+        $this->assertDatabaseCount('individuals', 1);
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseCount('enrollments', 0);
     }
 
-    public function test_refund_transfer_reference_cannot_be_reused_for_another_payment(): void
+    public function test_lesson_purchase_only_opens_that_lesson(): void
     {
-        foreach ([$this->availability, $this->availability(4)] as $index => $availability) {
-            Sanctum::actingAs($this->user);
-            $id = $this->submit('IN-'.$index, $availability);
-            $this->approve($id);
-            $refund = $this->requestRefund($id);
-            Sanctum::actingAs($this->admin);
-            $this->postJson('/api/v1/admin/refunds/'.$refund.'/review', ['decision' => 'approve', 'review_note' => 'Manual exception approved'])->assertOk();
-            $response = $this->postJson('/api/v1/admin/refunds/'.$refund.'/complete', ['transfer_reference' => 'SAME-OUT']);
-            if ($index === 0) {
-                $response->assertOk();
-            } else {
-                $response->assertUnprocessable()->assertJsonValidationErrors('transfer_reference');
-                $this->assertDatabaseHas('refund_requests', ['id' => $refund, 'status' => 'APPROVED']);
-            }
-        }
+        $p = $this->submit('lesson', $this->first->id);
+        $this->approve($p);
+        $this->getJson('/api/v1/contents/'.$this->video->id.'/assets')->assertOk();
+        $this->getJson('/api/v1/contents/'.$this->other->id.'/assets')->assertNotFound();
+    }
+
+    public function test_simple_quiz_is_free_limited_graded_and_counts_with_lower_weight(): void
+    {
+        $c = Content::create(['lesson_id' => $this->first->id, 'type' => 'quiz', 'title' => 'Quick quiz', 'status' => 'published']);
+        $q = Quiz::create(['content_id' => $c->id, 'quiz_type' => 'simple', 'attempts_allowed' => 1, 'status' => 'published', 'progress_weight' => 0.30]);
+        $c->update(['price' => 10]);
+        $this->postJson('/api/v1/payments/checkout', ['service_type' => 'content', 'service_id' => $c->id])->assertUnprocessable()->assertJsonPath('code', 'SIMPLE_QUIZ_FREE');
+        $question = Question::create(['quiz_id' => $q->id, 'type' => 'mcq', 'body' => '2+2?', 'points' => 1, 'rubric_json' => ['options' => ['3', '4'], 'correct_answer' => '4']]);
+        $res = $this->getJson('/api/v1/quizzes/'.$q->id.'/data')->assertOk()->assertJsonPath('data.protected', false);
+        $this->assertStringNotContainsString('correct_answer', $res->getContent());
+        $id = $this->postJson('/api/v1/quizzes/'.$q->id.'/attempts')->assertCreated()->json('data.attempt_id');
+        $this->postJson('/api/v1/quiz-attempts/'.$id.'/answers', ['question_id' => $question->id, 'answer_text' => '4'])->assertCreated();
+        $this->postJson('/api/v1/quiz-attempts/'.$id.'/submit')->assertOk();
+        $this->postJson('/api/v1/quizzes/'.$q->id.'/attempts')->assertUnprocessable();
+        $this->getJson('/api/v1/student/teacher-subjects/'.$this->course->id.'/learning-summary')->assertOk()->assertJsonPath('data.earned_progress_points', 0.3)->assertJsonPath('data.completed_lessons', 0);
+        $this->getJson('/api/v1/contents/'.$this->video->id.'/assets')->assertNotFound();
+    }
+
+    public function test_old_payments_without_price_snapshot_require_audited_reconciliation_not_guessed_prices(): void
+    {
+        $e = Enrollment::create(['student_id' => $this->student->id, 'teacher_id' => $this->teacher->id, 'enrollable_type' => 'teacher_subject', 'enrollable_id' => $this->course->id, 'price' => 100, 'status' => 'active']);
+        $p = Payment::create(['payer_id' => $this->studentUser->id, 'payable_type' => $e->getMorphClass(), 'payable_id' => $e->id, 'amount' => 100, 'currency' => 'SYP', 'provider' => 'sham_cash', 'status' => 'succeeded']);
+        $this->getJson('/api/v1/student/refunds/eligibility?payment_id='.$p->id)->assertJsonPath('data.code', 'PRICING_SNAPSHOT_REQUIRED');
+        Sanctum::actingAs($this->admin);
+        $this->postJson('/api/v1/admin/payments/'.$p->id.'/pricing-allocation', ['review_note' => 'Original invoice confirmed', 'lessons' => [
+            ['lesson_id' => $this->first->id, 'lesson_price_snapshot' => 60, 'allocated_amount' => 30, 'content_ids_snapshot' => [$this->video->id]],
+            ['lesson_id' => $this->second->id, 'lesson_price_snapshot' => 140, 'allocated_amount' => 70, 'content_ids_snapshot' => [$this->other->id]],
+        ]])->assertOk()->assertJsonPath('data.refundable_amount', '100.00');
+    }
+
+    public function test_teacher_reviews_submitted_essay_and_recomputes_attempt_score(): void
+    {
+        $c = Content::create(['lesson_id' => $this->first->id, 'type' => 'quiz', 'title' => 'Essay', 'status' => 'published']);
+        $q = Quiz::create(['content_id' => $c->id, 'quiz_type' => 'simple', 'attempts_allowed' => 1, 'status' => 'published']);
+        $question = Question::create(['quiz_id' => $q->id, 'type' => 'essay', 'body' => 'Explain', 'points' => 10]);
+        $id = $this->postJson('/api/v1/quizzes/'.$q->id.'/attempts')->assertCreated()->json('data.attempt_id');
+        $this->postJson('/api/v1/quiz-attempts/'.$id.'/answers', ['question_id' => $question->id, 'answer_text' => 'My answer'])->assertCreated();
+        $this->postJson('/api/v1/quiz-attempts/'.$id.'/submit')->assertOk();
+        $answer = Answer::where('attempt_id', $id)->firstOrFail();
+        Sanctum::actingAs($this->teacherUser);
+        $this->postJson('/api/v1/teacher/answers/'.$answer->id.'/grade', ['score' => 11])->assertUnprocessable();
+        $this->postJson('/api/v1/teacher/answers/'.$answer->id.'/grade', ['score' => 8])->assertOk()->assertJsonPath('data.attempt.status', 'graded')->assertJsonPath('data.attempt.score', '8.00');
     }
 }

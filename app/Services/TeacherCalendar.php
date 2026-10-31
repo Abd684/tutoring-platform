@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Enrollment;
+use App\Models\Individual;
 use App\Models\PaidBooking;
 use App\Models\Session;
 use App\Models\Student;
@@ -36,13 +36,11 @@ class TeacherCalendar
         }
         $base = Session::whereIn('status', ['scheduled', 'ongoing', 'completed'])->where('starts_at', '<', $to)->where('ends_at', '>', $from);
         $teacherBusy = (clone $base)->where('teacher_id', $teacher->id)->get(['starts_at', 'ends_at', 'type', 'status']);
-        $studentBusy = (clone $base)->where(fn ($q) => $q->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))
-            ->orWhereHas('group.groupEnrollments', fn ($q) => $q->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $student->id))))->get(['starts_at', 'ends_at']);
+        $studentBusy = (clone $base)->forStudent($student->id)->get(['starts_at', 'ends_at']);
         $holds = PaidBooking::holding()->where('starts_at', '<', $to)->where('ends_at', '>', $from);
         $teacherBusy = $teacherBusy->concat((clone $holds)->where('teacher_id', $teacher->id)->get());
         $studentBusy = $studentBusy->concat((clone $holds)->where('student_id', $student->id)->get());
-        $enrollments = Enrollment::where('student_id', $student->id)->where('teacher_id', $teacher->id)->where('status', 'active')->where('enrollable_type', '!=', 'paid_booking')
-            ->with(['student.user', 'teacher.user'])->get();
+        $individuals = Individual::whereDoesntHave('paidBookings')->where('student_id', $student->id)->where('status', 'active')->whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $teacher->id))->with(['student.user', 'teacherSubject.teacher.user'])->get();
         $points = [$from->timestamp, $to->timestamp];
         foreach ($windows as $window) {
             $points[] = $window['from'];
@@ -52,8 +50,8 @@ class TeacherCalendar
             $points[] = max($from->timestamp, $session->starts_at->timestamp);
             $points[] = min($to->timestamp, $session->ends_at->timestamp);
         }
-        foreach ($enrollments as $enrollment) {
-            foreach ([$enrollment->starts_at, $enrollment->expires_at] as $boundary) {
+        foreach ($individuals as $individual) {
+            foreach ([$individual->starts_at, $individual->ends_at] as $boundary) {
                 if ($boundary && $boundary->gt($from) && $boundary->lt($to)) {
                     $points[] = $boundary->timestamp;
                 }
@@ -81,7 +79,7 @@ class TeacherCalendar
             $active = array_values(array_filter($cover, fn ($w) => $w['model']->status === 'active'));
             $busy = $teacherBusy->first(fn ($s) => $s->starts_at->timestamp < $b && $s->ends_at->timestamp > $a);
             $ownConflict = $studentBusy->contains(fn ($s) => $s->starts_at->timestamp < $b && $s->ends_at->timestamp > $a);
-            $ids = $enrollments->filter(fn ($e) => app(SessionRules::class)->active($e, $start, $end))->pluck('id')->values();
+            $ids = $individuals->filter(fn ($e) => app(SessionRules::class)->active($e, $start, $end))->pluck('id')->values();
             $eligibleInPeriod = $eligibleInPeriod || $ids->isNotEmpty();
             $reason = match (true) {
                 (bool) $busy => 'booked', $active === [] && $cover !== [] => 'closed', $active === [] => 'outside_schedule',
@@ -92,12 +90,12 @@ class TeacherCalendar
             $periods[] = [
                 'starts_at' => $start->setTimezone($timezone)->toIso8601String(), 'ends_at' => $end->setTimezone($timezone)->toIso8601String(),
                 'timezone' => $timezone, 'status' => $bookable ? 'available' : ($reason === 'booked' ? 'booked' : 'unavailable'),
-                'reason' => $reason, 'bookable' => $bookable, 'session_id' => null, 'session_type' => $busy?->type ?? ($active !== [] ? 'INDIVIDUAL' : null),
+                'reason' => $reason, 'bookable' => $bookable, 'session_id' => null, 'session_type' => $busy?->type ?? ($active !== [] ? 'individual' : null),
                 'session_status' => $busy?->status, 'availability_id' => $availability?->id, 'availability_timezone' => $availability?->timezone,
-                'eligible_enrollment_ids' => $bookable ? $ids : [],
+                'eligible_individual_ids' => $bookable ? $ids : [],
             ];
         }
 
-        return ['periods' => $periods, 'has_schedule' => $windows !== [], 'has_eligible_enrollment_in_period' => $eligibleInPeriod];
+        return ['periods' => $periods, 'has_schedule' => $windows !== [], 'has_eligible_individual_in_period' => $eligibleInPeriod];
     }
 }

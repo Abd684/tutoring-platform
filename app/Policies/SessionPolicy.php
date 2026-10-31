@@ -117,15 +117,14 @@ class SessionPolicy
     public function viewBooking(User $user, Session $session): Response
     {
         $studentId = $user->student?->id;
-        $owns = $this->book($user) && ((int) $session->enrollment?->student_id === (int) $studentId
-            || $session->group?->groupEnrollments()->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $studentId))->exists());
+        $owns = $this->book($user) && Session::whereKey($session->id)->forStudent((int) $studentId)->exists();
 
         return $owns ? Response::allow() : Response::denyAsNotFound();
     }
 
     public function cancelBooking(User $user, ?Session $session = null): bool
     {
-        return $this->book($user) && ($session === null || (int) $session->enrollment?->student_id === (int) $user->student->id);
+        return $this->book($user) && ($session === null || $session->type === 'individual' && (int) $session->target?->student_id === (int) $user->student->id);
     }
 
     private function isActiveTeacher(User $user): bool
@@ -137,8 +136,7 @@ class SessionPolicy
     public function studentView(User $user, Session $session): Response
     {
         $studentId = $user->student?->id;
-        $owns = $studentId && ((int) $session->enrollment?->student_id === (int) $studentId
-            || $session->group?->groupEnrollments()->where('status', 'active')->whereHas('enrollment', fn ($q) => $q->where('student_id', $studentId))->exists());
+        $owns = $studentId && Session::whereKey($session->id)->forStudent((int) $studentId)->exists();
 
         return $this->book($user) && $owns ? Response::allow() : Response::denyAsNotFound();
     }

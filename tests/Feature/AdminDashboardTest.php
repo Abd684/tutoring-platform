@@ -5,7 +5,8 @@ namespace Tests\Feature;
 use App\Models\Content;
 use App\Models\Enrollment;
 use App\Models\Group;
-use App\Models\GroupEnrollment;
+use App\Models\GroupStudent;
+use App\Models\Individual;
 use App\Models\Lesson;
 use App\Models\Payment;
 use App\Models\Question;
@@ -54,7 +55,9 @@ class AdminDashboardTest extends TestCase
         $enrollment = Enrollment::create(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'enrollable_type' => 'teacher_subject', 'enrollable_id' => $course->id, 'price' => 50, 'status' => 'active', 'starts_at' => now()->subDay(), 'expires_at' => now()->addMonth()]);
         $group = Group::create(['teacher_subject_id' => $course->id, 'name' => 'المجموعة الأولى', 'capacity' => 3, 'status' => 'active']);
 
-        return compact('teacherUser', 'teacher', 'studentUser', 'student', 'subject', 'course', 'unit', 'lesson', 'content', 'enrollment', 'group');
+        $individual = Individual::create(['student_id' => $student->id, 'teacher_subject_id' => $course->id, 'status' => 'active']);
+
+        return compact('individual', 'teacherUser', 'teacher', 'studentUser', 'student', 'subject', 'course', 'unit', 'lesson', 'content', 'enrollment', 'group');
     }
 
     private function protectedPages(): array
@@ -83,13 +86,13 @@ class AdminDashboardTest extends TestCase
     {
         $admin = $this->admin();
         $this->get('/admin/login')->assertOk()->assertSee('تسجيل الدخول');
-        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'wrong'])->assertSessionHasErrors('email');
-        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'TestPassword123!'])->assertRedirect('/admin');
+        $this->post('/admin/login', ['phone' => $admin->phone, 'password' => 'wrong'])->assertSessionHasErrors('phone');
+        $this->post('/admin/login', ['phone' => $admin->phone, 'password' => 'TestPassword123!'])->assertRedirect('/admin');
         $this->assertAuthenticatedAs($admin);
         $this->post('/admin/logout')->assertRedirect('/admin/login');
         $this->assertGuest();
         $teacher = User::factory()->create(['role' => 'teacher', 'password_hash' => Hash::make('TestPassword123!')]);
-        $this->post('/admin/login', ['email' => $teacher->email, 'password' => 'TestPassword123!'])->assertSessionHasErrors('email');
+        $this->post('/admin/login', ['phone' => $teacher->phone, 'password' => 'TestPassword123!'])->assertSessionHasErrors('phone');
         $this->assertGuest();
     }
 
@@ -107,7 +110,7 @@ class AdminDashboardTest extends TestCase
     {
         $f = $this->fixture();
         $this->actingAs($this->admin());
-        $session = Session::create(['teacher_id' => $f['teacher']->id, 'type' => 'GROUP', 'group_id' => $f['group']->id, 'capacity' => 3, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'status' => 'scheduled']);
+        $session = Session::create(['teacher_id' => $f['teacher']->id, 'type' => 'group', 'type_id' => $f['group']->id, 'capacity' => 3, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'status' => 'scheduled']);
         $plan = SubscriptionPlan::create(['name' => 'خطة تجريبية', 'price' => 10, 'billing_cycle' => 'monthly', 'status' => 'active']);
         foreach (['/admin/students/'.$f['studentUser']->id, '/admin/students/'.$f['studentUser']->id.'/edit', '/admin/teachers/'.$f['teacherUser']->id, '/admin/teachers/'.$f['teacherUser']->id.'/edit', '/admin/groups/'.$f['group']->id, '/admin/groups/'.$f['group']->id.'/edit', '/admin/sessions/'.$session->id, '/admin/plans/'.$plan->id.'/edit', '/admin/content/'.$f['content']->id.'/edit', '/admin/content/'.$f['content']->id.'/quiz'] as $path) {
             $this->get($path)->assertOk();
@@ -156,24 +159,22 @@ class AdminDashboardTest extends TestCase
         $e = $user->student->enrollments()->firstOrFail();
         $this->assertSame('active', $e->status);
         $this->assertSame('0.00', $e->price);
-        $this->assertDatabaseHas('group_enrollments', ['group_id' => $f['group']->id, 'enrollment_id' => $e->id, 'status' => 'active']);
+        $this->assertDatabaseHas('group_students', ['group_id' => $f['group']->id, 'student_id' => $user->student->id, 'status' => 'active']);
         $this->assertDatabaseCount('payments', 0);
         $this->post('/admin/students', [...$data, 'email' => 'bad-grant@example.invalid', 'phone' => 'qa004', 'course_id' => 99999])->assertSessionHasErrors('course_id');
         $this->assertDatabaseMissing('users', ['email' => 'bad-grant@example.invalid']);
     }
 
-    public function test_group_membership_uses_full_subject_rules_and_capacity(): void
+    public function test_group_membership_uses_students_and_capacity(): void
     {
         $f = $this->fixture();
         $this->actingAs($this->admin());
         $path = '/admin/groups/'.$f['group']->id.'/members';
-        $unitE = Enrollment::create(['student_id' => $f['student']->id, 'teacher_id' => $f['teacher']->id, 'enrollable_type' => 'unit', 'enrollable_id' => $f['unit']->id, 'status' => 'active']);
-        $this->post($path, ['enrollment_id' => $unitE->id])->assertSessionHasErrors('enrollment_id');
-        $this->post($path, ['enrollment_id' => $f['enrollment']->id])->assertRedirect();
-        $this->assertDatabaseCount('group_enrollments', 1);
-        $this->post($path, ['enrollment_id' => $f['enrollment']->id])->assertSessionHasErrors('enrollment_id');
-        $m = GroupEnrollment::firstOrFail();
-        $other = Group::create(['teacher_subject_id' => $f['course']->id, 'name' => 'أخرى', 'capacity' => 1, 'status' => 'active']);
+        $this->post($path, ['student_id' => $f['student']->id])->assertRedirect();
+        $this->assertDatabaseCount('group_students', 1);
+        $this->post($path, ['student_id' => $f['student']->id])->assertSessionHasErrors('student_id');
+        $m = GroupStudent::firstOrFail();
+        $other = Group::create(['teacher_subject_id' => $f['course']->id, 'name' => 'Other', 'capacity' => 1, 'status' => 'active']);
         $this->delete('/admin/groups/'.$other->id.'/members/'.$m->id)->assertNotFound();
         $this->delete($path.'/'.$m->id)->assertRedirect();
         $this->assertSame('removed', $m->fresh()->status);
@@ -183,13 +184,13 @@ class AdminDashboardTest extends TestCase
     {
         $f = $this->fixture();
         $this->actingAs($this->admin());
-        $state = ['teacher_id' => $f['teacher']->id, 'type' => 'INDIVIDUAL', 'enrollment_id' => $f['enrollment']->id, 'starts_at' => now()->addDays(2)->toIso8601String(), 'ends_at' => now()->addDays(2)->addHour()->toIso8601String()];
+        $state = ['teacher_id' => $f['teacher']->id, 'type' => 'individual', 'type_id' => $f['individual']->id, 'starts_at' => now()->addDays(2)->toIso8601String(), 'ends_at' => now()->addDays(2)->addHour()->toIso8601String()];
         $this->post('/admin/sessions', $state)->assertRedirect();
-        $this->assertDatabaseHas('sessions', ['type' => 'INDIVIDUAL', 'capacity' => 1, 'enrollment_id' => $f['enrollment']->id]);
+        $this->assertDatabaseHas('sessions', ['type' => 'individual', 'capacity' => 1, 'type_id' => $f['individual']->id]);
         $this->post('/admin/sessions', $state)->assertSessionHasErrors('starts_at');
-        $this->post('/admin/sessions', [...$state, 'group_id' => $f['group']->id])->assertSessionHasErrors('enrollment_id');
-        $this->post('/admin/sessions/'.$f['enrollment']->sessions()->firstOrFail()->id.'/cancel')->assertRedirect();
-        $this->assertDatabaseHas('sessions', ['status' => 'cancelled', 'enrollment_id' => $f['enrollment']->id]);
+        $this->post('/admin/sessions', [...$state, 'group_id' => $f['group']->id])->assertSessionHasErrors('group_id');
+        $this->post('/admin/sessions/'.$f['individual']->sessions()->firstOrFail()->id.'/cancel')->assertRedirect();
+        $this->assertDatabaseHas('sessions', ['status' => 'cancelled', 'type_id' => $f['individual']->id]);
     }
 
     public function test_admin_can_link_matching_availability_but_not_another_teachers_availability(): void
@@ -198,7 +199,7 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($this->admin());
         $start = now()->addDays(3)->startOfDay()->addHours(10);
         $slot = TeacherAvailability::create(['teacher_id' => $f['teacher']->id, 'date' => $start->toDateString(), 'start_time' => '09:00:00', 'end_time' => '12:00:00', 'recurrence_type' => 'none', 'timezone' => config('app.timezone'), 'status' => 'active']);
-        $state = ['teacher_id' => $f['teacher']->id, 'type' => 'INDIVIDUAL', 'enrollment_id' => $f['enrollment']->id, 'starts_at' => $start->toIso8601String(), 'ends_at' => $start->copy()->addHour()->toIso8601String(), 'availability_id' => $slot->id];
+        $state = ['teacher_id' => $f['teacher']->id, 'type' => 'individual', 'type_id' => $f['individual']->id, 'starts_at' => $start->toIso8601String(), 'ends_at' => $start->copy()->addHour()->toIso8601String(), 'availability_id' => $slot->id];
         $other = $this->fixture();
         $slot->update(['teacher_id' => $other['teacher']->id]);
         $this->post('/admin/sessions', $state)->assertSessionHasErrors('availability_id');
@@ -328,7 +329,7 @@ class AdminDashboardTest extends TestCase
         $this->get('/admin/search?q='.urlencode($f['studentUser']->name))->assertOk()->assertSee($f['studentUser']->name);
         $f['studentUser']->update(['name' => '=UNSAFE()']);
         $r = $this->get('/admin/students?export=1')->assertOk();
-        $this->assertStringContainsString("'=UNSAFE()",$r->streamedContent());
-        $this->assertDatabaseHas('platform_settings',['key' => 'dashboard']);
+        $this->assertStringContainsString("'=UNSAFE()", $r->streamedContent());
+        $this->assertDatabaseHas('platform_settings', ['key' => 'dashboard']);
     }
 }

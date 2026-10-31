@@ -88,9 +88,9 @@ class TeacherSubjectManagementTest extends TestCase
             Sanctum::actingAs($user);
             $this->postJson(self::URL, $payload)->assertForbidden();
             $this->getJson(self::URL)->assertForbidden();
-            $this->getJson(self::URL.'/'.$course->id)->assertNotFound();
-            $this->patchJson(self::URL.'/'.$course->id, ['price' => 1])->assertNotFound();
-            $this->deleteJson(self::URL.'/'.$course->id)->assertNotFound();
+            $this->getJson(self::URL.'/'.$course->id)->assertForbidden();
+            $this->patchJson(self::URL.'/'.$course->id, ['price' => 1])->assertForbidden();
+            $this->deleteJson(self::URL.'/'.$course->id)->assertForbidden();
         }
     }
 

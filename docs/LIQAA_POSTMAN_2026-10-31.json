@@ -1,0 +1,4953 @@
+{
+  "info": {
+    "name": "LIQAA — API 2026-10-31",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "اختَر توكن الطالب/الأستاذ/الإدارة حسب المسار. الأمثلة مولدة ويجب تعبئة المعرفات والملفات وحقول المصفوفات حسب الدليل."
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "phone",
+      "value": "0991234567"
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "device_uuid",
+      "value": "frontend-device-uuid"
+    },
+    {
+      "key": "checkout_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "GET /api/v1/teachers/featured",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/featured",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md."
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers/directory",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/directory",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:[{id,name,specialization,avatar_url,modes:[online,physical],status,region_id}] وmeta. mode سياق عرض، وليس مفتاح تفعيل قدرة الأستاذ."
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:[{id,name,specialization,avatar_url,modes:[online,physical],status,region_id}] وmeta. mode سياق عرض، وليس مفتاح تفعيل قدرة الأستاذ."
+      }
+    },
+    {
+      "name": "GET /api/v1/avatars/{user}/{filename}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/avatars/{{user_id}}/{{filename_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية."
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher-subjects/most-requested",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher-subjects/most-requested",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج."
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers/{teacher}/subjects",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/{{teacher_id}}/subjects",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة."
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/subjects/{teacherSubject}/units",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/subjects/{{teacherSubject_id}}/units",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة."
+      }
+    },
+    {
+      "name": "GET /api/v1/units/{unit}/lessons",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/units/{{unit_id}}/lessons",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة."
+      }
+    },
+    {
+      "name": "GET /api/v1/lessons/{lesson}/contents",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/lessons/{{lesson_id}}/contents",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة."
+      }
+    },
+    {
+      "name": "PUT /api/v1/admin/payment-settings",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/admin/payment-settings",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "account_id",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "qr_image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/admin/payments",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/admin/payments",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/admin/refunds",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/admin/refunds",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data قائمة RefundRequest DTO؛ meta للصفحات.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/admin/refunds/{refund}/review",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/admin/refunds/{{refund_id}}/review",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: RefundRequest؛ قرار المراجعة لا يعني إرسال الأموال. rejection_code مطلوب عند الرفض.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"decision\": \"approve\",\n  \"review_note\": \"example\",\n  \"rejection_code\": \"rejected_no_balance\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/admin/refunds/{refund}/complete",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/admin/refunds/{{refund_id}}/complete",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: RefundRequest مع refund_status=refund_sent وrefunded_amount وrefund_proof_url. الإثبات وتاريخ التحويل إلزاميان، رقم التحويل اختياري.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "transfer_reference",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "refund_transferred_at",
+              "type": "text",
+              "value": "2026-11-03T10:00:00+03:00"
+            },
+            {
+              "key": "refund_proof",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/admin/payments/{payment}/review",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/admin/payments/{{payment_id}}/review",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:{payment:PaymentDTO,enrollment:Enrollment}. confirm أوreject؛ السبب إلزامي عند رفض شام كاش.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"decision\": \"confirm\",\n  \"rejection_reason\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/admin/users/{user}/suspend",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/admin/users/{{user_id}}/suspend",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/admin/users/{user}/activate",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/admin/users/{{user_id}}/activate",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/admin/students/{user}/suspend",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/admin/students/{{user_id}}/suspend",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/admin/students/{user}/activate",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/admin/students/{{user_id}}/activate",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/payment-settings",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/payment-settings",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/payment-settings/qr",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/payment-settings/qr",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/payment-proofs/{payment}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/payment-proofs/{{payment_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/refunds/{refund}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/refunds/{{refund_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: RefundRequest مع refund_status وrefund_proof_url وoriginal_proof_url؛ حقول مسار الملفات الداخلية مخفية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/refunds/{refund}/proof/{kind}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/refunds/{{refund_id}}/proof/{{kind_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "ملف خاص؛ يعرضه صاحب الطلب أو الإدارة فقط. kind=refund أو original.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/payments",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/payments",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/payments",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/payments",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payer_id\": 1,\n  \"payable_type\": \"example\",\n  \"payable_id\": 1,\n  \"amount\": 1,\n  \"currency\": \"example\",\n  \"provider\": \"example\",\n  \"provider_reference\": \"example\",\n  \"status\": \"example\",\n  \"paid_at\": \"2026-11-03T10:00:00+03:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/payments/{payment}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/payments/{{payment_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/payments/{payment}",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/payments/{{payment_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payer_id\": 1,\n  \"payable_type\": \"example\",\n  \"payable_id\": 1,\n  \"amount\": 1,\n  \"currency\": \"example\",\n  \"provider\": \"example\",\n  \"provider_reference\": \"example\",\n  \"status\": \"example\",\n  \"paid_at\": \"2026-11-03T10:00:00+03:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/payments/{payment}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/payments/{{payment_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"payer_id\": 1,\n  \"payable_type\": \"example\",\n  \"payable_id\": 1,\n  \"amount\": 1,\n  \"currency\": \"example\",\n  \"provider\": \"example\",\n  \"provider_reference\": \"example\",\n  \"status\": \"example\",\n  \"paid_at\": \"2026-11-03T10:00:00+03:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/payments/{payment}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/payments/{{payment_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/governorates",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/governorates",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج."
+      }
+    },
+    {
+      "name": "GET /api/v1/governorates/{id}/regions",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/governorates/{{id_id}}/regions",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج."
+      }
+    },
+    {
+      "name": "GET /api/v1/regions/{id}/schools",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/regions/{{id_id}}/schools",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج."
+      }
+    },
+    {
+      "name": "POST /api/v1/admin/payments/{payment}/pricing-allocation",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/admin/payments/{{payment_id}}/pricing-allocation",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: أهلية الاسترداد بعد حفظ لقطة قديمة موثّقة. ممنوع استبدال لقطة موجودة؛ مجموع التوزيع يجب أن يساوي الدفعة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"review_note\": \"example\",\n  \"lessons\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/register",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/register",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 message وaccess_token وrefresh_token وuser.teacher_status=pending_review وuser.can_teach=false. التسجيل يدخل الأستاذ لكنه لا يمنحه صلاحيات التدريس.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"example\",\n  \"email\": \"example\",\n  \"password\": \"{{password}}\",\n  \"phone\": \"0991234567\",\n  \"region_id\": \"example\",\n  \"specialization\": \"example\",\n  \"bio\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/login",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/login",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "message والتوكنات وuser مع teacher_status وcan_teach. يستخدم phone+password.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"0991234567\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/refresh",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/refresh",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh_token\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/subjects",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/subjects",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/subjects",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/subjects",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject_id\": 1,\n  \"price\": 1,\n  \"group_enabled\": true,\n  \"max_group_size\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/subjects/{teacherSubject}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/subjects/{{teacherSubject_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/teacher/subjects/{teacherSubject}",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/teacher/subjects/{{teacherSubject_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject_id\": 1,\n  \"price\": 1,\n  \"group_enabled\": true,\n  \"max_group_size\": 1,\n  \"status\": \"active\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/subjects/{teacherSubject}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/subjects/{{teacherSubject_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject_id\": 1,\n  \"price\": 1,\n  \"group_enabled\": true,\n  \"max_group_size\": 1,\n  \"status\": \"active\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/teacher/subjects/{teacherSubject}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/teacher/subjects/{{teacherSubject_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/me",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/me",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "User مع teacher وcan_teach على المستوى الأعلى؛ ليس data wrapper.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/subject-catalog",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/subject-catalog",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/subscription",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/subscription",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/subscriptions",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/subscriptions",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/usage",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/usage",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/logout",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/logout",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh_token\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/subscription-plans",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/subscription-plans",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/subscription-plans/{subscriptionPlan}/subscribe",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/subscription-plans/{{subscriptionPlan_id}}/subscribe",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"auto_renew\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/content-assets",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/content-assets",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/contents",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/contents",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"lesson_id\": 1,\n  \"type\": \"example\",\n  \"title\": \"example\",\n  \"description\": \"example\",\n  \"learning_objectives\": [],\n  \"price\": 1,\n  \"order_no\": 1,\n  \"status\": \"example\",\n  \"published_at\": \"2026-11-03T10:00:00+03:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/contents/{content}/asset",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/contents/{{content_id}}/asset",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "disk",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "storage_key",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "mime_type",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "file_size",
+              "type": "text",
+              "value": "1"
+            },
+            {
+              "key": "checksum",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "encryption_type",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "encryption_status",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "status",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/content-assets/{contentAsset}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/content-assets/{{contentAsset_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/teacher/content-assets/{contentAsset}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/teacher/content-assets/{{contentAsset_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/availability",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/availability",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/availability",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/availability",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"price\": 1,\n  \"weekday\": 1,\n  \"date\": \"2026-11-03T10:00:00+03:00\",\n  \"start_time\": \"example\",\n  \"end_time\": \"example\",\n  \"recurrence_type\": \"none\",\n  \"timezone\": \"example\",\n  \"status\": \"active\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/teacher/availability/{teacherAvailability}",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/teacher/availability/{{teacherAvailability_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"price\": 1,\n  \"weekday\": 1,\n  \"date\": \"2026-11-03T10:00:00+03:00\",\n  \"start_time\": \"example\",\n  \"end_time\": \"example\",\n  \"recurrence_type\": \"none\",\n  \"timezone\": \"example\",\n  \"status\": \"active\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/teacher/availability/{teacherAvailability}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/teacher/availability/{{teacherAvailability_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/sessions",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/sessions",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/sessions",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/sessions",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 data: Session. type=group|individual وtype_id، الفردي سعته1 دائماً.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"individual\",\n  \"type_id\": 1,\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\",\n  \"teacher_id\": \"example\",\n  \"availability_id\": 1,\n  \"progress_notes\": \"example\",\n  \"capacity\": 1,\n  \"status\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/sessions/{session}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/sessions/{{session_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Session. تغيير type يتطلب type_id. تغيير المشاركين ممنوع بعد تسجيل حضور.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"individual\",\n  \"type_id\": 1,\n  \"availability_id\": 1,\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\",\n  \"progress_notes\": \"example\",\n  \"capacity\": 1,\n  \"status\": \"scheduled\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/v1/sessions/{session}/cancel",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/v1/sessions/{{session_id}}/cancel",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/sessions/{id}/attendance",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/sessions/{{id_id}}/attendance",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Attendance[] مع student عند تحميله؛ التحديث idempotent لكل session_id+student_id.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"records\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/{teacher}/activate",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/{{teacher_id}}/activate",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/groups",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/groups",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/groups",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/groups",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"teacher_subject_id\": 1,\n  \"teaching_scope_type\": \"subject\",\n  \"teaching_scope_id\": 1,\n  \"session_price\": 1,\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\",\n  \"name\": \"example\",\n  \"capacity\": 1,\n  \"status\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/groups/{id}/students",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/groups/{{id_id}}/students",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_id\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/teacher/groups/{id}/students/{student}",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/teacher/groups/{{id_id}}/students/{{student_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/profile",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/profile",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"example\",\n  \"email\": \"example\",\n  \"phone\": \"0991234567\",\n  \"region_id\": 1,\n  \"experience_years\": 1,\n  \"bio\": \"example\",\n  \"specialization\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/contents/{content}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/contents/{{content_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"example\",\n  \"description\": \"example\",\n  \"learning_objectives\": [],\n  \"price\": 1,\n  \"order_no\": 1,\n  \"status\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/sessions/{session}/complete",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/sessions/{{session_id}}/complete",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/sessions/{session}/cancel",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/sessions/{{session_id}}/cancel",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/sessions/{session}/progress",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/sessions/{{session_id}}/progress",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Session؛ progress_notes وprogress_updated_at محدثان؛ يقبل null للمسح، ويعمل على completed ولا يعمل على cancelled.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"progress_notes\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/individuals",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/individuals",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Individual[] مع student.user المختصر وteacher_subject.subject؛ meta.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/individuals",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/individuals",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 data: Individual. لا enrollment_id؛ المدرّس من مادة المدرّس.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_id\": 1,\n  \"teacher_subject_id\": 1,\n  \"teaching_scope_type\": \"subject\",\n  \"teaching_scope_id\": 1,\n  \"session_price\": 1,\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\",\n  \"notes\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/individuals/{individual}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/individuals/{{individual_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Individual مع student.user وteacher_subject.subject وsessions.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/teacher/individuals/{individual}",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/teacher/individuals/{{individual_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Individual. الطالب والمادة غير قابلين لإعادة التعيين؛ تغيير الحالة/الفترة لا يبطل جلسات معلقة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"active\",\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\",\n  \"notes\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/individuals/{individual}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/individuals/{{individual_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Individual. الطالب والمادة غير قابلين لإعادة التعيين؛ تغيير الحالة/الفترة لا يبطل جلسات معلقة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"active\",\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\",\n  \"notes\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/individual-offers",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/individual-offers",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/individual-offers",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/individual-offers",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"teacher_subject_id\": 1,\n  \"teaching_scope_type\": \"subject\",\n  \"teaching_scope_id\": 1,\n  \"title\": \"example\",\n  \"session_price\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/individual-offers/{individualOffer}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/individual-offers/{{individualOffer_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"example\",\n  \"status\": \"active\",\n  \"session_price\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/groups/{group}/students",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/groups/{{group_id}}/students",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: GroupStudent[] مع student(user:{id,name,phone,region_id,avatar_url},school.region)؛ للأستاذ المالك فقط، وmeta.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/units",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/units",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"teacher_subject_id\": 1,\n  \"title\": \"example\",\n  \"price\": 1,\n  \"order_no\": 1,\n  \"status\": \"draft\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/units/{unit}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/units/{{unit_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"example\",\n  \"price\": 1,\n  \"order_no\": 1,\n  \"status\": \"draft\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/lessons",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/lessons",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"unit_id\": 1,\n  \"title\": \"example\",\n  \"price\": 1,\n  \"order_no\": 1,\n  \"status\": \"draft\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/teacher/lessons/{lesson}",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/teacher/lessons/{{lesson_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"example\",\n  \"price\": 1,\n  \"order_no\": 1,\n  \"status\": \"draft\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/teacher/contents/{content}/quiz",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/teacher/contents/{{content_id}}/quiz",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quiz_type\": \"simple\",\n  \"attempts_allowed\": 1,\n  \"duration_minutes\": 1,\n  \"status\": \"draft\",\n  \"questions\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teacher/notifications",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/notifications",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:[{id,type,title,body,data,created_at,related_payment_id,read,read_at}] وmeta.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/notifications/{notification}/read",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/notifications/{{notification_id}}/read",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:{id,read:true,read_at}. سجل المستخدم نفسه فقط.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/answers/{answer}/grade",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/answers/{{answer_id}}/grade",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:{answer,attempt}. يراجع المدرّس صاحب الاختبار فقط، والعلامة لا تتجاوز points للسؤال؛ يُعاد حساب نتيجة المحاولة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"score\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/register",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/auth/register",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 استجابة تسجيل دخول الطالب: status,message,token_type,access_token,access_token_expires_at,refresh_token,refresh_token_expires_at,user,student,device. البريد غير ظاهر في user.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"example\",\n  \"phone\": \"0991234567\",\n  \"email\": \"example\",\n  \"password\": \"{{password}}\",\n  \"region_id\": 1,\n  \"grade\": \"example\",\n  \"school_id\": 1,\n  \"device_uuid\": \"{{device_uuid}}\",\n  \"platform\": \"android\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/login",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/auth/login",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "نفس بيانات جلسة الطالب والتوكنات وuser/student/device. لا تتجاوز بيانات الجهاز.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"0991234567\",\n  \"password\": \"{{password}}\",\n  \"device_uuid\": \"{{device_uuid}}\",\n  \"platform\": \"android\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/refresh",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/auth/refresh",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh_token\": \"example\",\n  \"device_uuid\": \"{{device_uuid}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/device/transfer",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/auth/device/transfer",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"0991234567\",\n  \"password\": \"{{password}}\",\n  \"device_uuid\": \"{{device_uuid}}\",\n  \"platform\": \"android\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/logout",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/auth/logout",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/me",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/me",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status,user,student على المستوى الأعلى، دون data wrapper؛ لا email داخل user.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teachers/{teacher}/bookings",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teachers/{{teacher_id}}/bookings",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"availability_id\": 1,\n  \"individual_id\": 1,\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers/{teacher}/available-sessions",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/{{teacher_id}}/available-sessions",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/bookings",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/bookings",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "{data:[StudentSessionSummary]}. لا status ولا meta في هذا المسار القديم؛ DTO موضح في دليل التدفقات.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/enrollments/{enrollment}/payments",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/enrollments/{{enrollment_id}}/payments",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "410 CHECKOUT_REQUIRED؛ لا تنشئ حوالة عبر المسار القديم، استخدم checkout ثم student/payments.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/payments/checkout",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/payments/checkout",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 data:{checkout_id,internal_reference,amount,currency,service,account_id,qr_url,expires_at,settings_url}. الأونلاين فقط: teacher_subject/unit/lesson/content.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"service_type\": \"teacher_subject\",\n  \"service_id\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers/{teacher}/paid-slots",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/{{teacher_id}}/paid-slots",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "410 PHYSICAL_CASH_ONLY؛ استخدم الحجز الفيزيائي النقدي.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/paid-bookings",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/paid-bookings",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/paid-bookings/{booking}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/paid-bookings/{{booking_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/paid-bookings/{booking}/reschedule",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/paid-bookings/{{booking_id}}/reschedule",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "410 LEGACY_BOOKING_REQUIRES_SUPPORT؛ استخدم الحجز الفيزيائي النقدي.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/refunds",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/refunds",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 data: RefundRequest DTO مع refund_status وproof URLs المصرح بها. المبلغ من الباك ولا يقبل قيمة من الطالب.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "payment_id",
+              "type": "text",
+              "value": "1"
+            },
+            {
+              "key": "account_id",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "reason_code",
+              "type": "text",
+              "value": "exceptional"
+            },
+            {
+              "key": "reason",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "original_transfer_date",
+              "type": "text",
+              "value": "2026-11-03T10:00:00+03:00"
+            },
+            {
+              "key": "original_transfer_number",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "original_proof",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/refunds/my",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/refunds/my",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data قائمة RefundRequest DTO؛ meta للصفحات.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/payments/checkout/{checkout}/qr",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/payments/checkout/{{checkout_id}}/qr",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/payments",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/payments",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 (أو200 عند إعادة نفس الطلب) data: Payment DTO مع financial_status/refundable_amount/refunded_amount/payment_status/proof_url. body=file proof وcheckout_id وprovider_reference.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "checkout_id",
+              "type": "text",
+              "value": "{{checkout_id}}"
+            },
+            {
+              "key": "provider_reference",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "proof",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/payments",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/payments",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/payments/{payment}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/payments/{{payment_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: PaymentDTO لشام كاش، أو Payment للسجلات المالية القديمة الأخرى.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/enrollments",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/enrollments",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/booking",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/booking",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher-subjects/{id}/enroll",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher-subjects/{{id_id}}/enroll",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/units/{id}/enroll",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/units/{{id_id}}/enroll",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/contents/{id}/enroll",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/contents/{{id_id}}/enroll",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/attendance/percentage",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/attendance/percentage",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/quizzes/{quiz}/data",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/quizzes/{{quiz_id}}/data",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:{quiz_type,protected,progress_weight,quiz,attempts_used,attempts_remaining,active_attempt}. quiz.questions لا تتضمن مفاتيح التصحيح السرية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/quizzes/{quiz}/attempts",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/quizzes/{{quiz_id}}/attempts",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 data:{attempt,attempt_id,quiz_id,attempts_remaining}. لا يمكن تجاوز attempts_allowed.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/quiz-attempts/{quizAttempt}/answers",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/quiz-attempts/{{quizAttempt_id}}/answers",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: Answer مع score/status من الباك؛ لا يقبل score من الطالب.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question_id\": 1,\n  \"answer_text\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/contents/{id}/playback-token",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/contents/{{id_id}}/playback-token",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/content-assets/{contentAsset}/play",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/content-assets/{{contentAsset_id}}/play",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/sessions/{id}/book",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/sessions/{{id_id}}/book",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/sessions/{id}/booking",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/sessions/{{id_id}}/booking",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/auth/device/transfer-requests/{transfer}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/auth/device/transfer-requests/{{transfer_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج."
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/device/transfer-requests",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/auth/device/transfer-requests",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"0991234567\",\n  \"password\": \"{{password}}\",\n  \"device_uuid\": \"{{device_uuid}}\",\n  \"platform\": \"android\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/auth/device/transfer-requests/{transfer}/claim",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/auth/device/transfer-requests/{{transfer_id}}/claim",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج."
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers/{teacher}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/{{teacher_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة."
+      }
+    },
+    {
+      "name": "PUT /api/v1/profile",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/profile",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "profile_image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/profile",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/profile",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "profile_image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/contents/{content}/assets",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/contents/{{content_id}}/assets",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/content-assets/{contentAsset}/access-token",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/content-assets/{{contentAsset_id}}/access-token",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/contents/{content}/complete",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/contents/{{content_id}}/complete",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teacher-subjects/{teacherSubject}/progress",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teacher-subjects/{{teacherSubject_id}}/progress",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teacher-subjects/{teacherSubject}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teacher-subjects/{{teacherSubject_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/sessions/{session}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/sessions/{{session_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: StudentSessionSummary.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/device-transfer-requests",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/device-transfer-requests",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/device-transfer-requests/{transfer}/{decision}",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/device-transfer-requests/{{transfer_id}}/{{decision_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/notifications",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/notifications",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:[{id,type,title,body,data,created_at,related_payment_id,read,read_at}] وmeta.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/notifications/{notification}/read",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/notifications/{{notification_id}}/read",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:{id,read:true,read_at}. سجل المستخدم نفسه فقط.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers/{teacher}/available-slots",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/{{teacher_id}}/available-slots",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher-availabilities/{availability}/book",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher-availabilities/{{availability_id}}/book",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"individual_id\": 1,\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/quiz-attempts/{quizAttempt}/submit",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/quiz-attempts/{{quizAttempt_id}}/submit",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:{attempt_id,quiz_id,status,submitted_at,score,grading_pending}. simple الموضوعي يُصحح آلياً والمقالي ينتظر مراجعة الأستاذ.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/contents/{content}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/contents/{{content_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/teachers/{teacher}/calendar",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teachers/{{teacher_id}}/calendar",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/my-quizzes",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/my-quizzes",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/my-quizzes/{quiz}/attempts",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/my-quizzes/{{quiz_id}}/attempts",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/groups",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/groups",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/groups/{group}/members",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/groups/{{group_id}}/members",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/contents/{content}/quizzes",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/contents/{{content_id}}/quizzes",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/profile/avatar",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/profile/avatar",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "avatar",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "DELETE /api/v1/profile/avatar",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/profile/avatar",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/register",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/register",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 استجابة تسجيل دخول الطالب: status,message,token_type,access_token,access_token_expires_at,refresh_token,refresh_token_expires_at,user,student,device. البريد غير ظاهر في user.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"example\",\n  \"phone\": \"0991234567\",\n  \"email\": \"example\",\n  \"password\": \"{{password}}\",\n  \"region_id\": 1,\n  \"grade\": \"example\",\n  \"school_id\": 1,\n  \"device_uuid\": \"{{device_uuid}}\",\n  \"platform\": \"android\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/login",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/login",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "نفس بيانات جلسة الطالب والتوكنات وuser/student/device. لا تتجاوز بيانات الجهاز.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"0991234567\",\n  \"password\": \"{{password}}\",\n  \"device_uuid\": \"{{device_uuid}}\",\n  \"platform\": \"android\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/profile",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/profile",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "status,user,student على المستوى الأعلى، دون data wrapper؛ لا email داخل user.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PUT /api/v1/student/profile",
+      "request": {
+        "method": "PUT",
+        "url": "{{base_url}}/api/v1/student/profile",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "profile_image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/student/profile",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/student/profile",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "profile_image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/profile",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/profile",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "profile_image",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teachers",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teachers",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:[{id,name,specialization,avatar_url,modes:[online,physical],status,region_id}] وmeta. mode سياق عرض، وليس مفتاح تفعيل قدرة الأستاذ.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teachers/{teacher}/physical/groups",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teachers/{{teacher_id}}/physical/groups",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data قائمة بالمجموعات ونطاقها وأسعار الحصة والجدول والأسماء؛ meta للصفحات.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/groups/{group}/join",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/groups/{{group_id}}/join",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/groups/{group}/join-request",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/groups/{{group_id}}/join-request",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/groups/{group}/withdraw",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/groups/{{group_id}}/withdraw",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {membership_status:left,refund_eligible:false,payment_method:cash_to_teacher}. 409 بعد بدء المجموعة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teachers/{teacher}/physical/individual-offers",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teachers/{{teacher_id}}/physical/individual-offers",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data قائمة IndividualOffer مع content.type/id/title وpayment_method=cash_to_teacher؛ meta للصفحات.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teachers/{teacher}/availability",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teachers/{{teacher_id}}/availability",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {date,offer_id,slots:[{availability_id,starts_at,ends_at,timezone,status:available|booked|unavailable}]}.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/individual-bookings",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/individual-bookings",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {session: Session, individual: Individual, payment_method: cash_to_teacher, payment_required_on_platform: false}. لا Payment ولا Enrollment جديد.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"offer_id\": 1,\n  \"availability_id\": 1,\n  \"starts_at\": \"2026-11-03T10:00:00+03:00\",\n  \"ends_at\": \"2026-11-03T10:00:00+03:00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teachers/{teacher}/online-content",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teachers/{{teacher_id}}/online-content",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data.teacher وdata.subjects[].units[].lessons[].contents[]؛ أسعار وعدادات وhas_access، دون ملفات مدفوعة مكشوفة.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/lessons/{lesson}/content",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/lessons/{{lesson_id}}/content",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {lesson,access:{allowed,reason},contents:[{id,type,title,description,has_access,protected,assets_endpoint,playback_token_endpoint,quizzes}]}. الاختبارات البسيطة تظهر دون شراء.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/lessons/{lesson}/complete",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/lessons/{{lesson_id}}/complete",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {lesson_id,completed:true,completed_at}. 422 إن لم تُكمل كل المحتويات التعليمية المنشورة غير الاختبارات، و404 عند غياب حق الوصول.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/teacher-subjects/{teacherSubject}/learning-summary",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/teacher-subjects/{{teacherSubject_id}}/learning-summary",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {teacher_subject_id,total_lessons,completed_lessons,total_quizzes,completed_quizzes,lesson_weight:1,quiz_weight:0.30,earned_progress_points,total_progress_points,progress_percentage}.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/refunds/eligibility",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/refunds/eligibility",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: {payment_id,currency,eligible,refundable_amount,consumed_amount,refunded_amount,reserved_amount,lesson_allocations,code,message} عند payment_id؛ وإلا قائمة paginated.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/refunds",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/refunds",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data قائمة RefundRequest DTO؛ meta للصفحات.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/student/refunds",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/student/refunds",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "201 data: RefundRequest DTO مع refund_status وproof URLs المصرح بها. المبلغ من الباك ولا يقبل قيمة من الطالب.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "payment_id",
+              "type": "text",
+              "value": "1"
+            },
+            {
+              "key": "account_id",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "reason_code",
+              "type": "text",
+              "value": "exceptional"
+            },
+            {
+              "key": "reason",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "original_transfer_date",
+              "type": "text",
+              "value": "2026-11-03T10:00:00+03:00"
+            },
+            {
+              "key": "original_transfer_number",
+              "type": "text",
+              "value": "example"
+            },
+            {
+              "key": "original_proof",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/refunds/{refund}",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/refunds/{{refund_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: RefundRequest مع refund_status وrefund_proof_url وoriginal_proof_url؛ حقول مسار الملفات الداخلية مخفية.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "PATCH /api/v1/student/refunds/{refund}/payout-details",
+      "request": {
+        "method": "PATCH",
+        "url": "{{base_url}}/api/v1/student/refunds/{{refund_id}}/payout-details",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data: RefundRequest؛ يُسمح بتعديل account_id لطلبك pending/approved فقط.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"account_id\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

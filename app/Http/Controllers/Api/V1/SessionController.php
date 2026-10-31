@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\Enrollment;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -55,23 +54,20 @@ class SessionController extends ApiController
     public function store(Request $request): JsonResponse
     {
         $this->authorize('create', Session::class);
-        $request->validate(['type' => ['required'], 'starts_at' => ['required'], 'ends_at' => ['required']]);
+        $request->validate(['type' => ['required'], 'type_id' => ['required'], 'starts_at' => ['required'], 'ends_at' => ['required']]);
         $data = $request->validate([
-            'teacher_id' => ['prohibited'], 'type' => ['sometimes', 'in:INDIVIDUAL,GROUP'],
-            'group_id' => ['sometimes', 'nullable', 'integer', 'exists:groups,id'],
-            'enrollment_id' => ['sometimes', 'nullable', 'integer', 'exists:enrollments,id'],
+            'teacher_id' => ['prohibited'], 'type' => ['sometimes', 'in:individual,group'],
+            'type_id' => ['sometimes', 'required', 'integer', 'min:1'],
+            'group_id' => ['prohibited'], 'enrollment_id' => ['prohibited'], 'individual_id' => ['prohibited'],
             'availability_id' => ['sometimes', 'nullable', 'integer', 'exists:teacher_availabilities,id'],
             'starts_at' => ['sometimes', 'date'], 'ends_at' => ['sometimes', 'date'],
+            'progress_notes' => ['sometimes', 'nullable', 'string', 'max:10000'],
             'capacity' => ['sometimes', 'nullable', 'integer', 'min:1'], 'status' => ['sometimes', 'in:scheduled,ongoing,completed'],
         ]);
 
         return DB::transaction(function () use ($data, $request) {
             $teacherId = $this->currentTeacherId($request);
             Teacher::whereKey($teacherId)->lockForUpdate()->firstOrFail();
-            if (! empty($data['enrollment_id'])) {
-                $e = Enrollment::findOrFail($data['enrollment_id']);
-                Student::whereKey($e->student_id)->lockForUpdate()->firstOrFail();
-            }
             $state = app(SessionRules::class)->validate([...$data, 'teacher_id' => $teacherId, 'status' => 'scheduled']);
             abort_if(app(SessionRules::class)->conflicts($state), 409, 'Teacher or student already has an overlapping session.');
 
@@ -99,7 +95,7 @@ class SessionController extends ApiController
         $session = Session::findOrFail($id);
         $this->authorize('studentView', $session);
 
-        if ($session->enrollment?->enrollable_type === 'paid_booking') {
+        if ($session->paidBooking()->exists()) {
             return $this->success(app(PaidLessonBookings::class)->cancelSession($session, 'student', $request->user()->id), 'Paid lesson cancelled.');
         }
 
@@ -107,7 +103,7 @@ class SessionController extends ApiController
             Teacher::whereKey($session->teacher_id)->lockForUpdate()->firstOrFail();
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
             $this->authorize('studentView', $session);
-            abort_unless($session->type === 'INDIVIDUAL', 404);
+            abort_unless($session->type === 'individual', 404);
             if ($session->status === 'cancelled') {
                 return $this->success($session);
             }
@@ -126,7 +122,7 @@ class SessionController extends ApiController
     ): JsonResponse {
         $this->authorize('cancel', $session);
 
-        if ($session->enrollment?->enrollable_type === 'paid_booking') {
+        if ($session->paidBooking()->exists()) {
             return $this->success(app(PaidLessonBookings::class)->cancelSession($session, 'teacher', request()->user()->id), 'Paid lesson cancelled.');
         }
 
@@ -207,30 +203,49 @@ class SessionController extends ApiController
     public function update(Request $request, Session $session): JsonResponse
     {
         $this->authorize('update', $session);
+        if ($request->has('progress_notes') && count($request->except(['_token', '_method'])) === 1) {
+            return $this->progress($request, $session);
+        }
+        abort_if($session->paidBooking()->exists(), 409, 'Paid lessons must use their rescheduling workflow.');
         $data = $request->validate([
-            'teacher_id' => ['prohibited'], 'type' => ['sometimes', 'in:INDIVIDUAL,GROUP'],
-            'group_id' => ['sometimes', 'nullable', 'integer', 'exists:groups,id'],
-            'enrollment_id' => ['sometimes', 'nullable', 'integer', 'exists:enrollments,id'],
+            'teacher_id' => ['prohibited'], 'type' => ['sometimes', 'in:individual,group'],
+            'type_id' => ['sometimes', 'required', 'integer', 'min:1'],
+            'group_id' => ['prohibited'], 'enrollment_id' => ['prohibited'], 'individual_id' => ['prohibited'],
             'availability_id' => ['sometimes', 'nullable', 'integer', 'exists:teacher_availabilities,id'],
             'starts_at' => ['sometimes', 'date'], 'ends_at' => ['sometimes', 'date'],
+            'progress_notes' => ['sometimes', 'nullable', 'string', 'max:10000'],
             'capacity' => ['sometimes', 'nullable', 'integer', 'min:1'], 'status' => ['sometimes', 'in:scheduled,ongoing,completed'],
         ]);
+
+        abort_if(isset($data['type']) && $data['type'] !== $session->type && ! isset($data['type_id']), 422, 'Changing type also requires type_id.');
 
         return DB::transaction(function () use ($session, $data) {
             Teacher::whereKey($session->teacher_id)->lockForUpdate()->firstOrFail();
             $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
             abort_if(in_array($session->status, ['cancelled', 'completed'], true), 409, 'Session is closed.');
-            $state = app(SessionRules::class)->validate(array_replace($session->only(['teacher_id', 'type', 'group_id', 'enrollment_id', 'availability_id', 'starts_at', 'ends_at', 'capacity', 'status']), $data));
-            if (! empty($state['enrollment_id'])) {
-                $e = Enrollment::findOrFail($state['enrollment_id']);
-                Student::whereKey($e->student_id)->lockForUpdate()->firstOrFail();
-            }
+            abort_if($session->attendance()->exists() && ((isset($data['type']) && $data['type'] !== $session->type) || (isset($data['type_id']) && (int) $data['type_id'] !== (int) $session->type_id)), 409, 'A session with attendance cannot change participants.');
+            $state = app(SessionRules::class)->validate(array_replace($session->only(['teacher_id', 'type', 'type_id', 'availability_id', 'starts_at', 'ends_at', 'capacity', 'status']), $data));
             abort_if(($state['status'] ?? null) === 'completed' && Carbon::parse($state['ends_at'])->isFuture(), 422, 'Session has not ended yet.');
             abort_if(app(SessionRules::class)->conflicts($state, $session->id), 409, 'Teacher or student already has an overlapping session.');
             $session->update($state);
 
             return $this->success($session->fresh(), 'Session updated successfully.');
         }, 3);
+    }
+
+    public function progress(Request $request, Session $session): JsonResponse
+    {
+        $this->authorize('update', $session);
+        $data = $request->validate(['progress_notes' => ['present', 'nullable', 'string', 'max:10000']]);
+
+        return DB::transaction(function () use ($session, $data) {
+            Teacher::whereKey($session->teacher_id)->lockForUpdate()->firstOrFail();
+            $session = Session::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            abort_if($session->status === 'cancelled', 409, 'Cancelled sessions cannot record progress.');
+            $session->update($data);
+
+            return $this->success($session->fresh(), 'Teaching progress updated.');
+        });
     }
 
     public function complete(Request $request, Session $session): JsonResponse
@@ -254,7 +269,7 @@ class SessionController extends ApiController
     {
         $this->authorize('delete', $session);
 
-        abort_if($session->enrollment?->enrollable_type === 'paid_booking', 409, 'Paid lesson history must be retained. Use cancellation.');
+        abort_if($session->paidBooking()->exists(), 409, 'Paid lesson history must be retained. Use cancellation.');
 
         $session->delete();
 

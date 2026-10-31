@@ -16,7 +16,7 @@ class TeacherAuthTest extends TestCase
     public function test_teacher_can_login_refresh_and_logout(): void
     {
         $user = User::factory()->create([
-            'email' => 'teacher@example.com',
+            'phone' => '0991234567',
             'password_hash' => Hash::make('Password123!'),
             'role' => 'teacher',
             'status' => 'active',
@@ -27,7 +27,7 @@ class TeacherAuthTest extends TestCase
         ]);
 
         $login = $this->postJson('/api/v1/teacher/login', [
-            'email' => 'teacher@example.com',
+            'phone' => '0991234567',
             'password' => 'Password123!',
         ])->assertOk()
             ->assertJsonPath('user.role', 'teacher')
@@ -55,7 +55,7 @@ class TeacherAuthTest extends TestCase
     public function test_invalid_credentials_are_rejected(): void
     {
         $this->postJson('/api/v1/teacher/login', [
-            'email' => 'missing@example.com',
+            'phone' => '0999999999',
             'password' => 'wrong-password',
         ])->assertUnauthorized();
     }

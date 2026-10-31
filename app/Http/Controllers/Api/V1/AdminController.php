@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\DeviceEvent;
 use App\Models\DeviceSession;
+use App\Models\Notification;
 use App\Models\RefreshToken;
 use App\Models\Student;
 use App\Models\StudentDevice;
+use App\Models\Teacher;
 use App\Models\User;
+use App\Services\OnlineRefunds;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +33,18 @@ class AdminController extends Controller
             return $this->suspendStudent($request, $user);
         }
 
-        $user->update(['status' => 'suspended']);
+        if ($user->role === 'teacher' && $user->teacher) {
+            DB::transaction(function () use ($user, $request) {
+                $teacher = Teacher::whereKey($user->teacher->id)->lockForUpdate()->firstOrFail();
+                $user->update(['status' => 'suspended']);
+                app(OnlineRefunds::class)->teacherSuspended($teacher, $request->user()->id);
+                $user->tokens()->delete();
+                RefreshToken::where('user_id', $user->id)->whereNull('revoked_at')->update(['revoked_at' => now()]);
+                Notification::create(['user_id' => $user->id, 'type' => 'teacher_suspended', 'title' => 'تم تجميد الحساب', 'body' => 'تم تجميد الحساب وبدء مراجعة الأرصدة الإلكترونية غير المستهلكة.', 'data' => ['teacher_id' => $teacher->id]]);
+            });
+        } else {
+            $user->update(['status' => 'suspended']);
+        }
 
         return response()->json([
             'message' => 'User suspended successfully.',

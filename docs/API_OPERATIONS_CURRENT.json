@@ -1,0 +1,3183 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/featured",
+    "action": "FeaturedTeacherController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/FeaturedTeacherController.php",
+    "line": 12,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/directory",
+    "action": "TeacherDirectoryController@index",
+    "fields": {
+      "mode": "['sometimes', 'in:online,physical']",
+      "search": "['sometimes', 'nullable', 'string', 'max:100']",
+      "specialization": "['sometimes', 'nullable', 'string', 'max:100']",
+      "region_id": "['sometimes', 'integer', 'min:1']",
+      "subject_id": "['sometimes', 'integer', 'min:1']",
+      "grade": "['prohibited']",
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "data:[{id,name,specialization,avatar_url,modes:[online,physical],status,region_id}] وmeta. mode سياق عرض، وليس مفتاح تفعيل قدرة الأستاذ.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherDirectoryController.php",
+    "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers",
+    "action": "TeacherDirectoryController@index",
+    "fields": {
+      "mode": "['sometimes', 'in:online,physical']",
+      "search": "['sometimes', 'nullable', 'string', 'max:100']",
+      "specialization": "['sometimes', 'nullable', 'string', 'max:100']",
+      "region_id": "['sometimes', 'integer', 'min:1']",
+      "subject_id": "['sometimes', 'integer', 'min:1']",
+      "grade": "['prohibited']",
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "data:[{id,name,specialization,avatar_url,modes:[online,physical],status,region_id}] وmeta. mode سياق عرض، وليس مفتاح تفعيل قدرة الأستاذ.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherDirectoryController.php",
+    "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/avatars/{user}/{filename}",
+    "action": "ProfileAvatarController@show",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ProfileAvatarController.php",
+    "line": 63,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher-subjects/most-requested",
+    "action": "TeacherSubjectController@mostRequested",
+    "fields": {
+      "limit": "['sometimes', 'integer', 'min:1', 'max:100']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectController.php",
+    "line": 16,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/{teacher}/subjects",
+    "action": "TeacherSubjectController@getSubjectsByTeacher",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectController.php",
+    "line": 159,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/subjects/{teacherSubject}/units",
+    "action": "TeacherSubjectController@units",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectController.php",
+    "line": 173,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/units/{unit}/lessons",
+    "action": "UnitController@lessons",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/UnitController.php",
+    "line": 74,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/lessons/{lesson}/contents",
+    "action": "CurriculumBrowseController@lessonContents",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/CurriculumBrowseController.php",
+    "line": 12,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/payment-settings",
+    "action": "ShamCashSettingController@update",
+    "fields": {
+      "account_id": "['required', 'string', 'max:255', 'regex:/\\S/u']",
+      "qr_image": "['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120', 'dimensions:max_width=4096,max_height=4096']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashSettingController.php",
+    "line": 21,
+    "multipart": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/payments",
+    "action": "ShamCashPaymentController@index",
+    "fields": {
+      "payment_status": "['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashPaymentController.php",
+    "line": 132,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/refunds",
+    "action": "RefundController@index",
+    "fields": {
+      "status": "['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED,COMPLETED']"
+    },
+    "response_description": "data قائمة RefundRequest DTO؛ meta للصفحات.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 65,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/refunds/{refund}/review",
+    "action": "RefundController@review",
+    "fields": {
+      "decision": "['required', 'in:approve,reject']",
+      "review_note": "['required', 'string', 'max:2000', 'regex:/\\S/u']",
+      "rejection_code": "['required_if:decision,reject', 'nullable', 'in:rejected_no_balance,rejected_invalid_data,rejected']"
+    },
+    "response_description": "data: RefundRequest؛ قرار المراجعة لا يعني إرسال الأموال. rejection_code مطلوب عند الرفض.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 97,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/refunds/{refund}/complete",
+    "action": "RefundController@complete",
+    "fields": {
+      "transfer_reference": "['nullable', 'string', 'max:255', Rule::unique('refund_requests', 'transfer_reference')]",
+      "refund_transferred_at": "['required', 'date', 'before_or_equal:now']",
+      "refund_proof": "['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:5120']"
+    },
+    "response_description": "data: RefundRequest مع refund_status=refund_sent وrefunded_amount وrefund_proof_url. الإثبات وتاريخ التحويل إلزاميان، رقم التحويل اختياري.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 122,
+    "multipart": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/payments/{payment}/review",
+    "action": "EnrollmentPaymentController@review",
+    "fields": {
+      "decision": "['required', 'in:confirm,reject']",
+      "rejection_reason": "[$payment->provider === 'sham_cash' ? 'required_if:decision,reject' : 'nullable', 'nullable', 'string', 'max:2000', 'regex:/\\S/u']"
+    },
+    "response_description": "data:{payment:PaymentDTO,enrollment:Enrollment}. confirm أوreject؛ السبب إلزامي عند رفض شام كاش.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/EnrollmentPaymentController.php",
+    "line": 34,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/users/{user}/suspend",
+    "action": "AdminController@suspendUser",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AdminController.php",
+    "line": 28,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/users/{user}/activate",
+    "action": "AdminController@activateUser",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AdminController.php",
+    "line": 59,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/students/{user}/suspend",
+    "action": "AdminController@suspendStudent",
+    "fields": {
+      "reason": "['nullable', 'string', 'max:500']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AdminController.php",
+    "line": 79,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/students/{user}/activate",
+    "action": "AdminController@activateStudent",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AdminController.php",
+    "line": 166,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment-settings",
+    "action": "ShamCashSettingController@show",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student,company_admin",
+      "App\\Http\\Middleware\\StudentDeviceWhenRequired"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashSettingController.php",
+    "line": 14,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment-settings/qr",
+    "action": "ShamCashSettingController@qr",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student,company_admin",
+      "App\\Http\\Middleware\\StudentDeviceWhenRequired"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashSettingController.php",
+    "line": 52,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payment-proofs/{payment}",
+    "action": "ShamCashPaymentController@proof",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student,company_admin",
+      "App\\Http\\Middleware\\StudentDeviceWhenRequired"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashPaymentController.php",
+    "line": 151,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/refunds/{refund}",
+    "action": "RefundController@show",
+    "fields": {},
+    "response_description": "data: RefundRequest مع refund_status وrefund_proof_url وoriginal_proof_url؛ حقول مسار الملفات الداخلية مخفية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student,company_admin",
+      "App\\Http\\Middleware\\StudentDeviceWhenRequired"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 76,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/refunds/{refund}/proof/{kind}",
+    "action": "RefundController@proof",
+    "fields": {},
+    "response_description": "ملف خاص؛ يعرضه صاحب الطلب أو الإدارة فقط. kind=refund أو original.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student,company_admin",
+      "App\\Http\\Middleware\\StudentDeviceWhenRequired"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 162,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payments",
+    "action": "PaymentController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaymentController.php",
+    "line": 13,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments",
+    "action": "PaymentController@store",
+    "fields": {
+      "payer_id": "['required', 'integer', 'exists:users,id']",
+      "payable_type": "['required', 'string', 'max:255']",
+      "payable_id": "['required', 'integer', 'min:1']",
+      "amount": "['required', 'numeric', 'min:0.01', 'max:9999999999.99']",
+      "currency": "['required', 'string', 'size:3']",
+      "provider": "['required', 'string', 'max:100']",
+      "provider_reference": "['nullable', 'string', 'max:255']",
+      "status": "['sometimes', Rule::in(['pending', 'succeeded', 'failed', 'refunded'])]",
+      "paid_at": "['nullable', 'date']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaymentController.php",
+    "line": 27,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payments/{payment}",
+    "action": "PaymentController@show",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaymentController.php",
+    "line": 53,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/payments/{payment}",
+    "action": "PaymentController@update",
+    "fields": {
+      "payer_id": "['sometimes', 'integer', 'exists:users,id']",
+      "payable_type": "['sometimes', 'required', 'string', 'max:255']",
+      "payable_id": "['sometimes', 'integer', 'min:1']",
+      "amount": "['sometimes', 'numeric', 'min:0.01', 'max:9999999999.99']",
+      "currency": "['sometimes', 'string', 'size:3']",
+      "provider": "['sometimes', 'string', 'max:100']",
+      "provider_reference": "['nullable', 'string', 'max:255']",
+      "status": "['sometimes', Rule::in(['pending', 'succeeded', 'failed', 'refunded'])]",
+      "paid_at": "['nullable', 'date']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaymentController.php",
+    "line": 60,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/payments/{payment}",
+    "action": "PaymentController@update",
+    "fields": {
+      "payer_id": "['sometimes', 'integer', 'exists:users,id']",
+      "payable_type": "['sometimes', 'required', 'string', 'max:255']",
+      "payable_id": "['sometimes', 'integer', 'min:1']",
+      "amount": "['sometimes', 'numeric', 'min:0.01', 'max:9999999999.99']",
+      "currency": "['sometimes', 'string', 'size:3']",
+      "provider": "['sometimes', 'string', 'max:100']",
+      "provider_reference": "['nullable', 'string', 'max:255']",
+      "status": "['sometimes', Rule::in(['pending', 'succeeded', 'failed', 'refunded'])]",
+      "paid_at": "['nullable', 'date']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaymentController.php",
+    "line": 60,
+    "multipart": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/payments/{payment}",
+    "action": "PaymentController@destroy",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaymentController.php",
+    "line": 87,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/governorates",
+    "action": "LocationController@governorates",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/LocationController.php",
+    "line": 18,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/governorates/{id}/regions",
+    "action": "LocationController@regions",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/LocationController.php",
+    "line": 36,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/regions/{id}/schools",
+    "action": "LocationController@schools",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/LocationController.php",
+    "line": 66,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/payments/{payment}/pricing-allocation",
+    "action": "LegacyPricingAllocationController@store",
+    "fields": {
+      "review_note": "['required', 'string', 'max:2000']",
+      "lessons": "['required', 'array', 'min:1']",
+      "lessons.*.lesson_id": "['required', 'distinct', 'integer', 'exists:lessons,id']",
+      "lessons.*.allocated_amount": "['required', 'numeric', 'min:0']",
+      "lessons.*.lesson_price_snapshot": "['required', 'numeric', 'min:0']",
+      "lessons.*.content_ids_snapshot": "['required', 'array']",
+      "lessons.*.content_ids_snapshot.*": "['integer', 'exists:contents,id']"
+    },
+    "response_description": "data: أهلية الاسترداد بعد حفظ لقطة قديمة موثّقة. ممنوع استبدال لقطة موجودة؛ مجموع التوزيع يجب أن يساوي الدفعة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/LegacyPricingAllocationController.php",
+    "line": 18,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/register",
+    "action": "TeacherAuthController@registerTeacher",
+    "fields": {
+      "name": "'required|string|max:255'",
+      "email": "'nullable|string|email|max:255|unique:users,email'",
+      "password": "'required|string|min:8|confirmed'",
+      "phone": "'required|string|max:20|unique:users,phone'",
+      "region_id": "'required|exists:regions,id'",
+      "specialization": "'nullable|string|max:255'",
+      "bio": "'nullable|string|max:1000'"
+    },
+    "response_description": "201 message وaccess_token وrefresh_token وuser.teacher_status=pending_review وuser.can_teach=false. التسجيل يدخل الأستاذ لكنه لا يمنحه صلاحيات التدريس.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherAuthController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/login",
+    "action": "AuthController@login",
+    "fields": {
+      "phone": "['required', 'string', 'max:30']",
+      "password": "['required', 'string']"
+    },
+    "response_description": "message والتوكنات وuser مع teacher_status وcan_teach. يستخدم phone+password.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AuthController.php",
+    "line": 16,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/refresh",
+    "action": "AuthController@refresh",
+    "fields": {
+      "refresh_token": "['required', 'string']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AuthController.php",
+    "line": 75,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/subjects",
+    "action": "TeacherSubjectManagementController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php",
+    "line": 16,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/subjects",
+    "action": "TeacherSubjectManagementController@store",
+    "fields": {
+      "subject_id": "['required','integer','exists:subjects,id']",
+      "price": "['required','numeric','between:0,9999999999.99']",
+      "group_enabled": "['sometimes','boolean']",
+      "max_group_size": "['nullable','integer','min:1','max:100000']",
+      "teacher_id": "['prohibited']",
+      "status": "$course === null ? ['prohibited'] : ['sometimes', Rule::in(['active', 'inactive'])]"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php",
+    "line": 26,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/subjects/{teacherSubject}",
+    "action": "TeacherSubjectManagementController@show",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php",
+    "line": 52,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/teacher/subjects/{teacherSubject}",
+    "action": "TeacherSubjectManagementController@update",
+    "fields": {
+      "subject_id": "['sometimes','integer','exists:subjects,id']",
+      "price": "['sometimes','numeric','between:0,9999999999.99']",
+      "group_enabled": "['sometimes', 'boolean']",
+      "max_group_size": "['nullable', 'integer', 'min:1', 'max:100000']",
+      "teacher_id": "['prohibited']",
+      "status": "['sometimes','in:active,inactive']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php",
+    "line": 59,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/subjects/{teacherSubject}",
+    "action": "TeacherSubjectManagementController@update",
+    "fields": {
+      "subject_id": "['sometimes','integer','exists:subjects,id']",
+      "price": "['sometimes','numeric','between:0,9999999999.99']",
+      "group_enabled": "['sometimes', 'boolean']",
+      "max_group_size": "['nullable', 'integer', 'min:1', 'max:100000']",
+      "teacher_id": "['prohibited']",
+      "status": "['sometimes','in:active,inactive']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php",
+    "line": 59,
+    "multipart": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/teacher/subjects/{teacherSubject}",
+    "action": "TeacherSubjectManagementController@destroy",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php",
+    "line": 72,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/me",
+    "action": "AuthController@me",
+    "fields": {},
+    "response_description": "User مع teacher وcan_teach على المستوى الأعلى؛ ليس data wrapper.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AuthController.php",
+    "line": 70,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/subject-catalog",
+    "action": "TeacherCourseController@catalog",
+    "fields": {
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherCourseController.php",
+    "line": 11,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/subscription",
+    "action": "TeacherDashboardController@current",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherDashboardController.php",
+    "line": 11,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/subscriptions",
+    "action": "TeacherDashboardController@history",
+    "fields": {
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherDashboardController.php",
+    "line": 19,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/usage",
+    "action": "TeacherDashboardController@usage",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherDashboardController.php",
+    "line": 29,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/logout",
+    "action": "AuthController@logout",
+    "fields": {
+      "refresh_token": "['required', 'string']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AuthController.php",
+    "line": 51,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/subscription-plans",
+    "action": "SubscriptionPlanController@available",
+    "fields": {
+      "billing_cycle": "['sometimes', Rule::in(['monthly', 'yearly'])]",
+      "per_page": "['sometimes', 'integer', 'min:1', 'max:100']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SubscriptionPlanController.php",
+    "line": 12,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/subscription-plans/{subscriptionPlan}/subscribe",
+    "action": "TeacherSubscriptionController@subscribe",
+    "fields": {
+      "auto_renew": "['sometimes', 'boolean']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherSubscriptionController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/content-assets",
+    "action": "TeacherContentAssetController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
+    "line": 18,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/contents",
+    "action": "TeacherContentController@store",
+    "fields": {
+      "lesson_id": "[ 'required', 'integer', Rule::exists('lessons', 'id')->where(fn ($query) => $query ->whereExists(fn ($owned) => $owned ->selectRaw('1') ->from('units') ->join('teacher_subjects', 'teacher_subjects.id', '=', 'units.teacher_subject_id') ->whereColumn('units.id', 'lessons.unit_id') ->where('teacher_subjects.teacher_id', $teacherId))), ]",
+      "type": "['required', Rule::in(['video', 'pdf', 'quiz', 'link'])]",
+      "title": "['required', 'string', 'max:255']",
+      "description": "['nullable', 'string']",
+      "learning_objectives": "['nullable', 'array', 'max:100']",
+      "learning_objectives.*": "['string', 'max:1000']",
+      "price": "['sometimes', 'numeric', 'min:0']",
+      "order_no": "['sometimes', 'integer', 'min:0']",
+      "status": "['sometimes', Rule::in(['draft', 'published', 'archived'])]",
+      "published_at": "['nullable', 'date']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherContentController.php",
+    "line": 13,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/contents/{content}/asset",
+    "action": "TeacherContentAssetController@store",
+    "fields": {
+      "disk": "['required', Rule::in(array_values(array_diff(array_keys(config('filesystems.disks')), ['public'])))]",
+      "storage_key": "['required', 'string', 'max:2048']",
+      "mime_type": "['required', Rule::in(['application/pdf', 'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'])]",
+      "file_size": "['nullable', 'integer', 'min:0']",
+      "checksum": "['nullable', 'string', 'max:255']",
+      "encryption_type": "['nullable', 'string', 'max:100']",
+      "encryption_status": "['sometimes', Rule::in(['pending', 'processing', 'done', 'failed'])]",
+      "status": "['sometimes', Rule::in(['active', 'archived'])]",
+      "file": "['required', 'file', 'max:512000']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
+    "line": 34,
+    "multipart": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/content-assets/{contentAsset}",
+    "action": "TeacherContentAssetController@show",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
+    "line": 115,
+    "multipart": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/teacher/content-assets/{contentAsset}",
+    "action": "TeacherContentAssetController@destroy",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
+    "line": 122,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/availability",
+    "action": "TeacherAvailabilityController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherAvailabilityController.php",
+    "line": 26,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/availability",
+    "action": "TeacherAvailabilityController@store",
+    "fields": {
+      "price": "['sometimes', 'nullable', 'numeric', 'min:0.01', 'max:9999999999.99']",
+      "weekday": "[ 'nullable', 'integer', 'between:0,6', ]",
+      "date": "[ 'nullable', 'date', ]",
+      "start_time": "[ 'required', 'date_format:H:i', ]",
+      "end_time": "[ 'required', 'date_format:H:i', 'after:start_time', ]",
+      "recurrence_type": "[ 'required', 'in:none,weekly,custom', ]",
+      "timezone": "[ 'required', 'timezone', ]",
+      "status": "[ 'sometimes', 'in:active,disabled', ]"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherAvailabilityController.php",
+    "line": 46,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/teacher/availability/{teacherAvailability}",
+    "action": "TeacherAvailabilityController@update",
+    "fields": {
+      "price": "['sometimes', 'nullable', 'numeric', 'min:0.01', 'max:9999999999.99']",
+      "weekday": "[ 'sometimes', 'nullable', 'integer', 'between:0,6', ]",
+      "date": "[ 'sometimes', 'nullable', 'date', ]",
+      "start_time": "[ 'sometimes', 'date_format:H:i', ]",
+      "end_time": "[ 'sometimes', 'date_format:H:i', ]",
+      "recurrence_type": "[ 'sometimes', 'in:none,weekly,custom', ]",
+      "timezone": "[ 'sometimes', 'timezone', ]",
+      "status": "[ 'sometimes', 'in:active,disabled', ]"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherAvailabilityController.php",
+    "line": 120,
+    "multipart": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/teacher/availability/{teacherAvailability}",
+    "action": "TeacherAvailabilityController@destroy",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherAvailabilityController.php",
+    "line": 203,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/sessions",
+    "action": "SessionController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 36,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/sessions",
+    "action": "SessionController@store",
+    "fields": {
+      "type": "['sometimes', 'in:individual,group']",
+      "type_id": "['sometimes', 'required', 'integer', 'min:1']",
+      "starts_at": "['sometimes', 'date']",
+      "ends_at": "['sometimes', 'date']",
+      "teacher_id": "$teacherId",
+      "group_id": "['prohibited']",
+      "enrollment_id": "['prohibited']",
+      "individual_id": "['prohibited']",
+      "availability_id": "['sometimes', 'nullable', 'integer', 'exists:teacher_availabilities,id']",
+      "progress_notes": "['sometimes', 'nullable', 'string', 'max:10000']",
+      "capacity": "['sometimes', 'nullable', 'integer', 'min:1']",
+      "status": "'scheduled'"
+    },
+    "response_description": "201 data: Session. type=group|individual وtype_id، الفردي سعته1 دائماً.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 54,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/sessions/{session}",
+    "action": "SessionController@update",
+    "fields": {
+      "teacher_id": "['prohibited']",
+      "type": "['sometimes', 'in:individual,group']",
+      "type_id": "['sometimes', 'required', 'integer', 'min:1']",
+      "group_id": "['prohibited']",
+      "enrollment_id": "['prohibited']",
+      "individual_id": "['prohibited']",
+      "availability_id": "['sometimes', 'nullable', 'integer', 'exists:teacher_availabilities,id']",
+      "starts_at": "['sometimes', 'date']",
+      "ends_at": "['sometimes', 'date']",
+      "progress_notes": "['sometimes', 'nullable', 'string', 'max:10000']",
+      "capacity": "['sometimes', 'nullable', 'integer', 'min:1']",
+      "status": "['sometimes', 'in:scheduled,ongoing,completed']"
+    },
+    "response_description": "data: Session. تغيير type يتطلب type_id. تغيير المشاركين ممنوع بعد تسجيل حضور.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 203,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/v1/sessions/{session}/cancel",
+    "action": "SessionController@cancel",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 120,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/sessions/{id}/attendance",
+    "action": "AttendanceController@recordForSession",
+    "fields": {
+      "records": "['required', 'array', 'min:1']",
+      "records.*.student_id": "['required', 'distinct', 'integer', 'exists:students,id']",
+      "records.*.enrollment_id": "['prohibited']",
+      "records.*.status": "['required', Rule::in(['present', 'absent', 'late', 'excused'])]",
+      "records.*.check_in_at": "['nullable', 'date']",
+      "records.*.check_out_at": "['nullable', 'date']",
+      "records.*.note": "['nullable', 'string', 'max:10000']"
+    },
+    "response_description": "data: Attendance[] مع student عند تحميله؛ التحديث idempotent لكل session_id+student_id.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AttendanceController.php",
+    "line": 41,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/{teacher}/activate",
+    "action": "TeacherAuthController@activateTeacher",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:company_admin"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherAuthController.php",
+    "line": 64,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/groups",
+    "action": "GroupController@indexForTeacher",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/GroupController.php",
+    "line": 14,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/groups",
+    "action": "GroupController@storeForTeacher",
+    "fields": {
+      "teacher_subject_id": "['required', 'integer', 'exists:teacher_subjects,id']",
+      "teaching_scope_type": "['sometimes', 'in:subject,unit,lesson']",
+      "teaching_scope_id": "['required_with:teaching_scope_type', 'integer']",
+      "session_price": "['required', 'numeric', 'between:0,9999999999.99']",
+      "starts_at": "['nullable', 'date']",
+      "ends_at": "array_merge(['nullable', 'date'], $request->filled('starts_at') ? ['after:starts_at'] : [])",
+      "name": "['required', 'string', 'max:255']",
+      "capacity": "['required', 'integer', 'min:1', 'max:100000']",
+      "status": "['sometimes', Rule::in(['forming', 'active', 'closed'])]"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/GroupController.php",
+    "line": 69,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/groups/{id}/students",
+    "action": "GroupStudentController@addToTeacherGroup",
+    "fields": {
+      "student_id": "['required', 'integer', 'exists:students,id']",
+      "enrollment_id": "['prohibited']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/GroupStudentController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/teacher/groups/{id}/students/{student}",
+    "action": "GroupStudentController@removeFromTeacherGroup",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/GroupStudentController.php",
+    "line": 35,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/profile",
+    "action": "StudentLearningController@updateTeacher",
+    "fields": {
+      "name": "['sometimes', 'required', 'string', 'max:255']",
+      "email": "['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)]",
+      "phone": "['sometimes', 'required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)]",
+      "region_id": "['sometimes', 'required', 'integer', 'exists:regions,id']",
+      "experience_years": "['sometimes', 'nullable', 'integer', 'min:0', 'max:100']",
+      "bio": "['sometimes', 'nullable', 'string', 'max:10000']",
+      "specialization": "['sometimes', 'nullable', 'string', 'max:255']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentLearningController.php",
+    "line": 111,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/contents/{content}",
+    "action": "TeacherContentController@update",
+    "fields": {
+      "title": "['sometimes', 'required', 'string', 'max:255']",
+      "description": "['sometimes', 'nullable', 'string']",
+      "learning_objectives": "['sometimes', 'nullable', 'array', 'max:100']",
+      "learning_objectives.*": "['string', 'max:1000']",
+      "price": "['sometimes', 'numeric', 'min:0']",
+      "order_no": "['sometimes', 'integer', 'min:0']",
+      "status": "['sometimes', Rule::in(['draft', 'published', 'archived'])]"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherContentController.php",
+    "line": 48,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/sessions/{session}/complete",
+    "action": "SessionController@complete",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 251,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/sessions/{session}/cancel",
+    "action": "SessionController@cancel",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 120,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/sessions/{session}/progress",
+    "action": "SessionController@progress",
+    "fields": {
+      "progress_notes": "['present', 'nullable', 'string', 'max:10000']"
+    },
+    "response_description": "data: Session؛ progress_notes وprogress_updated_at محدثان؛ يقبل null للمسح، ويعمل على completed ولا يعمل على cancelled.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 236,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/individuals",
+    "action": "IndividualController@index",
+    "fields": {},
+    "response_description": "data: Individual[] مع student.user المختصر وteacher_subject.subject؛ meta.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/individuals",
+    "action": "IndividualController@store",
+    "fields": {
+      "student_id": "['required', 'integer', 'exists:students,id']",
+      "teacher_subject_id": "['required', 'integer', 'exists:teacher_subjects,id']",
+      "teaching_scope_type": "['sometimes', 'in:subject,unit,lesson']",
+      "teaching_scope_id": "['required_with:teaching_scope_type', 'integer']",
+      "session_price": "['sometimes', 'numeric', 'between:0,9999999999.99']",
+      "starts_at": "['nullable', 'date']",
+      "ends_at": "array_merge(['nullable', 'date'], $request->filled('starts_at') ? ['after:starts_at'] : [])",
+      "notes": "['nullable', 'string', 'max:10000']"
+    },
+    "response_description": "201 data: Individual. لا enrollment_id؛ المدرّس من مادة المدرّس.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualController.php",
+    "line": 23,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/individuals/{individual}",
+    "action": "IndividualController@show",
+    "fields": {},
+    "response_description": "data: Individual مع student.user وteacher_subject.subject وsessions.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualController.php",
+    "line": 42,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/teacher/individuals/{individual}",
+    "action": "IndividualController@update",
+    "fields": {
+      "student_id": "['prohibited']",
+      "teacher_subject_id": "['prohibited']",
+      "status": "['sometimes', 'in:active,completed,cancelled']",
+      "starts_at": "['sometimes', 'nullable', 'date']",
+      "ends_at": "['sometimes', 'nullable', 'date']",
+      "notes": "['sometimes', 'nullable', 'string', 'max:10000']"
+    },
+    "response_description": "data: Individual. الطالب والمادة غير قابلين لإعادة التعيين؛ تغيير الحالة/الفترة لا يبطل جلسات معلقة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualController.php",
+    "line": 49,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/individuals/{individual}",
+    "action": "IndividualController@update",
+    "fields": {
+      "student_id": "['prohibited']",
+      "teacher_subject_id": "['prohibited']",
+      "status": "['sometimes', 'in:active,completed,cancelled']",
+      "starts_at": "['sometimes', 'nullable', 'date']",
+      "ends_at": "['sometimes', 'nullable', 'date']",
+      "notes": "['sometimes', 'nullable', 'string', 'max:10000']"
+    },
+    "response_description": "data: Individual. الطالب والمادة غير قابلين لإعادة التعيين؛ تغيير الحالة/الفترة لا يبطل جلسات معلقة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualController.php",
+    "line": 49,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/individual-offers",
+    "action": "IndividualOfferController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualOfferController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/individual-offers",
+    "action": "IndividualOfferController@store",
+    "fields": {
+      "teacher_subject_id": "['required', 'integer', 'exists:teacher_subjects,id']",
+      "teaching_scope_type": "['required', 'in:subject,unit,lesson']",
+      "teaching_scope_id": "['required', 'integer']",
+      "title": "['required', 'string', 'max:255']",
+      "session_price": "['required', 'numeric', 'min:0', 'max:9999999999.99']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualOfferController.php",
+    "line": 20,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/individual-offers/{individualOffer}",
+    "action": "IndividualOfferController@update",
+    "fields": {
+      "title": "['sometimes', 'string', 'max:255']",
+      "status": "['sometimes', 'in:active,inactive']",
+      "session_price": "['sometimes', 'numeric', 'min:0', 'max:9999999999.99']",
+      "teacher_subject_id": "['prohibited']",
+      "teaching_scope_type": "['prohibited']",
+      "teaching_scope_id": "['prohibited']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualOfferController.php",
+    "line": 30,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/groups/{group}/students",
+    "action": "TeacherGroupMembersController@index",
+    "fields": {},
+    "response_description": "data: GroupStudent[] مع student(user:{id,name,phone,region_id,avatar_url},school.region)؛ للأستاذ المالك فقط، وmeta.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherGroupMembersController.php",
+    "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/units",
+    "action": "TeachingContentController@storeUnit",
+    "fields": {
+      "teacher_subject_id": "['required', 'integer', 'exists:teacher_subjects,id']",
+      "title": "['required', 'string', 'max:255']",
+      "price": "['nullable', 'numeric', 'min:0', 'max:9999999999.99']",
+      "order_no": "['sometimes', 'integer', 'min:0']",
+      "status": "['sometimes', 'in:draft,published,archived']"
+    },
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/units/{unit}",
+    "action": "TeachingContentController@updateUnit",
+    "fields": {
+      "title": "['sometimes', 'required', 'string', 'max:255']",
+      "price": "['sometimes', 'nullable', 'numeric', 'min:0', 'max:9999999999.99']",
+      "order_no": "['sometimes', 'integer', 'min:0']",
+      "status": "['sometimes', 'in:draft,published,archived']",
+      "teacher_subject_id": "['prohibited']"
+    },
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
+    "line": 23,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/lessons",
+    "action": "TeachingContentController@storeLesson",
+    "fields": {
+      "unit_id": "['required', 'integer', 'exists:units,id']",
+      "title": "['required', 'string', 'max:255']",
+      "price": "['required', 'numeric', 'min:0', 'max:9999999999.99']",
+      "order_no": "['sometimes', 'integer', 'min:0']",
+      "status": "['sometimes', 'in:draft,published,archived']"
+    },
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
+    "line": 32,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/teacher/lessons/{lesson}",
+    "action": "TeachingContentController@updateLesson",
+    "fields": {
+      "title": "['sometimes', 'required', 'string', 'max:255']",
+      "price": "['sometimes', 'numeric', 'min:0', 'max:9999999999.99']",
+      "order_no": "['sometimes', 'integer', 'min:0']",
+      "status": "['sometimes', 'in:draft,published,archived']",
+      "unit_id": "['prohibited']"
+    },
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
+    "line": 40,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/teacher/contents/{content}/quiz",
+    "action": "TeachingContentController@quiz",
+    "fields": {
+      "quiz_type": "['required', 'in:simple,protected']",
+      "attempts_allowed": "['required', 'integer', 'between:1,100']",
+      "duration_minutes": "['nullable', 'integer', 'between:1,1440']",
+      "status": "['required', 'in:draft,published,archived']",
+      "questions": "['required', 'array', 'min:1', 'max:100']",
+      "questions.*.type": "['required', 'in:mcq,true_false,essay']",
+      "questions.*.body": "['required', 'string', 'max:10000']",
+      "questions.*.points": "['required', 'numeric', 'between:0,1000']",
+      "questions.*.rubric_json": "['nullable', 'array']",
+      "questions.*.rubric_json.options": "['sometimes', 'array']",
+      "questions.*.rubric_json.correct_answer": "['sometimes']",
+      "questions.*.rubric_json.explanation": "['sometimes', 'string']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
+    "line": 49,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/notifications",
+    "action": "StudentNotificationController@index",
+    "fields": {},
+    "response_description": "data:[{id,type,title,body,data,created_at,related_payment_id,read,read_at}] وmeta.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentNotificationController.php",
+    "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/notifications/{notification}/read",
+    "action": "StudentNotificationController@read",
+    "fields": {},
+    "response_description": "data:{id,read:true,read_at}. سجل المستخدم نفسه فقط.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentNotificationController.php",
+    "line": 18,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/answers/{answer}/grade",
+    "action": "TeachingContentController@grade",
+    "fields": {
+      "score": "['required', 'numeric', 'min:0']"
+    },
+    "response_description": "data:{answer,attempt}. يراجع المدرّس صاحب الاختبار فقط، والعلامة لا تتجاوز points للسؤال؛ يُعاد حساب نتيجة المحاولة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
+    "line": 74,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "action": "StudentAuthController@register",
+    "fields": {
+      "name": "['required', 'string', 'max:255']",
+      "phone": "['required', 'string', 'max:30', 'unique:users,phone']",
+      "email": "['nullable', 'email', 'max:255', 'unique:users,email']",
+      "password": "['required', 'string', 'min:8', 'confirmed']",
+      "region_id": "['required', 'integer', 'exists:regions,id']",
+      "grade": "['required', 'string', 'max:100']",
+      "school_id": "[ 'required', 'integer', Rule::exists('schools', 'id')->where( fn ($query) => $query->where('region_id', $request->region_id) ), ]",
+      "device_uuid": "['required','string','max:255']",
+      "platform": "['required','in:android,ios']"
+    },
+    "response_description": "201 استجابة تسجيل دخول الطالب: status,message,token_type,access_token,access_token_expires_at,refresh_token,refresh_token_expires_at,user,student,device. البريد غير ظاهر في user.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 31,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "action": "StudentAuthController@studentLogin",
+    "fields": {
+      "phone": "['required', 'string', 'max:30']",
+      "password": "['required', 'string']",
+      "device_uuid": "['required','string','max:255']",
+      "platform": "['required','in:android,ios']"
+    },
+    "response_description": "نفس بيانات جلسة الطالب والتوكنات وuser/student/device. لا تتجاوز بيانات الجهاز.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 78,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/refresh",
+    "action": "StudentAuthController@studentRefresh",
+    "fields": {
+      "refresh_token": "['required', 'string']",
+      "device_uuid": "['required', 'string', 'max:255']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 181,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/device/transfer",
+    "action": "StudentAuthController@studentDeviceTransfer",
+    "fields": {
+      "phone": "['required','string','max:30']",
+      "password": "['required','string']",
+      "device_uuid": "['required','string','max:255']",
+      "platform": "['required','in:android,ios']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php",
+    "line": 17,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout",
+    "action": "StudentAuthController@studentLogout",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "throttle:10,1",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 123,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/me",
+    "action": "StudentAuthController@studentMe",
+    "fields": {},
+    "response_description": "status,user,student على المستوى الأعلى، دون data wrapper؛ لا email داخل user.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 350,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teachers/{teacher}/bookings",
+    "action": "IndividualBookingController@store",
+    "fields": {
+      "availability_id": "['required', 'integer', 'exists:teacher_availabilities,id']",
+      "individual_id": "['required', 'integer', 'exists:individuals,id']",
+      "enrollment_id": "['prohibited']",
+      "starts_at": "['required', 'date', 'after:now']",
+      "ends_at": "['required', 'date', 'after:starts_at']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/IndividualBookingController.php",
+    "line": 12,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/{teacher}/available-sessions",
+    "action": "AvailableSessionController@index",
+    "fields": {
+      "from": "['sometimes', 'date']",
+      "to": "array_merge(['sometimes', 'date'], $request->filled('from') ? ['after_or_equal:from'] : [])"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AvailableSessionController.php",
+    "line": 17,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/bookings",
+    "action": "StudentBookingController@index",
+    "fields": {
+      "scope": "['sometimes', 'in:upcoming,history,all']"
+    },
+    "response_description": "{data:[StudentSessionSummary]}. لا status ولا meta في هذا المسار القديم؛ DTO موضح في دليل التدفقات.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentBookingController.php",
+    "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/enrollments/{enrollment}/payments",
+    "action": "EnrollmentPaymentController@store",
+    "fields": {},
+    "response_description": "410 CHECKOUT_REQUIRED؛ لا تنشئ حوالة عبر المسار القديم، استخدم checkout ثم student/payments.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/EnrollmentPaymentController.php",
+    "line": 16,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/checkout",
+    "action": "ShamCashPaymentController@checkout",
+    "fields": {
+      "service_type": "['required', 'in:teacher_subject,unit,lesson,content']",
+      "service_id": "['required', 'integer', 'min:1']"
+    },
+    "response_description": "201 data:{checkout_id,internal_reference,amount,currency,service,account_id,qr_url,expires_at,settings_url}. الأونلاين فقط: teacher_subject/unit/lesson/content.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashPaymentController.php",
+    "line": 21,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/{teacher}/paid-slots",
+    "action": "Closure",
+    "fields": {},
+    "response_description": "410 PHYSICAL_CASH_ONLY؛ استخدم الحجز الفيزيائي النقدي.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": null,
+    "line": null,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/paid-bookings",
+    "action": "PaidLessonController@index",
+    "fields": {},
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaidLessonController.php",
+    "line": 184,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/paid-bookings/{booking}",
+    "action": "PaidLessonController@show",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PaidLessonController.php",
+    "line": 192,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/paid-bookings/{booking}/reschedule",
+    "action": "Closure",
+    "fields": {},
+    "response_description": "410 LEGACY_BOOKING_REQUIRES_SUPPORT؛ استخدم الحجز الفيزيائي النقدي.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": null,
+    "line": null,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/refunds",
+    "action": "RefundController@store",
+    "fields": {
+      "payment_id": "['required', 'integer']",
+      "account_id": "['required', 'string', 'max:255', 'regex:/\\S/u']",
+      "reason_code": "['sometimes', 'in:exceptional,service_unavailable,teacher_suspended']",
+      "reason": "['sometimes', 'string', 'max:2000']",
+      "original_transfer_date": "['nullable', 'date', 'before_or_equal:now']",
+      "original_transfer_number": "['nullable', 'string', 'max:255']",
+      "original_proof": "['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120']"
+    },
+    "response_description": "201 data: RefundRequest DTO مع refund_status وproof URLs المصرح بها. المبلغ من الباك ولا يقبل قيمة من الطالب.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 36,
+    "multipart": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/refunds/my",
+    "action": "RefundController@index",
+    "fields": {
+      "status": "['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED,COMPLETED']"
+    },
+    "response_description": "data قائمة RefundRequest DTO؛ meta للصفحات.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 65,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payments/checkout/{checkout}/qr",
+    "action": "ShamCashPaymentController@checkoutQr",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashPaymentController.php",
+    "line": 123,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/payments",
+    "action": "ShamCashPaymentController@store",
+    "fields": {
+      "checkout_id": "['required', 'uuid']",
+      "provider_reference": "['required', 'string', 'max:255']",
+      "proof": "['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png', 'max:'.config('payments.proof_max_kb')]"
+    },
+    "response_description": "201 (أو200 عند إعادة نفس الطلب) data: Payment DTO مع financial_status/refundable_amount/refunded_amount/payment_status/proof_url. body=file proof وcheckout_id وprovider_reference.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashPaymentController.php",
+    "line": 44,
+    "multipart": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/payments",
+    "action": "ShamCashPaymentController@index",
+    "fields": {
+      "payment_status": "['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ShamCashPaymentController.php",
+    "line": 132,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/payments/{payment}",
+    "action": "EnrollmentPaymentController@show",
+    "fields": {},
+    "response_description": "data: PaymentDTO لشام كاش، أو Payment للسجلات المالية القديمة الأخرى.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/EnrollmentPaymentController.php",
+    "line": 27,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/enrollments",
+    "action": "StudentEnrollmentController@index",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentEnrollmentController.php",
+    "line": 20,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/booking",
+    "action": "StudentEnrollmentController@current",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentEnrollmentController.php",
+    "line": 27,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher-subjects/{id}/enroll",
+    "action": "StudentEnrollmentController@enrollTeacherSubject",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentEnrollmentController.php",
+    "line": 83,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/units/{id}/enroll",
+    "action": "StudentEnrollmentController@enrollUnit",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentEnrollmentController.php",
+    "line": 127,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/contents/{id}/enroll",
+    "action": "StudentEnrollmentController@enrollContent",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentEnrollmentController.php",
+    "line": 185,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/attendance/percentage",
+    "action": "AttendanceController@percentage",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AttendanceController.php",
+    "line": 105,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/quizzes/{quiz}/data",
+    "action": "QuizController@studentData",
+    "fields": {},
+    "response_description": "data:{quiz_type,protected,progress_weight,quiz,attempts_used,attempts_remaining,active_attempt}. quiz.questions لا تتضمن مفاتيح التصحيح السرية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/QuizController.php",
+    "line": 43,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/quizzes/{quiz}/attempts",
+    "action": "QuizAttemptController@start",
+    "fields": {},
+    "response_description": "201 data:{attempt,attempt_id,quiz_id,attempts_remaining}. لا يمكن تجاوز attempts_allowed.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/QuizAttemptController.php",
+    "line": 47,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/quiz-attempts/{quizAttempt}/answers",
+    "action": "AnswerController@submitForAttempt",
+    "fields": {
+      "question_id": "['required', 'integer', 'exists:questions,id']",
+      "answer_text": "['present', 'nullable', 'string']"
+    },
+    "response_description": "data: Answer مع score/status من الباك؛ لا يقبل score من الطالب.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AnswerController.php",
+    "line": 46,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/contents/{id}/playback-token",
+    "action": "StudentContentAssetController@playbackToken",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
+    "line": 19,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/content-assets/{contentAsset}/play",
+    "action": "StudentContentAssetController@play",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device",
+      "signed"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
+    "line": 79,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/sessions/{id}/book",
+    "action": "SessionController@book",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 82,
+    "multipart": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/sessions/{id}/booking",
+    "action": "SessionController@cancelBooking",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/SessionController.php",
+    "line": 93,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/device/transfer-requests/{transfer}",
+    "action": "StudentAuthController@transferStatus",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "throttle:30,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php",
+    "line": 49,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/device/transfer-requests",
+    "action": "StudentAuthController@studentDeviceTransfer",
+    "fields": {
+      "phone": "['required','string','max:30']",
+      "password": "['required','string']",
+      "device_uuid": "['required','string','max:255']",
+      "platform": "['required','in:android,ios']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php",
+    "line": 17,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/device/transfer-requests/{transfer}/claim",
+    "action": "StudentAuthController@claimTransfer",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php",
+    "line": 63,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/{teacher}",
+    "action": "StudentLearningController@teacher",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentLearningController.php",
+    "line": 89,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/profile",
+    "action": "StudentProfileController@update",
+    "fields": {
+      "name": "['sometimes', 'required', 'string', 'max:255']",
+      "profile_image": "['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']",
+      "phone": "['prohibited']",
+      "email": "['prohibited']",
+      "password": "['prohibited']",
+      "region_id": "['prohibited']",
+      "school_id": "['prohibited']",
+      "grade": "['prohibited']"
+    },
+    "response_description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentProfileController.php",
+    "line": 11,
+    "multipart": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/profile",
+    "action": "StudentProfileController@update",
+    "fields": {
+      "name": "['sometimes', 'required', 'string', 'max:255']",
+      "profile_image": "['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']",
+      "phone": "['prohibited']",
+      "email": "['prohibited']",
+      "password": "['prohibited']",
+      "region_id": "['prohibited']",
+      "school_id": "['prohibited']",
+      "grade": "['prohibited']"
+    },
+    "response_description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentProfileController.php",
+    "line": 11,
+    "multipart": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/contents/{content}/assets",
+    "action": "StudentContentAssetController@assets",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
+    "line": 40,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-assets/{contentAsset}/access-token",
+    "action": "StudentContentAssetController@accessToken",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
+    "line": 52,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/contents/{content}/complete",
+    "action": "StudentLearningController@complete",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentLearningController.php",
+    "line": 20,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teacher-subjects/{teacherSubject}/progress",
+    "action": "StudentLearningController@progress",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentLearningController.php",
+    "line": 40,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teacher-subjects/{teacherSubject}",
+    "action": "StudentLearningController@course",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentLearningController.php",
+    "line": 64,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/sessions/{session}",
+    "action": "StudentBookingController@show",
+    "fields": {},
+    "response_description": "data: StudentSessionSummary.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentBookingController.php",
+    "line": 23,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/device-transfer-requests",
+    "action": "StudentAuthController@pendingTransfers",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php",
+    "line": 88,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/device-transfer-requests/{transfer}/{decision}",
+    "action": "StudentAuthController@decideTransfer",
+    "fields": {},
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php",
+    "line": 97,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/notifications",
+    "action": "StudentNotificationController@index",
+    "fields": {},
+    "response_description": "data:[{id,type,title,body,data,created_at,related_payment_id,read,read_at}] وmeta.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentNotificationController.php",
+    "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/notifications/{notification}/read",
+    "action": "StudentNotificationController@read",
+    "fields": {},
+    "response_description": "data:{id,read:true,read_at}. سجل المستخدم نفسه فقط.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentNotificationController.php",
+    "line": 18,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/{teacher}/available-slots",
+    "action": "AvailabilityBookingController@index",
+    "fields": {
+      "from": "['sometimes', 'date']",
+      "to": "['sometimes', 'date']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AvailabilityBookingController.php",
+    "line": 14,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher-availabilities/{availability}/book",
+    "action": "AvailabilityBookingController@store",
+    "fields": {
+      "individual_id": "['required', 'integer', 'exists:individuals,id']",
+      "enrollment_id": "['prohibited']",
+      "starts_at": "['required', 'date']",
+      "ends_at": "['required', 'date', 'after:starts_at']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/AvailabilityBookingController.php",
+    "line": 26,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/quiz-attempts/{quizAttempt}/submit",
+    "action": "QuizAttemptController@submit",
+    "fields": {},
+    "response_description": "data:{attempt_id,quiz_id,status,submitted_at,score,grading_pending}. simple الموضوعي يُصحح آلياً والمقالي ينتظر مراجعة الأستاذ.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/QuizAttemptController.php",
+    "line": 113,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/contents/{content}",
+    "action": "CurriculumBrowseController@show",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/CurriculumBrowseController.php",
+    "line": 37,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teachers/{teacher}/calendar",
+    "action": "TeacherCalendarController@index",
+    "fields": {
+      "from": "['sometimes', 'date']",
+      "to": "['sometimes', 'date']",
+      "timezone": "['sometimes', 'timezone']",
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherCalendarController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/my-quizzes",
+    "action": "StudentQuizReadController@index",
+    "fields": {
+      "scope": "['sometimes', 'in:available,history,all']",
+      "status": "['sometimes', 'in:not_started,in_progress,submitted,graded,pending_grading']",
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentQuizReadController.php",
+    "line": 28,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/my-quizzes/{quiz}/attempts",
+    "action": "StudentQuizReadController@attempts",
+    "fields": {
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentQuizReadController.php",
+    "line": 92,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/groups",
+    "action": "StudentGroupReadController@index",
+    "fields": {
+      "scope": "['sometimes', 'in:active,history,all']",
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentGroupReadController.php",
+    "line": 12,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/groups/{group}/members",
+    "action": "StudentGroupReadController@members",
+    "fields": {},
+    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentGroupReadController.php",
+    "line": 59,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/contents/{content}/quizzes",
+    "action": "CurriculumBrowseController@quizzes",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/CurriculumBrowseController.php",
+    "line": 44,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/profile/avatar",
+    "action": "ProfileAvatarController@store",
+    "fields": {
+      "avatar": "['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:max_width=4096,max_height=4096']"
+    },
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student,teacher",
+      "App\\Http\\Middleware\\StudentDeviceWhenRequired",
+      "throttle:20,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ProfileAvatarController.php",
+    "line": 15,
+    "multipart": true
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/profile/avatar",
+    "action": "ProfileAvatarController@destroy",
+    "fields": {},
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student,teacher",
+      "App\\Http\\Middleware\\StudentDeviceWhenRequired"
+    ],
+    "source": "app/Http/Controllers/Api/V1/ProfileAvatarController.php",
+    "line": 43,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/register",
+    "action": "StudentAuthController@register",
+    "fields": {
+      "name": "['required', 'string', 'max:255']",
+      "phone": "['required', 'string', 'max:30', 'unique:users,phone']",
+      "email": "['nullable', 'email', 'max:255', 'unique:users,email']",
+      "password": "['required', 'string', 'min:8', 'confirmed']",
+      "region_id": "['required', 'integer', 'exists:regions,id']",
+      "grade": "['required', 'string', 'max:100']",
+      "school_id": "[ 'required', 'integer', Rule::exists('schools', 'id')->where( fn ($query) => $query->where('region_id', $request->region_id) ), ]",
+      "device_uuid": "['required','string','max:255']",
+      "platform": "['required','in:android,ios']"
+    },
+    "response_description": "201 استجابة تسجيل دخول الطالب: status,message,token_type,access_token,access_token_expires_at,refresh_token,refresh_token_expires_at,user,student,device. البريد غير ظاهر في user.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 31,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/login",
+    "action": "StudentAuthController@studentLogin",
+    "fields": {
+      "phone": "['required', 'string', 'max:30']",
+      "password": "['required', 'string']",
+      "device_uuid": "['required','string','max:255']",
+      "platform": "['required','in:android,ios']"
+    },
+    "response_description": "نفس بيانات جلسة الطالب والتوكنات وuser/student/device. لا تتجاوز بيانات الجهاز.",
+    "middleware": [
+      "api",
+      "throttle:10,1"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 78,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/profile",
+    "action": "StudentAuthController@studentMe",
+    "fields": {},
+    "response_description": "status,user,student على المستوى الأعلى، دون data wrapper؛ لا email داخل user.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentAuthController.php",
+    "line": 350,
+    "multipart": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/student/profile",
+    "action": "StudentProfileController@update",
+    "fields": {
+      "name": "['sometimes', 'required', 'string', 'max:255']",
+      "profile_image": "['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']",
+      "phone": "['prohibited']",
+      "email": "['prohibited']",
+      "password": "['prohibited']",
+      "region_id": "['prohibited']",
+      "school_id": "['prohibited']",
+      "grade": "['prohibited']"
+    },
+    "response_description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentProfileController.php",
+    "line": 11,
+    "multipart": true
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/student/profile",
+    "action": "StudentProfileController@update",
+    "fields": {
+      "name": "['sometimes', 'required', 'string', 'max:255']",
+      "profile_image": "['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']",
+      "phone": "['prohibited']",
+      "email": "['prohibited']",
+      "password": "['prohibited']",
+      "region_id": "['prohibited']",
+      "school_id": "['prohibited']",
+      "grade": "['prohibited']"
+    },
+    "response_description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentProfileController.php",
+    "line": 11,
+    "multipart": true
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/profile",
+    "action": "StudentProfileController@update",
+    "fields": {
+      "name": "['sometimes', 'required', 'string', 'max:255']",
+      "profile_image": "['sometimes', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120']",
+      "phone": "['prohibited']",
+      "email": "['prohibited']",
+      "password": "['prohibited']",
+      "region_id": "['prohibited']",
+      "school_id": "['prohibited']",
+      "grade": "['prohibited']"
+    },
+    "response_description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/StudentProfileController.php",
+    "line": 11,
+    "multipart": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teachers",
+    "action": "TeacherDirectoryController@index",
+    "fields": {
+      "mode": "['sometimes', 'in:online,physical']",
+      "search": "['sometimes', 'nullable', 'string', 'max:100']",
+      "specialization": "['sometimes', 'nullable', 'string', 'max:100']",
+      "region_id": "['sometimes', 'integer', 'min:1']",
+      "subject_id": "['sometimes', 'integer', 'min:1']",
+      "grade": "['prohibited']",
+      "page": "['sometimes', 'integer', 'min:1']",
+      "per_page": "['sometimes', 'integer', 'between:1,100']"
+    },
+    "response_description": "data:[{id,name,specialization,avatar_url,modes:[online,physical],status,region_id}] وmeta. mode سياق عرض، وليس مفتاح تفعيل قدرة الأستاذ.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherDirectoryController.php",
+    "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teachers/{teacher}/physical/groups",
+    "action": "PhysicalTeachingController@groups",
+    "fields": {},
+    "response_description": "data قائمة بالمجموعات ونطاقها وأسعار الحصة والجدول والأسماء؛ meta للصفحات.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
+    "line": 26,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/groups/{group}/join",
+    "action": "PhysicalTeachingController@join",
+    "fields": {},
+    "response_description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
+    "line": 49,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/groups/{group}/join-request",
+    "action": "PhysicalTeachingController@join",
+    "fields": {},
+    "response_description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
+    "line": 49,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/groups/{group}/withdraw",
+    "action": "PhysicalTeachingController@withdraw",
+    "fields": {},
+    "response_description": "data: {membership_status:left,refund_eligible:false,payment_method:cash_to_teacher}. 409 بعد بدء المجموعة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
+    "line": 77,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teachers/{teacher}/physical/individual-offers",
+    "action": "PhysicalTeachingController@offers",
+    "fields": {},
+    "response_description": "data قائمة IndividualOffer مع content.type/id/title وpayment_method=cash_to_teacher؛ meta للصفحات.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
+    "line": 90,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teachers/{teacher}/availability",
+    "action": "PhysicalAvailabilityController@index",
+    "fields": {
+      "offer_id": "['required', 'integer', 'exists:individual_offers,id']",
+      "date": "['required', 'date_format:Y-m-d', 'after_or_equal:today']"
+    },
+    "response_description": "data: {date,offer_id,slots:[{availability_id,starts_at,ends_at,timezone,status:available|booked|unavailable}]}.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PhysicalAvailabilityController.php",
+    "line": 15,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/individual-bookings",
+    "action": "PhysicalTeachingController@book",
+    "fields": {
+      "offer_id": "['required', 'integer', 'exists:individual_offers,id']",
+      "availability_id": "['required', 'integer', 'exists:teacher_availabilities,id']",
+      "starts_at": "['required', 'date', 'after:now']",
+      "ends_at": "['required', 'date', 'after:starts_at']"
+    },
+    "response_description": "data: {session: Session, individual: Individual, payment_method: cash_to_teacher, payment_required_on_platform: false}. لا Payment ولا Enrollment جديد.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
+    "line": 99,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teachers/{teacher}/online-content",
+    "action": "OnlineLearningController@tree",
+    "fields": {},
+    "response_description": "data.teacher وdata.subjects[].units[].lessons[].contents[]؛ أسعار وعدادات وhas_access، دون ملفات مدفوعة مكشوفة.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/OnlineLearningController.php",
+    "line": 25,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/lessons/{lesson}/content",
+    "action": "OnlineLearningController@content",
+    "fields": {},
+    "response_description": "data: {lesson,access:{allowed,reason},contents:[{id,type,title,description,has_access,protected,assets_endpoint,playback_token_endpoint,quizzes}]}. الاختبارات البسيطة تظهر دون شراء.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/OnlineLearningController.php",
+    "line": 36,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/lessons/{lesson}/complete",
+    "action": "OnlineLearningController@complete",
+    "fields": {},
+    "response_description": "data: {lesson_id,completed:true,completed_at}. 422 إن لم تُكمل كل المحتويات التعليمية المنشورة غير الاختبارات، و404 عند غياب حق الوصول.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/OnlineLearningController.php",
+    "line": 52,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/teacher-subjects/{teacherSubject}/learning-summary",
+    "action": "OnlineLearningController@progress",
+    "fields": {},
+    "response_description": "data: {teacher_subject_id,total_lessons,completed_lessons,total_quizzes,completed_quizzes,lesson_weight:1,quiz_weight:0.30,earned_progress_points,total_progress_points,progress_percentage}.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/OnlineLearningController.php",
+    "line": 69,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/refunds/eligibility",
+    "action": "RefundController@eligibility",
+    "fields": {
+      "payment_id": "['sometimes', 'integer', 'min:1']"
+    },
+    "response_description": "data: {payment_id,currency,eligible,refundable_amount,consumed_amount,refunded_amount,reserved_amount,lesson_allocations,code,message} عند payment_id؛ وإلا قائمة paginated.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 23,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/refunds",
+    "action": "RefundController@index",
+    "fields": {
+      "status": "['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED,COMPLETED']"
+    },
+    "response_description": "data قائمة RefundRequest DTO؛ meta للصفحات.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 65,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/student/refunds",
+    "action": "RefundController@store",
+    "fields": {
+      "payment_id": "['required', 'integer']",
+      "account_id": "['required', 'string', 'max:255', 'regex:/\\S/u']",
+      "reason_code": "['sometimes', 'in:exceptional,service_unavailable,teacher_suspended']",
+      "reason": "['sometimes', 'string', 'max:2000']",
+      "original_transfer_date": "['nullable', 'date', 'before_or_equal:now']",
+      "original_transfer_number": "['nullable', 'string', 'max:255']",
+      "original_proof": "['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120']"
+    },
+    "response_description": "201 data: RefundRequest DTO مع refund_status وproof URLs المصرح بها. المبلغ من الباك ولا يقبل قيمة من الطالب.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 36,
+    "multipart": true
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/refunds/{refund}",
+    "action": "RefundController@show",
+    "fields": {},
+    "response_description": "data: RefundRequest مع refund_status وrefund_proof_url وoriginal_proof_url؛ حقول مسار الملفات الداخلية مخفية.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 76,
+    "multipart": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/student/refunds/{refund}/payout-details",
+    "action": "RefundController@payout",
+    "fields": {
+      "account_id": "['required', 'string', 'max:255', 'regex:/\\S/u']"
+    },
+    "response_description": "data: RefundRequest؛ يُسمح بتعديل account_id لطلبك pending/approved فقط.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/RefundController.php",
+    "line": 83,
+    "multipart": false
+  }
+]

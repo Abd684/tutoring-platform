@@ -30,10 +30,10 @@ class StudentAuthController extends Controller
      */
     public function register(Request $request)
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'max:30', 'unique:users,phone'],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'region_id' => ['required', 'integer', 'exists:regions,id'],
             'grade' => ['required', 'string', 'max:100'],
@@ -44,13 +44,13 @@ class StudentAuthController extends Controller
                     fn ($query) => $query->where('region_id', $request->region_id)
                 ),
             ],
-        ]);
+        ], $this->deviceValidationRules()));
 
-        $result = DB::transaction(function () use ($validated) {
+        $result = DB::transaction(function () use ($validated, $request) {
             $user = User::create([
                 'name' => $validated['name'],
                 'phone' => $validated['phone'],
-                'email' => $validated['email'],
+                'email' => $validated['email'] ?? null,
                 'password_hash' => Hash::make($validated['password']),
                 'role' => 'student',
                 'status' => 'active',
@@ -64,28 +64,26 @@ class StudentAuthController extends Controller
                 'status' => 'active',
             ]);
 
-            return [
-                'user' => $user,
-                'student' => $student,
-            ];
+            $response = $this->studentLogin($request);
+            $payload = $response->getData(true);
+            $payload['message'] = 'تم إنشاء حسابك وتسجيل دخولك بنجاح.';
+
+            return response()->json($payload, 201);
         });
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Student account created successfully.',
-        ], 201);
+        return $result;
     }
 
     // تسجيل دخول الطالب مع مبدأ جهاز واحد فعال.
     public function studentLogin(Request $request)
     {
         $validated = $request->validate(array_merge([
-            'email' => ['required', 'email'],
+            'phone' => ['required', 'string', 'max:30'],
             'password' => ['required', 'string'],
         ], $this->deviceValidationRules()));
 
         [$user, $student] = $this->validatedStudentCredentials(
-            $validated['email'],
+            $validated['phone'],
             $validated['password']
         );
 
@@ -371,15 +369,15 @@ class StudentAuthController extends Controller
         ]);
     }
 
-    private function validatedStudentCredentials(string $email, string $password): array
+    private function validatedStudentCredentials(string $phone, string $password): array
     {
-        $user = User::where('email', $email)->first();
+        $user = User::where('phone', $phone)->first();
 
         if (! $user || ! Hash::check($password, $user->password_hash)) {
             throw new HttpResponseException(
                 response()->json([
                     'status' => false,
-                    'message' => 'Invalid email or password.',
+                    'message' => 'Invalid phone number or password.',
                 ], 401)
             );
         }
@@ -503,7 +501,6 @@ class StudentAuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'phone' => $user->phone,
-            'email' => $user->email,
             'role' => $user->role,
             'status' => $user->status,
             'region_id' => $user->region_id,

@@ -7,7 +7,8 @@ use App\Models\Device;
 use App\Models\DeviceTransferRequest;
 use App\Models\Enrollment;
 use App\Models\Group;
-use App\Models\GroupEnrollment;
+use App\Models\GroupStudent;
+use App\Models\Individual;
 use App\Models\Lesson;
 use App\Models\Quiz;
 use App\Models\Session;
@@ -61,6 +62,12 @@ class CriticalBusinessRulesTest extends TestCase
             'starts_at' => now()->subDay(), 'expires_at' => now()->addDays(10)], $extra));
     }
 
+    private function individual(Student $student, Teacher $teacher, $item, array $extra = []): Individual
+    {
+        return Individual::create(array_replace(['student_id' => $student->id, 'teacher_subject_id' => $item->id,
+            'status' => 'active', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(10)], $extra));
+    }
+
     private function availability(Teacher $teacher): TeacherAvailability
     {
         return TeacherAvailability::create(['teacher_id' => $teacher->id, 'date' => now()->addDay()->toDateString(),
@@ -73,15 +80,15 @@ class CriticalBusinessRulesTest extends TestCase
             'ends_at' => now()->addDay()->startOfDay()->addHours(11)->toIso8601String()];
     }
 
-    public function test_individual_requires_enrollment_and_forces_capacity_one(): void
+    public function test_individual_requires_teaching_target_and_forces_capacity_one(): void
     {
         [$studentUser,$student] = $this->student();
         [$teacherUser,$teacher,$course] = $this->course();
         Sanctum::actingAs($teacherUser);
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'INDIVIDUAL', ...$this->interval()])->assertUnprocessable();
-        $enrollment = $this->enrollment($student, $teacher, $course);
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'INDIVIDUAL', 'enrollment_id' => $enrollment->id, 'capacity' => 7, ...$this->interval()])
-            ->assertCreated()->assertJsonPath('data.capacity', 1)->assertJsonPath('data.enrollment_id', $enrollment->id);
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'individual', ...$this->interval()])->assertUnprocessable();
+        $enrollment = $this->individual($student, $teacher, $course);
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'individual', 'type_id' => $enrollment->id, 'capacity' => 7, ...$this->interval()])
+            ->assertCreated()->assertJsonPath('data.capacity', 1)->assertJsonPath('data.type_id', $enrollment->id);
     }
 
     public function test_group_and_type_conversion_validate_final_state(): void
@@ -89,29 +96,29 @@ class CriticalBusinessRulesTest extends TestCase
         [$user,$student] = $this->student();
         [$teacherUser,$teacher,$course] = $this->course();
         $group = Group::create(['teacher_subject_id' => $course->id, 'name' => 'Group', 'capacity' => 3, 'status' => 'active']);
-        $enrollment = $this->enrollment($student, $teacher, $course);
+        $enrollment = $this->individual($student, $teacher, $course);
         Sanctum::actingAs($teacherUser);
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'GROUP', ...$this->interval()])->assertUnprocessable();
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'GROUP', 'group_id' => $group->id, 'enrollment_id' => $enrollment->id, ...$this->interval()])->assertUnprocessable();
-        $id = $this->postJson('/api/v1/teacher/sessions', ['type' => 'GROUP', 'group_id' => $group->id, ...$this->interval()])->assertCreated()->json('data.id');
-        $this->patchJson('/api/v1/teacher/sessions/'.$id, ['type' => 'INDIVIDUAL', 'enrollment_id' => $enrollment->id])->assertUnprocessable();
-        $this->patchJson('/api/v1/teacher/sessions/'.$id, ['type' => 'INDIVIDUAL', 'group_id' => null, 'enrollment_id' => $enrollment->id])->assertOk()->assertJsonPath('data.capacity', 1);
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'group', ...$this->interval()])->assertUnprocessable();
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'group', 'type_id' => $group->id, 'individual_id' => $enrollment->id, ...$this->interval()])->assertUnprocessable();
+        $id = $this->postJson('/api/v1/teacher/sessions', ['type' => 'group', 'type_id' => $group->id, ...$this->interval()])->assertCreated()->json('data.id');
+        $this->patchJson('/api/v1/teacher/sessions/'.$id, ['type' => 'individual'])->assertUnprocessable();
+        $this->patchJson('/api/v1/teacher/sessions/'.$id, ['type' => 'individual', 'type_id' => $enrollment->id])->assertOk()->assertJsonPath('data.capacity', 1);
     }
 
     public function test_booking_creates_session_and_cancel_preserves_history_and_reopens_time(): void
     {
         [$user,$student] = $this->student();
         [, $teacher,$course] = $this->course();
-        $enrollment = $this->enrollment($student, $teacher, $course);
+        $enrollment = $this->individual($student, $teacher, $course);
         $availability = $this->availability($teacher);
         Sanctum::actingAs($user);
-        $id = $this->postJson('/api/v1/teacher-availabilities/'.$availability->id.'/book', ['enrollment_id' => $enrollment->id, ...$this->interval()])->assertCreated()->json('data.id');
+        $id = $this->postJson('/api/v1/teacher-availabilities/'.$availability->id.'/book', ['individual_id' => $enrollment->id, ...$this->interval()])->assertCreated()->json('data.id');
         $slots = $this->getJson('/api/v1/teachers/'.$teacher->id.'/available-slots?from='.now()->addDay()->toDateString().'T10:00:00Z&to='.now()->addDay()->toDateString().'T12:00:00Z')->assertOk();
         $this->assertCount(1, $slots->json('data'));
         $this->assertStringContainsString('11:00:00', $slots->json('data.0.starts_at'));
-        $this->deleteJson('/api/v1/sessions/'.$id.'/booking')->assertOk()->assertJsonPath('data.status', 'cancelled')->assertJsonPath('data.enrollment_id', $enrollment->id);
+        $this->deleteJson('/api/v1/sessions/'.$id.'/booking')->assertOk()->assertJsonPath('data.status', 'cancelled')->assertJsonPath('data.type_id', $enrollment->id);
         $this->assertSame(1, Session::count());
-        $this->postJson('/api/v1/teacher-availabilities/'.$availability->id.'/book', ['enrollment_id' => $enrollment->id, ...$this->interval()])->assertCreated();
+        $this->postJson('/api/v1/teacher-availabilities/'.$availability->id.'/book', ['individual_id' => $enrollment->id, ...$this->interval()])->assertCreated();
     }
 
     public function test_booking_rejects_other_students_enrollment_and_duplicate_interval(): void
@@ -119,13 +126,13 @@ class CriticalBusinessRulesTest extends TestCase
         [$user,$student] = $this->student();
         [, $other] = $this->student();
         [, $teacher,$course] = $this->course();
-        $own = $this->enrollment($student, $teacher, $course);
-        $foreign = $this->enrollment($other, $teacher, $course);
+        $own = $this->individual($student, $teacher, $course);
+        $foreign = $this->individual($other, $teacher, $course);
         $a = $this->availability($teacher);
         Sanctum::actingAs($user);
-        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['enrollment_id' => $foreign->id, ...$this->interval()])->assertForbidden();
-        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['enrollment_id' => $own->id, ...$this->interval()])->assertCreated();
-        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['enrollment_id' => $own->id, ...$this->interval()])->assertConflict();
+        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['individual_id' => $foreign->id, ...$this->interval()])->assertNotFound();
+        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['individual_id' => $own->id, ...$this->interval()])->assertCreated();
+        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['individual_id' => $own->id, ...$this->interval()])->assertConflict();
         $this->assertSame(1, Session::count());
     }
 
@@ -135,12 +142,12 @@ class CriticalBusinessRulesTest extends TestCase
         [, $teacher,$course] = $this->course();
         $a = $this->availability($teacher);
         Sanctum::actingAs($user);
-        foreach ([['status' => 'pending'], ['expires_at' => now()->subMinute()], ['starts_at' => now()->addDays(3)]] as $extra) {
-            $e = $this->enrollment($student, $teacher, $course, $extra);
-            $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['enrollment_id' => $e->id, ...$this->interval()])->assertUnprocessable();
+        foreach ([['status' => 'pending'], ['ends_at' => now()->subMinute()], ['starts_at' => now()->addDays(3)]] as $extra) {
+            $e = $this->individual($student, $teacher, $course, $extra);
+            $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['individual_id' => $e->id, ...$this->interval()])->assertUnprocessable();
         }
-        $e = $this->enrollment($student, $teacher, $course);
-        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['enrollment_id' => $e->id, 'starts_at' => now()->addDay()->startOfDay()->addHours(9)->toIso8601String(), 'ends_at' => $this->interval()['ends_at']])->assertUnprocessable();
+        $e = $this->individual($student, $teacher, $course);
+        $this->postJson('/api/v1/teacher-availabilities/'.$a->id.'/book', ['individual_id' => $e->id, 'starts_at' => now()->addDay()->startOfDay()->addHours(9)->toIso8601String(), 'ends_at' => $this->interval()['ends_at']])->assertUnprocessable();
     }
 
     public function test_student_cannot_cancel_another_students_booking(): void
@@ -148,26 +155,24 @@ class CriticalBusinessRulesTest extends TestCase
         [$user,$student] = $this->student();
         [$otherUser,$other] = $this->student();
         [, $teacher,$course] = $this->course();
-        $e = $this->enrollment($student, $teacher, $course);
+        $e = $this->individual($student, $teacher, $course);
         Sanctum::actingAs($user);
-        $session = app(AvailabilityBooking::class)->book($student, $this->availability($teacher), ['enrollment_id' => $e->id, ...$this->interval()]);
+        $session = app(AvailabilityBooking::class)->book($student, $this->availability($teacher), ['individual_id' => $e->id, ...$this->interval()]);
         Sanctum::actingAs($otherUser);
         $this->deleteJson('/api/v1/sessions/'.$session->id.'/booking')->assertNotFound();
         $this->assertSame('scheduled', $session->fresh()->status);
     }
 
-    public function test_group_membership_requires_exact_active_full_subject(): void
+    public function test_group_membership_requires_active_student_without_online_enrollment(): void
     {
         [, $student] = $this->student();
-        [$teacherUser,$teacher,$course,$unit] = $this->course();
+        [$teacherUser, $teacher, $course] = $this->course();
         $group = Group::create(['teacher_subject_id' => $course->id, 'name' => 'Group', 'capacity' => 5, 'status' => 'active']);
         Sanctum::actingAs($teacherUser);
-        foreach ([[$unit, []], [$course, ['status' => 'pending']], [$course, ['expires_at' => now()->subMinute()]]] as [$item,$extra]) {
-            $e = $this->enrollment($student, $teacher, $item, $extra);
-            $this->postJson('/api/v1/teacher/groups/'.$group->id.'/enrollments', ['enrollment_id' => $e->id])->assertUnprocessable();
-        }
-        $e = $this->enrollment($student, $teacher, $course);
-        $this->postJson('/api/v1/teacher/groups/'.$group->id.'/enrollments', ['enrollment_id' => $e->id])->assertCreated();
+        $student->update(['status' => 'suspended']);
+        $this->postJson('/api/v1/teacher/groups/'.$group->id.'/students', ['student_id' => $student->id])->assertUnprocessable();
+        $student->update(['status' => 'active']);
+        $this->postJson('/api/v1/teacher/groups/'.$group->id.'/students', ['student_id' => $student->id])->assertCreated();
     }
 
     public function test_content_policy_covers_subject_unit_and_content_without_cross_scope_leak(): void
@@ -288,36 +293,35 @@ class CriticalBusinessRulesTest extends TestCase
         [$user,$student] = $this->student();
         [, $a,$ca] = $this->course();
         [, $b,$cb] = $this->course();
-        $ea = $this->enrollment($student, $a, $ca);
-        $eb = $this->enrollment($student, $b, $cb);
+        $ea = $this->individual($student, $a, $ca);
+        $eb = $this->individual($student, $b, $cb);
         Sanctum::actingAs($user);
-        app(AvailabilityBooking::class)->book($student, $this->availability($a), ['enrollment_id' => $ea->id, ...$this->interval()]);
-        $this->postJson('/api/v1/teacher-availabilities/'.$this->availability($b)->id.'/book', ['enrollment_id' => $eb->id, ...$this->interval()])->assertConflict();
+        app(AvailabilityBooking::class)->book($student, $this->availability($a), ['individual_id' => $ea->id, ...$this->interval()]);
+        $this->postJson('/api/v1/teacher-availabilities/'.$this->availability($b)->id.'/book', ['individual_id' => $eb->id, ...$this->interval()])->assertConflict();
         $this->assertSame(1, Session::count());
     }
 
-    public function test_teacher_cannot_attach_another_teachers_enrollment_or_availability(): void
+    public function test_teacher_cannot_attach_another_teachers_individual_or_availability(): void
     {
         [, $student] = $this->student();
         [$user,$a,$ca] = $this->course();
         [, $b,$cb] = $this->course();
-        $own = $this->enrollment($student, $a, $ca);
-        $foreign = $this->enrollment($student, $b, $cb);
+        $own = $this->individual($student, $a, $ca);
+        $foreign = $this->individual($student, $b, $cb);
         Sanctum::actingAs($user);
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'INDIVIDUAL', 'enrollment_id' => $foreign->id, ...$this->interval()])->assertNotFound();
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'INDIVIDUAL', 'enrollment_id' => $own->id, 'availability_id' => $this->availability($b)->id, ...$this->interval()])->assertNotFound();
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'individual', 'type_id' => $foreign->id, ...$this->interval()])->assertNotFound();
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'individual', 'type_id' => $own->id, 'availability_id' => $this->availability($b)->id, ...$this->interval()])->assertNotFound();
         $this->assertSame(0, Session::count());
     }
 
-    public function test_same_teacher_other_subject_enrollment_cannot_join_group(): void
+    public function test_online_subject_enrollment_does_not_control_group_membership(): void
     {
         [, $student] = $this->student();
-        [$user,$teacher,$course] = $this->course();
-        $other = TeacherSubject::create(['teacher_id' => $teacher->id, 'subject_id' => Subject::create(['name' => 'Other', 'status' => 'active'])->id, 'price' => 10, 'status' => 'active']);
+        [$teacherUser, $teacher, $course, $unit] = $this->course();
+        $this->enrollment($student, $teacher, $unit, ['status' => 'pending']);
         $group = Group::create(['teacher_subject_id' => $course->id, 'name' => 'Group', 'capacity' => 3, 'status' => 'active']);
-        $e = $this->enrollment($student, $teacher, $other);
-        Sanctum::actingAs($user);
-        $this->postJson('/api/v1/teacher/groups/'.$group->id.'/enrollments', ['enrollment_id' => $e->id])->assertUnprocessable();
+        Sanctum::actingAs($teacherUser);
+        $this->postJson('/api/v1/teacher/groups/'.$group->id.'/students', ['student_id' => $student->id])->assertCreated();
     }
 
     public function test_only_source_account_and_device_may_approve_transfer(): void
@@ -337,15 +341,13 @@ class CriticalBusinessRulesTest extends TestCase
         $this->assertSame('pending', $transfer->fresh()->status);
     }
 
-    public function test_group_session_must_be_covered_by_each_members_enrollment(): void
+    public function test_group_session_does_not_require_members_online_enrollments(): void
     {
         [, $student] = $this->student();
-        [$user,$teacher,$course] = $this->course();
+        [$user, $teacher, $course] = $this->course();
         $group = Group::create(['teacher_subject_id' => $course->id, 'name' => 'Group', 'capacity' => 3, 'status' => 'active']);
-        $enrollment = $this->enrollment($student, $teacher, $course, ['expires_at' => now()->addHour()]);
-        GroupEnrollment::create(['group_id' => $group->id, 'enrollment_id' => $enrollment->id, 'status' => 'active']);
+        GroupStudent::create(['group_id' => $group->id, 'student_id' => $student->id, 'status' => 'active']);
         Sanctum::actingAs($user);
-        $this->postJson('/api/v1/teacher/sessions', ['type' => 'GROUP', 'group_id' => $group->id, ...$this->interval()])->assertUnprocessable();
-        $this->assertDatabaseCount('sessions', 0);
+        $this->postJson('/api/v1/teacher/sessions', ['type' => 'group', 'type_id' => $group->id] + $this->interval())->assertCreated();
     }
 }

@@ -33,7 +33,8 @@ class StudentQuizReadController extends ApiController
             'status' => ['sometimes', 'in:not_started,in_progress,submitted,graded,pending_grading'],
             'page' => ['sometimes', 'integer', 'min:1'], 'per_page' => ['sometimes', 'integer', 'between:1,100']]);
         $scope = $data['scope'] ?? 'all';
-        $available = fn ($q) => $q->where('status', 'published')->whereIn('content_id', $access->accessibleContents($student)->select('contents.id'));
+        $simpleIds = Quiz::where('quiz_type', 'simple')->get()->filter(fn ($q) => $access->simpleQuizAvailable($q))->pluck('id');
+        $available = fn ($q) => $q->where('status', 'published')->where(fn ($q) => $q->whereIn('content_id', $access->accessibleContents($student)->select('contents.id'))->orWhereIn('id', $simpleIds));
         $owned = fn ($q) => $q->where('student_id', $student->id);
         $query = Quiz::query()->where(function ($q) use ($scope, $available, $owned) {
             if ($scope === 'available') {
@@ -66,15 +67,15 @@ class StudentQuizReadController extends ApiController
         $ids = $page->getCollection()->flatMap(fn ($q) => [$q->latest_attempt_id, $q->active_attempt_id])->filter()->unique();
         $attempts = QuizAttempt::where('student_id', $student->id)->whereIn('id', $ids)->withCount(['answers as pending_answers_count' => fn ($q) => $this->pending($q)])->get()->keyBy('id');
         $allowed = $access->accessibleContents($student)->whereIn('id', $page->getCollection()->pluck('content_id'))->pluck('id')->flip();
-        $page->setCollection($page->getCollection()->map(function ($quiz) use ($attempts, $allowed) {
+        $page->setCollection($page->getCollection()->map(function ($quiz) use ($attempts, $allowed, $simpleIds) {
             $content = $quiz->content;
             $course = $content?->lesson?->unit?->teacherSubject;
             $latest = $attempts->get($quiz->latest_attempt_id);
             $active = $attempts->get($quiz->active_attempt_id);
-            $canAccess = $quiz->status === 'published' && $allowed->has($quiz->content_id);
+            $canAccess = $quiz->status === 'published' && ($allowed->has($quiz->content_id) || $simpleIds->contains($quiz->id));
             $activeData = $active ? $this->attemptPayload($active, $quiz) : null;
 
-            return ['quiz_id' => $quiz->id, 'quiz_title' => $content?->title, 'quiz_status' => $quiz->status, 'content_id' => $quiz->content_id,
+            return ['quiz_type' => $quiz->quiz_type, 'protected' => $quiz->quiz_type !== 'simple', 'progress_weight' => (float) $quiz->progress_weight, 'quiz_id' => $quiz->id, 'quiz_title' => $content?->title, 'quiz_status' => $quiz->status, 'content_id' => $quiz->content_id,
                 'lesson_id' => $content?->lesson_id, 'teacher_subject_id' => $course?->id, 'subject_name' => $course?->subject?->name,
                 'teacher' => $course?->teacher ? ['id' => $course->teacher->id, 'name' => $course->teacher->user?->name, 'avatar_url' => $course->teacher->user?->avatar_url] : null,
                 'attempts_allowed' => (int) $quiz->attempts_allowed, 'attempts_used' => (int) $quiz->attempts_used,

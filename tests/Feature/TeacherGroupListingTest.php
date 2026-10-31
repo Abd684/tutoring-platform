@@ -39,14 +39,14 @@ class TeacherGroupListingTest extends TestCase
         $owner = $this->teacher();
         $course = $this->course($owner);
         $foreign = $this->course($this->teacher());
-        Group::create(['teacher_subject_id' => $foreign->id, 'name' => 'Other', 'capacity' => 5, 'status' => 'active']);
+        Group::create(['teacher_subject_id' => $foreign->id, 'name' => 'Other', 'session_price' => 50, 'capacity' => 5, 'status' => 'active']);
         Sanctum::actingAs($owner);
-        $id = $this->postJson(self::URL, ['teacher_subject_id' => $course->id, 'name' => 'My group', 'capacity' => 5])
+        $id = $this->postJson(self::URL, ['teacher_subject_id' => $course->id, 'name' => 'My group', 'session_price' => 50, 'capacity' => 5])
             ->assertCreated()->json('data.id');
 
         $this->getJson(self::URL.'?teacher_id='.$foreign->teacher_id)->assertOk()
             ->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $id)
-            ->assertJsonPath('data.0.active_enrollments_count', 0)
+            ->assertJsonPath('data.0.active_members_count', 0)
             ->assertJsonPath('data.0.teacher_subject.subject.name', 'Math');
         $this->getJson(self::URL.'?teacher_subject_id='.$foreign->id)->assertOk()->assertJsonCount(0, 'data');
     }
@@ -56,7 +56,7 @@ class TeacherGroupListingTest extends TestCase
         $owner = $this->teacher();
         $course = $this->course($owner);
         foreach (['forming', 'active', 'closed'] as $status) {
-            Group::create(['teacher_subject_id' => $course->id, 'name' => 'Group '.$status, 'capacity' => 5, 'status' => $status]);
+            Group::create(['teacher_subject_id' => $course->id, 'name' => 'Group '.$status, 'session_price' => 50, 'capacity' => 5, 'status' => $status]);
         }
         Sanctum::actingAs($owner);
         $this->getJson(self::URL.'?per_page=2')->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('meta.total', 3);

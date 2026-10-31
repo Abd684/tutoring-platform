@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentCheckout;
 use App\Models\PaymentSetting;
 use App\Models\Student;
+use App\Services\OnlinePricing;
 use App\Services\ShamCashPayments;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
@@ -19,16 +20,14 @@ class ShamCashPaymentController extends ApiController
 {
     public function checkout(Request $request, ShamCashPayments $service)
     {
-        $data = $request->validate(['service_type' => ['required', 'in:teacher_subject,unit,content,lesson_booking'], 'service_id' => ['required', 'integer', 'min:1']]);
-        if ($data['service_type'] === 'lesson_booking') {
-            return app(PaidLessonController::class)->checkout($request);
-        }
+        $data = $request->validate(['service_type' => ['required', 'in:teacher_subject,unit,lesson,content'], 'service_id' => ['required', 'integer', 'min:1']]);
         $settings = $this->configured($service);
         [$item, $course, $snapshot] = $service->service($data['service_type'], $data['service_id']);
         $service->ensureAvailable($request->user()->student, $item, $course);
+        $pricing = app(OnlinePricing::class)->snapshot($item, $item->price);
         $checkout = PaymentCheckout::create([
             'id' => (string) Str::uuid(), 'user_id' => $request->user()->id,
-            'service_type' => $data['service_type'], 'service_id' => $item->id,
+            'service_type' => $data['service_type'], 'service_id' => $item->id, 'pricing_snapshot' => $pricing,
             'amount' => $item->price, 'currency' => 'SYP',
             'account_id' => $settings->account_id,
             'qr_path' => $settings->qr_path,
@@ -54,7 +53,7 @@ class ShamCashPaymentController extends ApiController
         ]);
         $seed = PaymentCheckout::whereKey($data['checkout_id'])->where('user_id', $request->user()->id)->firstOrFail();
         if ($seed->service_type === 'lesson_booking') {
-            return app(PaidLessonController::class)->submit($request, $seed);
+            $service->fail('PHYSICAL_CASH_ONLY', 'هذا حجز فيزيائي؛ الدفع لدى الأستاذ وليس عبر المنصة.', 410);
         }
         $path = null;
         try {
@@ -103,6 +102,7 @@ class ShamCashPaymentController extends ApiController
                     'internal_reference' => $checkout->id, 'proof_path' => $path, 'proof_mime' => $request->file('proof')->getMimeType(),
                     'service_snapshot' => $snapshot, 'status' => 'pending', 'submitted_at' => now(),
                 ]);
+                app(OnlinePricing::class)->persist($payment, $checkout->pricing_snapshot ?? $service->fail('PRICE_SNAPSHOT_MISSING', 'أعد إنشاء طلب الدفع لحفظ أسعار الدروس.', 409));
                 $checkout->update(['payment_id' => $payment->id]);
 
                 return [$payment, true];

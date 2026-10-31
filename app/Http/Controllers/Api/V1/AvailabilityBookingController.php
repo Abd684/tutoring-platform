@@ -26,7 +26,7 @@ class AvailabilityBookingController extends ApiController
     public function store(Request $request, TeacherAvailability $availability, AvailabilityBooking $booking)
     {
         $this->authorize('book', $availability);
-        $data = $request->validate(['enrollment_id' => ['required', 'integer', 'exists:enrollments,id'],
+        $data = $request->validate(['individual_id' => ['required', 'integer', 'exists:individuals,id'], 'enrollment_id' => ['prohibited'],
             'starts_at' => ['required', 'date'], 'ends_at' => ['required', 'date', 'after:starts_at']]);
 
         return $this->success($booking->book($request->user()->student, $availability, $data), 'Session booked successfully.', 201);

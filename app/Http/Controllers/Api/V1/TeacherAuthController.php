@@ -16,7 +16,7 @@ class TeacherAuthController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'email' => 'nullable|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'required|string|max:20|unique:users,phone',
             'region_id' => 'required|exists:regions,id',
@@ -25,12 +25,12 @@ class TeacherAuthController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($validatedData) {
+            $response = DB::transaction(function () use ($validatedData, $request) {
 
                 $user = User::create([
                     'name' => $validatedData['name'],
                     'phone' => $validatedData['phone'],
-                    'email' => $validatedData['email'],
+                    'email' => $validatedData['email'] ?? null,
                     'password_hash' => Hash::make($validatedData['password']),
                     'role' => 'teacher',
                     'region_id' => $validatedData['region_id'],
@@ -43,11 +43,11 @@ class TeacherAuthController extends Controller
                     'specialization' => $validatedData['specialization'] ?? null,
                     'status' => 'pending_review',
                 ]);
+
+                return app(AuthController::class)->login($request)->setStatusCode(201);
             });
 
-            return response()->json([
-                'message' => 'Teacher registered successfully',
-            ], 201);
+            return $response;
 
         } catch (\Throwable $e) {
 

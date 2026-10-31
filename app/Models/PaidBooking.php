@@ -46,6 +46,16 @@ class PaidBooking extends Model
         return $this->belongsTo(Session::class);
     }
 
+    public function individual(): BelongsTo
+    {
+        return $this->belongsTo(Individual::class);
+    }
+
+    public function teacherSubject(): BelongsTo
+    {
+        return $this->belongsTo(TeacherSubject::class);
+    }
+
     public function enrollment(): MorphOne
     {
         return $this->morphOne(Enrollment::class, 'enrollable');

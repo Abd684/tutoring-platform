@@ -116,12 +116,12 @@ Schedule::command('content:publish-scheduled')->everyMinute()->withoutOverlappin
 
 Artisan::command('admin:create {--name=} {--email=} {--phone=}', function () {
     $name = $this->option('name') ?: $this->ask('Administrator name');
-    $email = $this->option('email') ?: $this->ask('Administrator email');
+    $email = $this->option('email');
     $phone = $this->option('phone') ?: $this->ask('Administrator phone');
     $password = $this->secret('Password (at least 12 characters)');
     $confirmation = $this->secret('Confirm password');
     $validator = Validator::make(compact('name', 'email', 'phone', 'password') + ['password_confirmation' => $confirmation], [
-        'name' => 'required|string|max:255', 'email' => 'required|email|max:255|unique:users,email', 'phone' => 'required|string|max:20|unique:users,phone', 'password' => 'required|string|min:12|confirmed']);
+        'name' => 'required|string|max:255', 'email' => 'nullable|email|max:255|unique:users,email', 'phone' => 'required|string|max:20|unique:users,phone', 'password' => 'required|string|min:12|confirmed']);
     if ($validator->fails()) {
         $this->error($validator->errors()->first());
 

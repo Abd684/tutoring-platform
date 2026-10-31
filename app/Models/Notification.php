@@ -9,11 +9,11 @@ class Notification extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['user_id', 'type', 'title', 'body', 'read_at', 'related_payment_id'];
+    protected $fillable = ['user_id', 'type', 'title', 'body', 'data', 'read_at', 'related_payment_id'];
 
     protected function casts(): array
     {
-        return ['read_at' => 'datetime'];
+        return ['data' => 'array', 'created_at' => 'datetime', 'read_at' => 'datetime'];
     }
 
     public function user(): BelongsTo

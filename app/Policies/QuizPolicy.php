@@ -4,12 +4,17 @@ namespace App\Policies;
 
 use App\Models\Quiz;
 use App\Models\User;
+use App\Services\ContentAccess;
 use Illuminate\Auth\Access\Response;
 
 class QuizPolicy extends ResourcePolicy
 {
     public function access(User $user, Quiz $quiz): Response
     {
+        if ($this->accessStudent($user) && app(ContentAccess::class)->simpleQuizAvailable($quiz)) {
+            return Response::allow();
+        }
+
         return $quiz->status === 'published' && $quiz->content
             ? app(ContentPolicy::class)->access($user, $quiz->content)
             : Response::denyAsNotFound();

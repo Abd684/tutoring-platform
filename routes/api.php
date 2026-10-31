@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AdminController;
 use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
 use App\Http\Controllers\Api\V1\FeaturedTeacherController;
+use App\Http\Controllers\Api\V1\LegacyPricingAllocationController;
 use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileAvatarController;
@@ -27,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Api\V1\EscrowTransactionController;
 // use App\Http\Controllers\Api\V1\GovernortateController;
 // use App\Http\Controllers\Api\V1\GroupController;
-// use App\Http\Controllers\Api\V1\GroupEnrollmentController;
+// use App\Http\Controllers\Api\V1\GroupStudentController;
 // use App\Http\Controllers\Api\V1\LessonController;
 // use App\Http\Controllers\Api\V1\NotificationController;
 // use App\Http\Controllers\Api\V1\PdfAssetController;
@@ -69,7 +70,7 @@ Route::prefix('v1')->group(function (): void {
 //     'lessons' => LessonController::class,
 //     'contents' => ContentController::class,
 //     'groups' => GroupController::class,
-//     'group-enrollments' => GroupEnrollmentController::class,
+//     'group-enrollments' => GroupStudentController::class,
 //     'subscription-plans' => SubscriptionPlanController::class,
 //     'teacher-subscriptions' => TeacherSubscriptionController::class,
 // ]);
@@ -121,6 +122,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'role:student,company_admin', S
     Route::get('/payment-settings/qr', [ShamCashSettingController::class, 'qr'])->name('payment-settings.qr');
     Route::get('/payment-proofs/{payment}', [ShamCashPaymentController::class, 'proof'])->name('payments.proof');
     Route::get('/refunds/{refund}', [RefundController::class, 'show'])->whereNumber('refund');
+    Route::get('/refunds/{refund}/proof/{kind}', [RefundController::class, 'proof'])->name('refunds.proof');
 });
 
 // Financial records cannot be created or edited anonymously.
@@ -132,3 +134,5 @@ Route::prefix('v1')->group(function (): void {
     Route::get('/governorates/{id}/regions', [LocationController::class, 'regions']);
     Route::get('/regions/{id}/schools', [LocationController::class, 'schools']);
 });
+
+Route::post('v1/admin/payments/{payment}/pricing-allocation', [LegacyPricingAllocationController::class, 'store'])->middleware(['auth:sanctum', 'role:company_admin']);

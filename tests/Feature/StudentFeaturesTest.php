@@ -6,10 +6,8 @@ use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\ContentCompletion;
 use App\Models\Enrollment;
-use App\Models\Governortate;
+use App\Models\Individual;
 use App\Models\Lesson;
-use App\Models\Region;
-use App\Models\School;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Subject;
@@ -56,20 +54,15 @@ class StudentFeaturesTest extends TestCase
             'starts_at' => now()->subDay(), 'expires_at' => now()->addDay()], $extra));
     }
 
-    public function test_profile_updates_are_scoped_and_validate_school_email_and_privileged_fields(): void
+    public function test_profile_updates_only_name_and_image_and_prohibits_identity_changes(): void
     {
         [$user] = $this->student();
         [$other] = $this->student();
-        $g = Governortate::create(['name' => 'Test']);
-        $region = Region::create(['name' => 'Region', 'governortate_id' => $g->id]);
-        $region2 = Region::create(['name' => 'Other', 'governortate_id' => $g->id]);
-        $school = School::create(['name' => 'School', 'region_id' => $region->id]);
         Sanctum::actingAs($user);
-        $this->patchJson('/api/v1/profile', ['name' => 'Updated', 'phone' => '099', 'grade' => '12',
-            'region_id' => $region->id, 'school_id' => $school->id, 'role' => 'company_admin', 'status' => 'suspended'])
-            ->assertOk()->assertJsonPath('user.name', 'Updated')->assertJsonPath('student.grade', '12')->assertJsonPath('user.role', 'student');
-        $this->patchJson('/api/v1/profile', ['region_id' => $region2->id])->assertUnprocessable();
-        $this->patchJson('/api/v1/profile', ['email' => $other->email])->assertUnprocessable();
+        $this->patchJson('/api/v1/profile', ['name' => 'Updated'])->assertOk()->assertJsonPath('user.name', 'Updated');
+        foreach (['phone' => $other->phone, 'email' => $other->email, 'region_id' => 1, 'school_id' => 1, 'grade' => '12', 'password' => 'Password123!'] as $field => $value) {
+            $this->patchJson('/api/v1/profile', [$field => $value])->assertUnprocessable()->assertJsonValidationErrors($field);
+        }
         $this->assertNotSame('Updated', $other->fresh()->name);
     }
 
@@ -167,7 +160,7 @@ class StudentFeaturesTest extends TestCase
         [$user, $student] = $this->student();
         [$course, , $teacher] = $this->course();
         $enrollment = $this->enroll($student, $course);
-        $session = Session::create(['teacher_id' => $teacher->id, 'type' => 'INDIVIDUAL', 'enrollment_id' => $enrollment->id,
+        $session = Session::create(['teacher_id' => $teacher->id, 'type' => 'individual', 'type_id' => Individual::create(['student_id' => $student->id, 'teacher_subject_id' => $course->id, 'status' => 'active'])->id,
             'starts_at' => now()->subHours(2), 'ends_at' => now()->subHour(), 'status' => 'scheduled']);
         Sanctum::actingAs($teacher->user);
         $this->postJson('/api/v1/teacher/sessions/'.$session->id.'/complete')->assertOk()->assertJsonPath('data.status', 'completed');

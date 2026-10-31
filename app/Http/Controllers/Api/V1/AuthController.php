@@ -16,11 +16,11 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'email' => ['required', 'email'],
+            'phone' => ['required', 'string', 'max:30'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::with('teacher')->where('email', $validatedData['email'])->first();
+        $user = User::with('teacher')->where('phone', $validatedData['phone'])->first();
 
         if (! $user || ! Hash::check($validatedData['password'], $user->password_hash)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
@@ -43,7 +43,7 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'status' => $user->status,
                 'role' => $user->role,
-                'teacher_status' => $user->teacher->status,
+                'teacher_status' => $user->teacher->status, 'can_teach' => $user->teacher->status === 'active',
             ],
         ]);
     }
@@ -69,7 +69,7 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user()->load('teacher'));
+        return response()->json($request->user()->load('teacher')->toArray() + ['can_teach' => $request->user()->status === 'active' && $request->user()->teacher?->status === 'active']);
     }
 
     public function refresh(Request $request): JsonResponse

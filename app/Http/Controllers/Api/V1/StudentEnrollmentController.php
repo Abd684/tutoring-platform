@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Content;
 use App\Models\Enrollment;
+use App\Models\Lesson;
 use App\Models\PaidBooking;
 use App\Models\Student;
 use App\Models\TeacherSubject;
@@ -54,6 +55,7 @@ class StudentEnrollmentController extends ApiController
                 'enrollable' => function (MorphTo $morphTo): void {
                     $morphTo->morphWith([
                         TeacherSubject::class => ['subject:id,name'],
+                        Lesson::class => ['unit.teacherSubject.subject:id,name'],
                         Unit::class => ['teacherSubject.subject:id,name'],
                         Content::class => ['lesson.unit.teacherSubject.subject:id,name'],
                     ]);
@@ -291,6 +293,7 @@ class StudentEnrollmentController extends ApiController
             (new TeacherSubject)->getMorphClass() => 'subject',
             (new Unit)->getMorphClass() => 'unit',
             (new Content)->getMorphClass() => 'content',
+            (new Lesson)->getMorphClass() => 'lesson',
             'paid_booking' => 'paid_booking',
             default => 'unknown',
         };
@@ -307,6 +310,9 @@ class StudentEnrollmentController extends ApiController
         } elseif ($item instanceof Unit) {
             $title = $item->title;
             $subjectName = $item->teacherSubject?->subject?->name;
+        } elseif ($item instanceof Lesson) {
+            $title = $item->title;
+            $subjectName = $item->unit?->teacherSubject?->subject?->name;
         } elseif ($item instanceof Content) {
             $title = $item->title;
             $subjectName = $item->lesson?->unit?->teacherSubject?->subject?->name;
@@ -328,6 +334,7 @@ class StudentEnrollmentController extends ApiController
             'status' => $enrollment->status,
             'starts_at' => $enrollment->starts_at?->toDateTimeString(),
             'expires_at' => $enrollment->expires_at?->toDateTimeString(),
+            'access_frozen_at' => $enrollment->access_frozen_at?->toIso8601String(),
         ];
     }
 

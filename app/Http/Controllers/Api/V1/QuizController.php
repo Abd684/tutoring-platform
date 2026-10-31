@@ -66,6 +66,7 @@ class QuizController extends ApiController
             ->first();
 
         return $this->success([
+            'quiz_type' => $quiz->quiz_type, 'protected' => $quiz->quiz_type !== 'simple', 'progress_weight' => (float) $quiz->progress_weight,
             'quiz' => $quiz,
             'attempts_used' => $attemptsUsed,
             'attempts_remaining' => max(0, (int) $quiz->attempts_allowed - $attemptsUsed),

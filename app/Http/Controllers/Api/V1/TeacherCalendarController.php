@@ -33,7 +33,7 @@ class TeacherCalendarController extends ApiController
         return response()->json(['status' => true, 'data' => $paginator->items(), 'meta' => [
             'current_page' => $page, 'per_page' => $perPage, 'total' => $all->count(), 'last_page' => $paginator->lastPage(),
             'teacher_id' => $teacher->id, 'from' => $from->toIso8601String(), 'to' => $to->toIso8601String(), 'timezone' => $timezone,
-            'has_schedule' => $result['has_schedule'], 'has_eligible_enrollment_in_period' => $result['has_eligible_enrollment_in_period'],
+            'has_schedule' => $result['has_schedule'], 'has_eligible_individual_in_period' => $result['has_eligible_individual_in_period'],
             'booking_contract' => 'availability', 'booking_endpoint' => '/teacher-availabilities/{availability_id}/book',
         ]]);
     }

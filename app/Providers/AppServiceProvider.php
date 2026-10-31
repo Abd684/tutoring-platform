@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Content;
+use App\Models\Group;
+use App\Models\Individual;
+use App\Models\Lesson;
 use App\Models\PaidBooking;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
@@ -24,8 +27,11 @@ class AppServiceProvider extends ServiceProvider
         Relation::morphMap([
             'teacher_subject' => TeacherSubject::class,
             'unit' => Unit::class,
+            'lesson' => Lesson::class,
             'content' => Content::class,
             'paid_booking' => PaidBooking::class,
+            'group' => Group::class,
+            'individual' => Individual::class,
         ]);
 
         RateLimiter::for('api', function (Request $request) {

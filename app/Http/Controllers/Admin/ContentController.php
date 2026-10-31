@@ -170,9 +170,6 @@ class ContentController extends AdminController
         abort_unless(in_array($kind, ['unit', 'lesson'], true), 404);
         $data = $request->validate(['title' => ['required', 'string', 'max:255'], 'status' => ['required', 'in:draft,published,archived'], 'price' => ['nullable', 'numeric', 'between:0,9999999999.99']]);
         $record = $kind === 'unit' ? Unit::findOrFail($item) : Lesson::findOrFail($item);
-        if ($kind === 'lesson') {
-            unset($data['price']);
-        }
         DB::transaction(function () use ($record, $data) {
             $record->update($data);
             $this->audit('curriculum.updated', $record);

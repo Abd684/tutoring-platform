@@ -9,6 +9,7 @@ use App\Models\PaymentSetting;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeacherAvailability;
+use App\Models\TeacherSubject;
 use App\Services\AvailabilityBooking;
 use App\Services\PaidLessonBookings;
 use App\Services\ShamCashPayments;
@@ -26,12 +27,14 @@ class PaidLessonController extends ApiController
     public function checkout(Request $request)
     {
         $data = $request->validate(['service_id' => ['required', 'integer', 'min:1'],
+            'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'],
             'starts_at' => ['required', 'date', 'after:now'], 'ends_at' => ['required', 'date', 'after:starts_at']]);
         $settings = PaymentSetting::findOrFail(1);
         if (! $settings->account_id || ! $settings->qr_path) {
             app(ShamCashPayments::class)->fail('PAYMENT_NOT_CONFIGURED', 'Sham Cash payment is not configured.', 503);
         }
         $availability = TeacherAvailability::with('teacher.user')->findOrFail($data['service_id']);
+        $course = TeacherSubject::where('teacher_id', $availability->teacher_id)->where('status', 'active')->findOrFail($data['teacher_subject_id']);
         $start = Carbon::parse($data['starts_at'])->setTimezone(config('app.timezone'));
         $end = Carbon::parse($data['ends_at'])->setTimezone(config('app.timezone'));
         $bookings = app(PaidLessonBookings::class);
@@ -40,7 +43,7 @@ class PaidLessonController extends ApiController
             app(ShamCashPayments::class)->fail('SLOT_UNAVAILABLE', 'This interval is already occupied.');
         }
         $checkout = PaymentCheckout::create(['id' => (string) Str::uuid(), 'user_id' => $request->user()->id,
-            'service_type' => 'lesson_booking', 'service_id' => $availability->id,
+            'service_type' => 'lesson_booking', 'service_id' => $availability->id, 'teacher_subject_id' => $course->id,
             'amount' => $availability->price, 'currency' => 'SYP', 'account_id' => $settings->account_id, 'qr_path' => $settings->qr_path,
             'booking_starts_at' => $start, 'booking_ends_at' => $end,
             'expires_at' => now()->addMinutes(config('payments.checkout_minutes'))]);
@@ -114,7 +117,7 @@ class PaidLessonController extends ApiController
                 if (Payment::where('provider_reference', $request->input('provider_reference'))->exists()) {
                     $service->fail('TRANSFER_ALREADY_USED', 'This transfer reference was already submitted.');
                 }
-                $booking = PaidBooking::create(['student_id' => $student->id, 'teacher_id' => $teacherId, 'availability_id' => $availability->id,
+                $booking = PaidBooking::create(['student_id' => $student->id, 'teacher_id' => $teacherId, 'availability_id' => $availability->id, 'teacher_subject_id' => $checkout->teacher_subject_id,
                     'status' => 'HELD', 'starts_at' => $checkout->booking_starts_at, 'ends_at' => $checkout->booking_ends_at,
                     'hold_expires_at' => now()->addHours(config('payments.booking_hold_hours'))]);
                 $enrollment = $booking->enrollment()->create(['student_id' => $student->id, 'teacher_id' => $teacherId,

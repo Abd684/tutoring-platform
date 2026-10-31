@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Enrollment;
 use App\Models\Group;
-use App\Models\GroupEnrollment;
+use App\Models\GroupStudent;
+use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use App\Services\GroupMembershipRules;
@@ -17,7 +17,7 @@ class GroupsController extends AdminController
     public function index(Request $request)
     {
         $data = $this->filters($request);
-        $query = Group::with(['teacherSubject.teacher.user', 'teacherSubject.subject'])->withCount(['groupEnrollments as active_members_count' => fn ($q) => $q->where('status', 'active')]);
+        $query = Group::with(['teacherSubject.teacher.user', 'teacherSubject.subject'])->withCount(['groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active')]);
         if (! empty($data['search'])) {
             $query->where('name', 'like', '%'.$data['search'].'%');
         }
@@ -75,7 +75,7 @@ class GroupsController extends AdminController
                 if ($group->teacher_subject_id !== (int) $data['teacher_subject_id']) {
                     throw ValidationException::withMessages(['teacher_subject_id' => ['لا يمكن نقل المجموعة لمادة أخرى حفاظاً على الاشتراكات والجلسات.']]);
                 }
-                if ($group->groupEnrollments()->where('status', 'active')->count() > $data['capacity']) {
+                if ($group->groupStudents()->where('status', 'active')->count() > $data['capacity']) {
                     throw ValidationException::withMessages(['capacity' => ['السعة أقل من عدد العضويات الفعالة.']]);
                 }
             }
@@ -91,44 +91,44 @@ class GroupsController extends AdminController
 
     public function show(Group $group)
     {
-        $group->load(['teacherSubject.teacher.user', 'teacherSubject.subject', 'groupEnrollments.enrollment.student.user', 'sessions.attendance']);
-        $enrollments = Enrollment::with('student.user')->where('teacher_id', $group->teacherSubject->teacher_id)->where('enrollable_type', 'teacher_subject')->where('enrollable_id', $group->teacher_subject_id)->where('status', 'active')->get();
+        $group->load(['teacherSubject.teacher.user', 'teacherSubject.subject', 'groupStudents.student.user', 'sessions.attendance']);
+        $students = Student::with('user')->where('status', 'active')->get();
 
-        return view('admin.groups.show', compact('group', 'enrollments'));
+        return view('admin.groups.show', compact('group', 'students'));
     }
 
     public function add(Request $request, Group $group)
     {
-        $data = $request->validate(['enrollment_id' => ['required', 'integer', 'exists:enrollments,id']]);
+        $data = $request->validate(['student_id' => ['required', 'integer', 'exists:students,id']]);
         DB::transaction(function () use ($group, $data) {
             Teacher::whereKey($group->teacherSubject->teacher_id)->lockForUpdate()->firstOrFail();
             $group = Group::whereKey($group->id)->lockForUpdate()->firstOrFail();
-            $enrollment = Enrollment::whereKey($data['enrollment_id'])->lockForUpdate()->firstOrFail();
-            app(GroupMembershipRules::class)->validate($group, $enrollment);
-            if (! in_array($group->status, ['forming', 'active'], true) || $group->groupEnrollments()->where('status', 'active')->count() >= $group->capacity) {
-                throw ValidationException::withMessages(['enrollment_id' => ['المجموعة مغلقة أو ممتلئة.']]);
+            $student = Student::whereKey($data['student_id'])->lockForUpdate()->firstOrFail();
+            app(GroupMembershipRules::class)->validate($group, $student);
+            if (! in_array($group->status, ['forming', 'active'], true) || $group->groupStudents()->where('status', 'active')->count() >= $group->capacity) {
+                throw ValidationException::withMessages(['student_id' => ['المجموعة مغلقة أو ممتلئة.']]);
             }
-            $existing = $group->groupEnrollments()->where('enrollment_id', $enrollment->id)->first();
+            $existing = $group->groupStudents()->where('student_id', $student->id)->first();
             if ($existing?->status === 'active') {
-                throw ValidationException::withMessages(['enrollment_id' => ['الطالب عضو بالفعل بهذا الاشتراك.']]);
+                throw ValidationException::withMessages(['student_id' => ['الطالب عضو بالفعل بهذا الاشتراك.']]);
             }
-            $member = GroupEnrollment::updateOrCreate(['group_id' => $group->id, 'enrollment_id' => $enrollment->id], ['status' => 'active', 'joined_at' => now(), 'left_at' => null]);
+            $member = GroupStudent::updateOrCreate(['group_id' => $group->id, 'student_id' => $student->id], ['status' => 'active', 'joined_at' => now(), 'left_at' => null]);
             $this->audit('group.member_added', $member);
         });
 
         return back()->with('success', 'تمت إضافة العضوية.');
     }
 
-    public function remove(Group $group, GroupEnrollment $membership)
+    public function remove(Group $group, GroupStudent $membership)
     {
         abort_unless($membership->group_id === $group->id, 404);
         DB::transaction(function () use ($group, $membership) {
             Group::whereKey($group->id)->lockForUpdate()->firstOrFail();
-            $membership = GroupEnrollment::whereKey($membership->id)->lockForUpdate()->firstOrFail();
+            $membership = GroupStudent::whereKey($membership->id)->lockForUpdate()->firstOrFail();
             $membership->update(['status' => 'removed', 'left_at' => now()]);
-            $this->audit('group.member_removed',$membership);
+            $this->audit('group.member_removed', $membership);
         });
 
-        return back()->with('success','تم إنهاء العضوية مع حفظ سجلها.');
+        return back()->with('success', 'تم إنهاء العضوية مع حفظ سجلها.');
     }
 }
