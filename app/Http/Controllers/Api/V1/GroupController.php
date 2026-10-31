@@ -10,6 +10,22 @@ use Illuminate\Validation\Rule;
 
 class GroupController extends ApiController
 {
+    public function indexForTeacher(Request $request): JsonResponse
+    {
+        $this->authorize('viewOwnAny', Group::class);
+
+        $query = Group::query()
+            ->whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $request->user()->teacher->id))
+            ->with(['teacherSubject.subject:id,name'])
+            ->withCount(['groupEnrollments as active_enrollments_count' => fn ($q) => $q->where('status', 'active')]);
+
+        $query->when($request->filled('teacher_subject_id'), fn ($q) => $q->where('teacher_subject_id', $request->integer('teacher_subject_id')))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
+            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%'));
+
+        return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
+    }
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Group::class);

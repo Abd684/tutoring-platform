@@ -11,6 +11,11 @@ class GroupPolicy extends ResourcePolicy
 {
     protected ?string $teacherPath = 'teacherSubject.teacher_id';
 
+    public function viewOwnAny(User $user): bool
+    {
+        return $this->teacher($user);
+    }
+
     public function viewMembers(User $user, Group $group): Response
     {
         return $user->role === 'student' && $user->status === 'active' && $user->student

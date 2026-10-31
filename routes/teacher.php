@@ -54,6 +54,7 @@ Route::patch('/{teacher}/activate', [TeacherAuthController::class, 'activateTeac
 
 // SDD teacher group APIs - teacher identity is derived from Bearer token.
 Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
+    Route::get('/groups', [GroupController::class, 'indexForTeacher']);
     Route::post('/groups', [GroupController::class, 'storeForTeacher']);
     Route::post('/groups/{id}/enrollments', [GroupEnrollmentController::class, 'addToTeacherGroup']);
     Route::delete('/groups/{id}/enrollments/{enrollment}', [GroupEnrollmentController::class, 'removeFromTeacherGroup']);

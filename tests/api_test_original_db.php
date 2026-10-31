@@ -18,10 +18,10 @@
  *      php artisan serve
  *
  *   2) In terminal 2:
- *      php api_test_original_db.php
+ *      php tests/api_test_original_db.php
  *
  * Optional:
- *   API_BASE_URL=http://127.0.0.1:8000/api/v1 php api_test_original_db.php
+ *   API_BASE_URL=http://127.0.0.1:8000/api/v1 php tests/api_test_original_db.php
  */
 
 use App\Models\Content;
@@ -42,10 +42,10 @@ use App\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Http;
 
-$root = __DIR__;
+$root = dirname(__DIR__);
 
 if (! file_exists($root.'/vendor/autoload.php') || ! file_exists($root.'/bootstrap/app.php')) {
-    fwrite(STDERR, "ERROR: Put this file in the Laravel project root (same folder as artisan).\n");
+    fwrite(STDERR, "ERROR: Put this file in the tests folder of the Laravel project.\n");
     exit(1);
 }
 
