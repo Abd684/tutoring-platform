@@ -10,7 +10,7 @@ class School extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['name', 'region_id', 'student_id'];
+    protected $fillable = ['name', 'region_id', 'student_id', 'code', 'education_stage'];
 
     public function region(): BelongsTo
     {
