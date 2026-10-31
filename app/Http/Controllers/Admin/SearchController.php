@@ -6,6 +6,7 @@ use App\Models\Content;
 use App\Models\Group;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\AdminLinks;
 use Illuminate\Http\Request;
 
 class SearchController extends AdminController
@@ -23,13 +24,13 @@ class SearchController extends AdminController
                 $results[] = ['title' => $row->title, 'kind' => 'محتوى تعليمي', 'detail' => '#'.$row->id, 'url' => route('admin.content.edit', $row)];
             }
             foreach (Group::where('name', 'like', "%{$term}%")->limit(8)->get() as $row) {
-                $results[] = ['title' => $row->name, 'kind' => 'مجموعة', 'detail' => '#'.$row->id, 'url' => route('admin.groups.show', $row)];
+                $results[] = ['title' => $row->name, 'kind' => 'مجموعة', 'detail' => '#'.$row->id, 'url' => AdminLinks::group($row)];
             }
             foreach (Payment::where('provider_reference', 'like', "%{$term}%")->limit(8)->get() as $row) {
                 $results[] = ['title' => $row->provider_reference, 'kind' => 'دفعة', 'detail' => $row->amount.' '.$row->currency, 'url' => route('admin.payments.show', $row)];
             }
         }
 
-        return view('admin.search', compact('results','term'));
+        return view('admin.search', compact('results', 'term'));
     }
 }

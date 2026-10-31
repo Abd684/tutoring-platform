@@ -1,17 +1,22 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountsController;
+use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\CatalogController;
 use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\EnrollmentsController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\GroupsController;
 use App\Http\Controllers\Admin\OverviewController;
+use App\Http\Controllers\Admin\PaidBookingsController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\SessionsController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SubscriptionsController;
 use App\Http\Middleware\AdminLocale;
 use App\Http\Middleware\EnsureAdministrator;
+use App\Http\Middleware\TeacherWorkspace;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(function () {
@@ -30,24 +35,30 @@ Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(fu
             Route::put($path.'/{user}', [AccountsController::class, 'update'])->whereNumber('user')->defaults('kind', $kind)->name($path.'.update');
             Route::patch($path.'/{user}/status', [AccountsController::class, 'status'])->whereNumber('user')->defaults('kind', $kind)->name($path.'.status');
         }
-        Route::get('groups', [GroupsController::class, 'index'])->name('groups.index');
-        Route::get('groups/create', [GroupsController::class, 'create'])->name('groups.create');
-        Route::post('groups', [GroupsController::class, 'store'])->name('groups.store');
-        Route::get('groups/{group}', [GroupsController::class, 'show'])->whereNumber('group')->name('groups.show');
-        Route::get('groups/{group}/edit', [GroupsController::class, 'edit'])->whereNumber('group')->name('groups.edit');
-        Route::put('groups/{group}', [GroupsController::class, 'update'])->whereNumber('group')->name('groups.update');
-        Route::post('groups/{group}/members', [GroupsController::class, 'add'])->name('groups.members.add');
-        Route::delete('groups/{group}/members/{membership}', [GroupsController::class, 'remove'])->name('groups.members.remove');
-        Route::get('sessions', [SessionsController::class, 'index'])->name('sessions.index');
-        Route::get('sessions/create', [SessionsController::class, 'create'])->name('sessions.create');
-        Route::post('sessions', [SessionsController::class, 'store'])->name('sessions.store');
-        Route::get('sessions/{session}', [SessionsController::class, 'show'])->whereNumber('session')->name('sessions.show');
-        Route::post('sessions/{session}/cancel', [SessionsController::class, 'cancel'])->name('sessions.cancel');
+        Route::prefix('teachers/{teacherUser}')->whereNumber('teacherUser')->middleware(TeacherWorkspace::class)->group(function () {
+            Route::get('groups', [GroupsController::class, 'index'])->name('groups.index');
+            Route::get('groups/create', [GroupsController::class, 'create'])->name('groups.create');
+            Route::post('groups', [GroupsController::class, 'store'])->name('groups.store');
+            Route::get('groups/{group}', [GroupsController::class, 'show'])->whereNumber('group')->name('groups.show');
+            Route::get('groups/{group}/edit', [GroupsController::class, 'edit'])->whereNumber('group')->name('groups.edit');
+            Route::put('groups/{group}', [GroupsController::class, 'update'])->whereNumber('group')->name('groups.update');
+            Route::post('groups/{group}/members', [GroupsController::class, 'add'])->name('groups.members.add');
+            Route::delete('groups/{group}/members/{membership}', [GroupsController::class, 'remove'])->name('groups.members.remove');
+            Route::get('sessions', [SessionsController::class, 'index'])->name('sessions.index');
+            Route::get('sessions/create', [SessionsController::class, 'create'])->name('sessions.create');
+            Route::post('sessions', [SessionsController::class, 'store'])->name('sessions.store');
+            Route::get('sessions/{session}', [SessionsController::class, 'show'])->whereNumber('session')->name('sessions.show');
+            Route::post('sessions/{session}/cancel', [SessionsController::class, 'cancel'])->name('sessions.cancel');
+        });
+        Route::get('groups', fn () => redirect()->route('admin.teachers.index'))->name('legacy.groups');
+        Route::get('sessions', fn () => redirect()->route('admin.teachers.index'))->name('legacy.sessions');
         Route::get('payments', [FinanceController::class, 'payments'])->name('payments.index');
         Route::get('payments/{payment}', [FinanceController::class, 'payment'])->whereNumber('payment')->name('payments.show');
         Route::post('payments/{payment}/review', [FinanceController::class, 'review'])->name('payments.review');
         Route::get('payments/{payment}/proof', [FinanceController::class, 'proof'])->name('payments.proof');
         Route::get('refunds', [FinanceController::class, 'refunds'])->name('refunds.index');
+        Route::get('refunds/create', [FinanceController::class, 'createRefund'])->name('refunds.create');
+        Route::post('refunds', [FinanceController::class, 'storeRefund'])->name('refunds.store');
         Route::get('refunds/{refund}', [FinanceController::class, 'refund'])->whereNumber('refund')->name('refunds.show');
         Route::post('refunds/{refund}/review', [FinanceController::class, 'reviewRefund'])->name('refunds.review');
         Route::post('refunds/{refund}/complete', [FinanceController::class, 'completeRefund'])->name('refunds.complete');
@@ -75,7 +86,21 @@ Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(fu
         Route::patch('settings/profile', [SettingsController::class, 'profile'])->name('settings.profile');
         Route::get('payment-settings', [FinanceController::class, 'paymentSettings'])->name('payment-settings');
         Route::put('payment-settings', [FinanceController::class, 'savePaymentSettings'])->name('payment-settings.update');
-        Route::get('payment-settings/qr',[FinanceController::class, 'qr'])->name('payment-settings.qr');
-        Route::get('audit',[SettingsController::class, 'auditLog'])->name('audit');
+        Route::get('payment-settings/qr', [FinanceController::class, 'qr'])->name('payment-settings.qr');
+
+        Route::get('enrollments', [EnrollmentsController::class, 'index'])->name('enrollments.index');
+        Route::get('enrollments/create', [EnrollmentsController::class, 'create'])->name('enrollments.create');
+        Route::post('enrollments', [EnrollmentsController::class, 'store'])->name('enrollments.store');
+        Route::post('enrollments/{enrollment}/cancel', [EnrollmentsController::class, 'cancel'])->whereNumber('enrollment')->name('enrollments.cancel');
+        Route::get('paid-bookings', [PaidBookingsController::class, 'index'])->name('bookings.index');
+        Route::post('paid-bookings/{booking}/reschedule', [PaidBookingsController::class, 'reschedule'])->whereNumber('booking')->name('bookings.reschedule');
+        Route::get('subjects', [CatalogController::class, 'subjects'])->name('subjects.index');
+        Route::post('subjects', [CatalogController::class, 'saveSubject'])->name('subjects.store');
+        Route::put('subjects/{subject}', [CatalogController::class, 'saveSubject'])->whereNumber('subject')->name('subjects.update');
+        Route::get('geography', [CatalogController::class, 'geography'])->name('geography');
+        Route::post('geography', [CatalogController::class, 'createGeography'])->name('geography.store');
+        Route::put('geography/{kind}/{item}', [CatalogController::class, 'updateGeography'])->where('kind', 'governortate|region|school')->whereNumber('item')->name('geography.update');
+        Route::get('audit', [AuditController::class, 'index'])->name('audit');
+
     });
 });

@@ -1,0 +1,5 @@
+@php
+$labels=['active'=>'نشط','inactive'=>'غير فعال','suspended'=>'موقوف','banned'=>'محظور','pending_review'=>'بانتظار التفعيل','pending'=>'بانتظار المراجعة','succeeded'=>'مقبولة','failed'=>'مرفوضة','forming'=>'قيد التشكيل','closed'=>'مغلقة','scheduled'=>'قادمة','ongoing'=>'جارية','completed'=>'مكتملة','cancelled'=>'ملغاة','published'=>'منشور','draft'=>'مسودة','archived'=>'مؤرشف','PENDING_REVIEW'=>'بانتظار المراجعة','APPROVED'=>'تمت الموافقة','REJECTED'=>'مرفوض','COMPLETED'=>'تم التحويل','expired'=>'منتهي','removed'=>'منتهية','left'=>'غادر','HELD'=>'محجوز مؤقتاً','CONFIRMED'=>'مؤكد','NEEDS_RESCHEDULE'=>'يحتاج موعداً بديلاً','EXPIRED'=>'انتهت المهلة','CANCELLED'=>'ملغى','REFUNDED'=>'مسترد'];
+$tone=in_array($status,['active','succeeded','published','completed','APPROVED','COMPLETED','CONFIRMED'])?'good':(in_array($status,['suspended','banned','failed','REJECTED','cancelled','CANCELLED'])?'bad':(in_array($status,['pending','pending_review','PENDING_REVIEW','forming','HELD','NEEDS_RESCHEDULE'])?'warning':'neutral'));
+@endphp
+<span class="badge {{ $tone }}"><span></span>{{ $labels[$status]??$status??'—' }}</span>

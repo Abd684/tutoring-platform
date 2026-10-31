@@ -29,7 +29,8 @@ class SettingsController extends AdminController
 
     public function profile(Request $request)
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore(auth()->id())]]);
+        $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'email' => ['sometimes', 'string', Rule::in([$request->user()->email])]]);
+        unset($data['email']);
         DB::transaction(function () use ($request, $data) {
             $request->user()->update($data);
             $this->audit('administrator.profile_updated', $request->user());

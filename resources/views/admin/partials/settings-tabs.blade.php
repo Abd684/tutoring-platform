@@ -1,0 +1,1 @@
+<nav class="tabs settings-tabs" aria-label="تبويبات الإعدادات">@foreach(['settings'=>'الإعدادات العامة','payment-settings'=>'إعدادات الدفع','geography'=>'المناطق والمدارس','audit'=>'سجل التدقيق'] as $key=>$label)<a href="{{ route('admin.'.$key) }}" @class(['active'=>$activeSettings===$key])>{{ $label }}</a>@endforeach</nav>
