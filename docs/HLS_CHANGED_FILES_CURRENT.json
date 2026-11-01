@@ -2,7 +2,6 @@
   "baseline_commit": "02625b3",
   "date": "2026-11-01",
   "live_migration_applied": false,
-  "pushed": false,
   "files": [
     {
       "status": " M",
@@ -116,5 +115,6 @@
       "status": "??",
       "path": "tests/Feature/HlsVideoTest.php"
     }
-  ]
+  ],
+  "delivery": "HLS changes included in the 2026-11-01 GitHub merge"
 }

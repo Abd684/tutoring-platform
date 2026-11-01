@@ -17,7 +17,7 @@ class OverviewController extends AdminController
             'sessions' => Session::where('status', 'scheduled')->whereBetween('starts_at', [now(), now()->addDay()])->count(),
             'payments' => Payment::where('status', 'pending')->count()];
         $payments = Payment::with('payer')->where('status', 'pending')->orderByDesc('id')->limit(5)->get();
-        $sessions = Session::with(['teacher.user', 'group.teacherSubject.subject'])->whereIn('status', ['scheduled', 'ongoing'])->where('ends_at', '>', now())->orderBy('starts_at')->limit(4)->get();
+        $sessions = Session::with(['teacher.user', 'target.teacherSubject.subject'])->whereIn('status', ['scheduled', 'ongoing'])->where('ends_at', '>', now())->orderBy('starts_at')->limit(4)->get();
         $renewals = TeacherSubscription::with(['teacher.user', 'plan'])->where('status', 'active')->whereBetween('ends_at', [now(), now()->addDays(7)])->orderBy('ends_at')->limit(6)->get();
         if ($request->boolean('export')) {
             return $this->csv(TeacherSubscription::with(['teacher.user', 'plan'])->orderBy('id'), ['المعرف' => 'id', 'المدرس' => 'teacher.user.name', 'الخطة' => 'plan.name', 'الحالة' => 'status', 'النهاية' => 'ends_at'], 'subscriptions');

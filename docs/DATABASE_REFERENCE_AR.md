@@ -1,6 +1,6 @@
 # مرجع قاعدة بيانات لقاء الحالية — 2026-11-01
 
-مرجع البنية الكاملة من الصفر: **60 جدولاً، 51 موديل**. استُخرج من جميع Migrations على قاعدة SQLite مؤقتة بالذاكرة، وليس من القاعدة الفعلية.
+مرجع البنية الكاملة من الصفر: **61 جدولاً، 52 موديل**. استُخرج من جميع Migrations على قاعدة SQLite مؤقتة بالذاكرة، وليس من القاعدة الفعلية.
 
 ## قراءة المرجع
 
@@ -183,10 +183,13 @@ student_id حقل تاريخي اختياري موجود؛ يوجد أيضاً s
 | `name` | `varchar` | لا | — | String |
 | `region_id` | `integer` | لا | — | int |
 | `student_id` | `integer` | نعم | — | int أو null |
+| `code` | `varchar` | نعم | — | String أو null |
+| `education_stage` | `varchar` | نعم | — | String أو null |
 
 - FK `student_id` → `students.id`؛ عند الحذف: `set null`.
 - FK `region_id` → `regions.id`؛ عند الحذف: `cascade`.
 - قيد فريد: `(id)`.
+- قيد فريد: `(code)`.
 
 علاقات ORM، عند تحميلها فقط:
 
@@ -209,8 +212,10 @@ student_id حقل تاريخي اختياري موجود؛ يوجد أيضاً s
 | `name` | `varchar` | لا | — | String |
 | `description` | `text` | نعم | — | String أو null |
 | `status` | `varchar` | لا | `'active'` | String |
+| `code` | `varchar` | نعم | — | String أو null |
 
 - قيد فريد: `(id)`.
+- قيد فريد: `(code)`.
 
 علاقات ORM، عند تحميلها فقط:
 
@@ -515,6 +520,7 @@ student_id حقل تاريخي اختياري موجود؛ يوجد أيضاً s
 علاقات ORM، عند تحميلها فقط:
 
 - `teacher_subject`: `BelongsTo` → `teacher_subjects`.
+- `join_requests`: `HasMany` → `group_join_requests`.
 - `group_students`: `HasMany` → `group_students`.
 - `sessions`: `MorphMany` → `sessions`.
 - `students`: `BelongsToMany` → `students`.
@@ -538,6 +544,41 @@ student_id حقل تاريخي اختياري موجود؛ يوجد أيضاً s
 - FK `group_id` → `groups.id`؛ عند الحذف: `restrict`.
 - قيد فريد: `(group_id, student_id)`.
 - قيد فريد: `(id)`.
+
+علاقات ORM، عند تحميلها فقط:
+
+- `group`: `BelongsTo` → `groups`.
+- `student`: `BelongsTo` → `students`.
+
+### `group_join_requests`
+
+البنية الحالية بعد جميع Migrations.
+
+موديل Laravel: `GroupJoinRequest`.
+
+| الحقل | SQL type | يقبل null | الافتراضي | تمثيل مبدئي في JSON إن ظهر |
+|---|---|---|---|---|
+| `id` | `integer` | لا | — | int |
+| `group_id` | `integer` | لا | — | int |
+| `student_id` | `integer` | لا | — | int |
+| `status` | `varchar` | لا | `'pending'` | String |
+| `pending_guard` | `integer` | نعم | `'1'` | int أو null |
+| `message` | `varchar` | نعم | — | String أو null |
+| `review_note` | `varchar` | نعم | — | String أو null |
+| `reviewed_by` | `integer` | نعم | — | int أو null |
+| `reviewed_at` | `datetime` | نعم | — | نص تاريخ/وقت أو null |
+| `created_at` | `datetime` | نعم | — | نص تاريخ/وقت أو null |
+| `updated_at` | `datetime` | نعم | — | نص تاريخ/وقت أو null |
+
+قيم `status`: `pending`, `approved`, `rejected`.
+
+- FK `reviewed_by` → `users.id`؛ عند الحذف: `restrict`.
+- FK `student_id` → `students.id`؛ عند الحذف: `restrict`.
+- FK `group_id` → `groups.id`؛ عند الحذف: `restrict`.
+- قيد فريد: `(group_id, student_id, pending_guard)`.
+- قيد فريد: `(id)`.
+
+حقول مخفية بالموديل: `pending_guard`.
 
 علاقات ORM، عند تحميلها فقط:
 
@@ -692,8 +733,8 @@ student_id حقل تاريخي اختياري موجود؛ يوجد أيضاً s
 
 قيم `status`: `present`, `absent`, `late`, `excused`.
 
-- FK `session_id` → `sessions.id`؛ عند الحذف: `cascade`.
 - FK `student_id` → `students.id`؛ عند الحذف: `restrict`.
+- FK `session_id` → `sessions.id`؛ عند الحذف: `cascade`.
 - قيد فريد: `(session_id, student_id)`.
 - قيد فريد: `(id)`.
 
@@ -868,12 +909,12 @@ student_id حقل تاريخي اختياري موجود؛ يوجد أيضاً s
 | `individual_id` | `integer` | نعم | — | int أو null |
 
 - FK `individual_id` → `individuals.id`؛ عند الحذف: `restrict`.
-- FK `teacher_subject_id` → `teacher_subjects.id`؛ عند الحذف: `restrict`.
-- FK `student_id` → `students.id`؛ عند الحذف: `restrict`.
-- FK `teacher_id` → `teachers.id`؛ عند الحذف: `restrict`.
-- FK `availability_id` → `teacher_availabilities.id`؛ عند الحذف: `restrict`.
-- FK `payment_id` → `payments.id`؛ عند الحذف: `restrict`.
 - FK `session_id` → `sessions.id`؛ عند الحذف: `restrict`.
+- FK `payment_id` → `payments.id`؛ عند الحذف: `restrict`.
+- FK `availability_id` → `teacher_availabilities.id`؛ عند الحذف: `restrict`.
+- FK `teacher_id` → `teachers.id`؛ عند الحذف: `restrict`.
+- FK `student_id` → `students.id`؛ عند الحذف: `restrict`.
+- FK `teacher_subject_id` → `teacher_subjects.id`؛ عند الحذف: `restrict`.
 - قيد فريد: `(payment_id)`.
 - قيد فريد: `(session_id)`.
 - قيد فريد: `(id)`.

@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Group;
-use App\Models\GroupStudent;
+use App\Models\GroupJoinRequest;
 use App\Models\Individual;
 use App\Models\IndividualOffer;
 use App\Models\Notification;
 use App\Models\Teacher;
 use App\Models\TeacherAvailability;
-use App\Services\GroupMembershipRules;
 use App\Services\IndividualBooking;
 use App\Services\TeachingScope;
 use Carbon\Carbon;
@@ -28,7 +27,7 @@ class PhysicalTeachingController extends ApiController
         $this->available($teacher);
         $p = Group::whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $teacher->id)->where('status', 'active'))->whereIn('status', ['forming', 'active'])->with('teacherSubject.subject')->withCount(['groupStudents as members_count' => fn ($q) => $q->where('status', 'active')])->orderBy('id')->paginate($this->perPage($r));
         $p->setCollection($p->getCollection()->map(function ($g) use ($r) {
-            return ['id' => $g->id, 'name' => $g->name, 'teacher_subject_id' => $g->teacher_subject_id, 'content' => app(TeachingScope::class)->payload($g), 'members_count' => $g->members_count, 'max_members' => $g->capacity, 'session_price' => $g->session_price, 'currency' => $g->currency, 'payment_method' => 'cash_to_teacher', 'payment_required_on_platform' => false, 'starts_at' => $g->starts_at, 'ends_at' => $g->ends_at, 'membership_status' => $g->groupStudents()->where('student_id', $r->user()->student->id)->value('status') ?? 'not_joined', 'members' => $this->memberNames($g), 'sessions' => $g->sessions()->orderBy('starts_at')->get(['id', 'starts_at', 'ends_at', 'status', 'progress_notes', 'progress_updated_at'])];
+            return ['id' => $g->id, 'name' => $g->name, 'teacher_subject_id' => $g->teacher_subject_id, 'content' => app(TeachingScope::class)->payload($g), 'members_count' => $g->members_count, 'max_members' => $g->capacity, 'session_price' => $g->session_price, 'currency' => $g->currency, 'payment_method' => 'cash_to_teacher', 'payment_required_on_platform' => false, 'starts_at' => $g->starts_at, 'ends_at' => $g->ends_at, 'membership_status' => $g->groupStudents()->where('student_id', $r->user()->student->id)->value('status') ?? 'not_joined', 'requires_teacher_approval' => true, 'join_request' => GroupJoinRequest::where('group_id', $g->id)->where('student_id', $r->user()->student->id)->latest('id')->first(), 'members' => $this->memberNames($g), 'sessions' => $g->sessions()->orderBy('starts_at')->get(['id', 'starts_at', 'ends_at', 'status', 'progress_notes', 'progress_updated_at'])];
         }));
 
         return $this->paginated($p);
@@ -44,34 +43,6 @@ class PhysicalTeachingController extends ApiController
         $this->available($group->teacherSubject->teacher);
 
         return $this->success(['group_id' => $group->id, 'members_count' => $group->groupStudents()->where('status', 'active')->count(), 'members' => $this->memberNames($group)]);
-    }
-
-    public function join(Request $r, Group $group)
-    {
-        $student = $r->user()->student;
-        $result = DB::transaction(function () use ($group, $student) {
-            Teacher::whereKey($group->teacherSubject->teacher_id)->lockForUpdate()->firstOrFail();
-            $g = Group::whereKey($group->id)->lockForUpdate()->firstOrFail();
-            $this->available($g->teacherSubject->teacher);
-            abort_unless(in_array($g->status, ['active', 'forming'], true) && $g->teacherSubject->status === 'active', 409, 'المجموعة غير متاحة للانضمام.');
-            $old = $g->groupStudents()->where('student_id', $student->id)->first();
-            if ($old?->status === 'active') {
-                return ['member' => $old, 'existing' => true];
-            }
-            if ($g->groupStudents()->where('status', 'active')->count() >= $g->capacity) {
-                return ['full' => true];
-            }
-            app(GroupMembershipRules::class)->validate($g, $student);
-            $m = GroupStudent::updateOrCreate(['group_id' => $g->id, 'student_id' => $student->id], ['status' => 'active', 'joined_at' => now(), 'left_at' => null]);
-            Notification::create(['user_id' => $g->teacherSubject->teacher->user_id, 'type' => 'group_student_joined', 'title' => 'طالب جديد بالمجموعة', 'body' => 'انضم طالب إلى مجموعتك. الدفع الفيزيائي يتم لدى الأستاذ.', 'data' => ['group_id' => $g->id, 'student_id' => $student->id]]);
-
-            return ['member' => $m, 'existing' => false];
-        }, 3);
-        if (isset($result['full'])) {
-            return response()->json(['status' => false, 'code' => 'GROUP_FULL', 'message' => 'نعتذر، اكتمل العدد المتاح لأن المقعد حُجز لطلب سابق. يمكنك اختيار مجموعة أو موعد آخر.'], 409);
-        }
-
-        return $this->success(['membership' => $result['member'], 'payment_method' => 'cash_to_teacher', 'requires_teacher_approval' => false], 'تم تثبيت مقعدك بالمجموعة.', $result['existing'] ? 200 : 201);
     }
 
     public function withdraw(Request $r, Group $group)

@@ -14,7 +14,7 @@ class Group extends Model
     protected static function booted(): void
     {
         static::deleting(function (Group $group) {
-            if ($group->sessions()->exists() || $group->groupStudents()->exists()) {
+            if ($group->sessions()->exists() || $group->groupStudents()->exists() || $group->joinRequests()->exists()) {
                 throw ValidationException::withMessages(['group' => 'Groups with teaching history must be closed instead of deleted.']);
             }
         });
@@ -32,6 +32,11 @@ class Group extends Model
     public function teacherSubject(): BelongsTo
     {
         return $this->belongsTo(TeacherSubject::class);
+    }
+
+    public function joinRequests(): HasMany
+    {
+        return $this->hasMany(GroupJoinRequest::class);
     }
 
     public function groupStudents(): HasMany

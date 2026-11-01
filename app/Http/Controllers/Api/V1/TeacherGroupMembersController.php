@@ -10,7 +10,12 @@ class TeacherGroupMembersController extends ApiController
     public function index(Request $r, Group $group)
     {
         $this->authorize('manage', $group);
-        $p = $group->groupStudents()->with(['student.user:id,name,phone,region_id,avatar_path', 'student.school.region'])->orderByDesc('id')->paginate($this->perPage($r));
+        $data = $r->validate(['status' => ['sometimes', 'in:active,left,removed,all']]);
+        $query = $group->groupStudents();
+        if (isset($data['status']) && $data['status'] !== 'all') {
+            $query->where('status', $data['status']);
+        }
+        $p = $query->with(['student.user:id,name,phone,region_id,avatar_path', 'student.school.region'])->orderByDesc('id')->paginate($this->perPage($r));
 
         return $this->paginated($p);
     }

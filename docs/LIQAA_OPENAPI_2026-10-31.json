@@ -3,7 +3,7 @@
   "info": {
     "title": "LIQAA API — current code",
     "version": "2026-11-01",
-    "description": "Route-complete specification, extracted request validations and manually described updated flows. Response data for older custom endpoints remains permissive rather than claiming database rows are exact DTOs. Read APIS_FULL_AR.md and FRONTEND_CONTRACT_FINAL_AR.md. Numeric IDs in examples are synthetic. HLS update: read HLS_IMPLEMENTATION_AR.md; original video playback is disabled."
+    "description": "Route-complete specification, extracted request validations and manually described updated flows. Response data for older custom endpoints remains permissive rather than claiming database rows are exact DTOs. Read APIS_FULL_AR.md and FRONTEND_CONTRACT_FINAL_AR.md. Numeric IDs in examples are synthetic."
   },
   "servers": [
     {
@@ -6805,6 +6805,73 @@
         ],
         "parameters": [
           {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "today"
+              ],
+              "description": "Laravel validation: ['sometimes', 'in:today']"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Laravel validation: ['sometimes', 'date_format:Y-m-d', 'prohibits:scope']"
+            }
+          },
+          {
+            "name": "timezone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Laravel validation: ['sometimes', 'timezone']"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "group",
+                "individual"
+              ],
+              "description": "Laravel validation: ['required_with:type_id', 'in:group,individual']"
+            }
+          },
+          {
+            "name": "type_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Laravel validation: ['sometimes', 'integer', 'min:1']"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "ongoing",
+                "completed",
+                "cancelled"
+              ],
+              "description": "Laravel validation: ['sometimes', 'in:scheduled,ongoing,completed,cancelled']"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -9679,6 +9746,21 @@
         ],
         "parameters": [
           {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "left",
+                "removed",
+                "all"
+              ],
+              "description": "Laravel validation: ['sometimes', 'in:active,left,removed,all']"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -9782,9 +9864,280 @@
         }
       }
     },
+    "/api/v1/teacher/groups/{group}/join-requests": {
+      "get": {
+        "operationId": "GroupJoinRequestController_teacherIndex_GET_82",
+        "summary": "GroupJoinRequestController@teacherIndex",
+        "description": "data طلبات المجموعة للأستاذ المالك وstudent.user المختصر؛meta. الافتراضيpending.\nMiddleware: api, auth:sanctum, role:teacher",
+        "tags": [
+          "GroupJoinRequest"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "all"
+              ],
+              "description": "Laravel validation: ['sometimes', 'in:pending,approved,rejected,all']"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "pagination; per_page is capped by server"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "pagination; per_page is capped by server"
+            }
+          },
+          {
+            "name": "group",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "نجاح أو إعادة طلب ناجح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "توكن مفقود/غير صالح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مخول أو غير موثق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "غير موجود أو خارج ملكية الحساب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "تعارض موعد/سعة/رصيد/حالة",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "حقول غير صالحة",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/teacher/groups/{group}/join-requests/{joinRequest}/{decision}": {
+      "post": {
+        "operationId": "GroupJoinRequestController_decide_POST_83",
+        "summary": "GroupJoinRequestController@decide",
+        "description": "data:{join_request,membership}. approve ينشئ العضوية تحت قفل السعة؛reject يحتاج review_note. الطلبات pending/approved/rejected.\nMiddleware: api, auth:sanctum, role:teacher",
+        "tags": [
+          "GroupJoinRequest"
+        ],
+        "parameters": [
+          {
+            "name": "group",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "joinRequest",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "decision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "نجاح أو إعادة طلب ناجح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "توكن مفقود/غير صالح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مخول أو غير موثق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "غير موجود أو خارج ملكية الحساب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "تعارض موعد/سعة/رصيد/حالة",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "حقول غير صالحة",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "إنشاء ناجح حسب العملية",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "review_note": {
+                    "type": "string",
+                    "description": "Laravel validation: ['required', 'string', 'max:1000', 'regex:/\\S/u']"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Laravel validation: ['prohibited']"
+                  }
+                },
+                "required": [
+                  "review_note"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/teacher/units": {
       "post": {
-        "operationId": "TeachingContentController_storeUnit_POST_82",
+        "operationId": "TeachingContentController_storeUnit_POST_84",
         "summary": "TeachingContentController@storeUnit",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -9921,7 +10274,7 @@
     },
     "/api/v1/teacher/units/{unit}": {
       "patch": {
-        "operationId": "TeachingContentController_updateUnit_PATCH_83",
+        "operationId": "TeachingContentController_updateUnit_PATCH_85",
         "summary": "TeachingContentController@updateUnit",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -10055,7 +10408,7 @@
     },
     "/api/v1/teacher/lessons": {
       "post": {
-        "operationId": "TeachingContentController_storeLesson_POST_84",
+        "operationId": "TeachingContentController_storeLesson_POST_86",
         "summary": "TeachingContentController@storeLesson",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -10192,7 +10545,7 @@
     },
     "/api/v1/teacher/lessons/{lesson}": {
       "patch": {
-        "operationId": "TeachingContentController_updateLesson_PATCH_85",
+        "operationId": "TeachingContentController_updateLesson_PATCH_87",
         "summary": "TeachingContentController@updateLesson",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -10325,7 +10678,7 @@
     },
     "/api/v1/teacher/contents/{content}/quiz": {
       "put": {
-        "operationId": "TeachingContentController_quiz_PUT_86",
+        "operationId": "TeachingContentController_quiz_PUT_88",
         "summary": "TeachingContentController@quiz",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -10514,7 +10867,7 @@
     },
     "/api/v1/teacher/notifications": {
       "get": {
-        "operationId": "StudentNotificationController_index_GET_87",
+        "operationId": "StudentNotificationController_index_GET_89",
         "summary": "StudentNotificationController@index",
         "description": "data:[{id,type,title,body,data,created_at,related_payment_id,read,read_at}] وmeta.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -10619,7 +10972,7 @@
     },
     "/api/v1/teacher/notifications/{notification}/read": {
       "post": {
-        "operationId": "StudentNotificationController_read_POST_88",
+        "operationId": "StudentNotificationController_read_POST_90",
         "summary": "StudentNotificationController@read",
         "description": "data:{id,read:true,read_at}. سجل المستخدم نفسه فقط.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -10723,7 +11076,7 @@
     },
     "/api/v1/teacher/answers/{answer}/grade": {
       "post": {
-        "operationId": "TeachingContentController_grade_POST_89",
+        "operationId": "TeachingContentController_grade_POST_91",
         "summary": "TeachingContentController@grade",
         "description": "data:{answer,attempt}. يراجع المدرّس صاحب الاختبار فقط، والعلامة لا تتجاوز points للسؤال؛ يُعاد حساب نتيجة المحاولة.\nMiddleware: api, auth:sanctum, role:teacher",
         "tags": [
@@ -10846,7 +11199,7 @@
     },
     "/api/v1/auth/register": {
       "post": {
-        "operationId": "StudentAuthController_register_POST_90",
+        "operationId": "StudentAuthController_register_POST_92",
         "summary": "StudentAuthController@register",
         "description": "201 استجابة تسجيل دخول الطالب: status,message,token_type,access_token,access_token_expires_at,refresh_token,refresh_token_expires_at,user,student,device. البريد غير ظاهر في user.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -11000,7 +11353,7 @@
     },
     "/api/v1/auth/login": {
       "post": {
-        "operationId": "StudentAuthController_studentLogin_POST_91",
+        "operationId": "StudentAuthController_studentLogin_POST_93",
         "summary": "StudentAuthController@studentLogin",
         "description": "نفس بيانات جلسة الطالب والتوكنات وuser/student/device. لا تتجاوز بيانات الجهاز.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -11129,7 +11482,7 @@
     },
     "/api/v1/auth/refresh": {
       "post": {
-        "operationId": "StudentAuthController_studentRefresh_POST_92",
+        "operationId": "StudentAuthController_studentRefresh_POST_94",
         "summary": "StudentAuthController@studentRefresh",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -11244,7 +11597,7 @@
     },
     "/api/v1/auth/device/transfer": {
       "post": {
-        "operationId": "StudentAuthController_studentDeviceTransfer_POST_93",
+        "operationId": "StudentAuthController_studentDeviceTransfer_POST_95",
         "summary": "StudentAuthController@studentDeviceTransfer",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -11373,7 +11726,7 @@
     },
     "/api/v1/auth/logout": {
       "post": {
-        "operationId": "StudentAuthController_studentLogout_POST_94",
+        "operationId": "StudentAuthController_studentLogout_POST_96",
         "summary": "StudentAuthController@studentLogout",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, throttle:10,1, auth:sanctum, role:student, student.device",
         "tags": [
@@ -11468,7 +11821,7 @@
     },
     "/api/v1/me": {
       "get": {
-        "operationId": "StudentAuthController_studentMe_GET_95",
+        "operationId": "StudentAuthController_studentMe_GET_97",
         "summary": "StudentAuthController@studentMe",
         "description": "status,user,student على المستوى الأعلى، دون data wrapper؛ لا email داخل user.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -11552,7 +11905,7 @@
     },
     "/api/v1/teachers/{teacher}/bookings": {
       "post": {
-        "operationId": "IndividualBookingController_store_POST_96",
+        "operationId": "IndividualBookingController_store_POST_98",
         "summary": "IndividualBookingController@store",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -11696,7 +12049,7 @@
     },
     "/api/v1/teachers/{teacher}/available-sessions": {
       "get": {
-        "operationId": "AvailableSessionController_index_GET_97",
+        "operationId": "AvailableSessionController_index_GET_99",
         "summary": "AvailableSessionController@index",
         "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -11829,7 +12182,7 @@
     },
     "/api/v1/student/bookings": {
       "get": {
-        "operationId": "StudentBookingController_index_GET_98",
+        "operationId": "StudentBookingController_index_GET_100",
         "summary": "StudentBookingController@index",
         "description": "{data:[StudentSessionSummary]}. لا status ولا meta في هذا المسار القديم؛ DTO موضح في دليل التدفقات.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -11928,7 +12281,7 @@
     },
     "/api/v1/student/enrollments/{enrollment}/payments": {
       "post": {
-        "operationId": "EnrollmentPaymentController_store_POST_99",
+        "operationId": "EnrollmentPaymentController_store_POST_101",
         "summary": "EnrollmentPaymentController@store",
         "description": "410 CHECKOUT_REQUIRED؛ لا تنشئ حوالة عبر المسار القديم، استخدم checkout ثم student/payments.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12032,7 +12385,7 @@
     },
     "/api/v1/payments/checkout": {
       "post": {
-        "operationId": "ShamCashPaymentController_checkout_POST_100",
+        "operationId": "ShamCashPaymentController_checkout_POST_102",
         "summary": "ShamCashPaymentController@checkout",
         "description": "201 data:{checkout_id,internal_reference,amount,currency,service,account_id,qr_url,expires_at,settings_url}. الأونلاين فقط: teacher_subject/unit/lesson/content.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12157,7 +12510,7 @@
     },
     "/api/v1/teachers/{teacher}/paid-slots": {
       "get": {
-        "operationId": "Closure_GET_101",
+        "operationId": "Closure_GET_103",
         "summary": "Closure",
         "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12254,7 +12607,7 @@
     },
     "/api/v1/student/paid-bookings": {
       "get": {
-        "operationId": "PaidLessonController_index_GET_102",
+        "operationId": "PaidLessonController_index_GET_104",
         "summary": "PaidLessonController@index",
         "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12359,7 +12712,7 @@
     },
     "/api/v1/student/paid-bookings/{booking}": {
       "get": {
-        "operationId": "PaidLessonController_show_GET_103",
+        "operationId": "PaidLessonController_show_GET_105",
         "summary": "PaidLessonController@show",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12452,7 +12805,7 @@
     },
     "/api/v1/student/paid-bookings/{booking}/reschedule": {
       "post": {
-        "operationId": "Closure_POST_104",
+        "operationId": "Closure_POST_106",
         "summary": "Closure",
         "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12560,7 +12913,7 @@
     },
     "/api/v1/refunds": {
       "post": {
-        "operationId": "RefundController_store_POST_105",
+        "operationId": "RefundController_store_POST_107",
         "summary": "RefundController@store",
         "description": "201 data: RefundRequest DTO مع refund_status وproof URLs المصرح بها. المبلغ من الباك ولا يقبل قيمة من الطالب.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12709,7 +13062,7 @@
     },
     "/api/v1/refunds/my": {
       "get": {
-        "operationId": "RefundController_index_GET_106",
+        "operationId": "RefundController_index_GET_108",
         "summary": "RefundController@index",
         "description": "data قائمة RefundRequest DTO؛ meta للصفحات.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12829,7 +13182,7 @@
     },
     "/api/v1/payments/checkout/{checkout}/qr": {
       "get": {
-        "operationId": "ShamCashPaymentController_checkoutQr_GET_107",
+        "operationId": "ShamCashPaymentController_checkoutQr_GET_109",
         "summary": "ShamCashPaymentController@checkoutQr",
         "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -12922,7 +13275,7 @@
     },
     "/api/v1/student/payments": {
       "post": {
-        "operationId": "ShamCashPaymentController_store_POST_108",
+        "operationId": "ShamCashPaymentController_store_POST_110",
         "summary": "ShamCashPaymentController@store",
         "description": "201 (أو200 عند إعادة نفس الطلب) data: Payment DTO مع financial_status/refundable_amount/refunded_amount/payment_status/proof_url. body=file proof وcheckout_id وprovider_reference.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13046,7 +13399,7 @@
         }
       },
       "get": {
-        "operationId": "ShamCashPaymentController_index_GET_109",
+        "operationId": "ShamCashPaymentController_index_GET_111",
         "summary": "ShamCashPaymentController@index",
         "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13165,7 +13518,7 @@
     },
     "/api/v1/student/payments/{payment}": {
       "get": {
-        "operationId": "EnrollmentPaymentController_show_GET_110",
+        "operationId": "EnrollmentPaymentController_show_GET_112",
         "summary": "EnrollmentPaymentController@show",
         "description": "data: PaymentDTO لشام كاش، أو Payment للسجلات المالية القديمة الأخرى.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13258,7 +13611,7 @@
     },
     "/api/v1/student/enrollments": {
       "get": {
-        "operationId": "StudentEnrollmentController_index_GET_111",
+        "operationId": "StudentEnrollmentController_index_GET_113",
         "summary": "StudentEnrollmentController@index",
         "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13342,7 +13695,7 @@
     },
     "/api/v1/student/booking": {
       "get": {
-        "operationId": "StudentEnrollmentController_current_GET_112",
+        "operationId": "StudentEnrollmentController_current_GET_114",
         "summary": "StudentEnrollmentController@current",
         "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13426,7 +13779,7 @@
     },
     "/api/v1/teacher-subjects/{id}/enroll": {
       "post": {
-        "operationId": "StudentEnrollmentController_enrollTeacherSubject_POST_113",
+        "operationId": "StudentEnrollmentController_enrollTeacherSubject_POST_115",
         "summary": "StudentEnrollmentController@enrollTeacherSubject",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13530,7 +13883,7 @@
     },
     "/api/v1/units/{id}/enroll": {
       "post": {
-        "operationId": "StudentEnrollmentController_enrollUnit_POST_114",
+        "operationId": "StudentEnrollmentController_enrollUnit_POST_116",
         "summary": "StudentEnrollmentController@enrollUnit",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13634,7 +13987,7 @@
     },
     "/api/v1/contents/{id}/enroll": {
       "post": {
-        "operationId": "StudentEnrollmentController_enrollContent_POST_115",
+        "operationId": "StudentEnrollmentController_enrollContent_POST_117",
         "summary": "StudentEnrollmentController@enrollContent",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13738,7 +14091,7 @@
     },
     "/api/v1/student/attendance/percentage": {
       "get": {
-        "operationId": "AttendanceController_percentage_GET_116",
+        "operationId": "AttendanceController_percentage_GET_118",
         "summary": "AttendanceController@percentage",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13822,7 +14175,7 @@
     },
     "/api/v1/quizzes/{quiz}/data": {
       "get": {
-        "operationId": "QuizController_studentData_GET_117",
+        "operationId": "QuizController_studentData_GET_119",
         "summary": "QuizController@studentData",
         "description": "data:{quiz_type,protected,progress_weight,quiz,attempts_used,attempts_remaining,active_attempt}. quiz.questions لا تتضمن مفاتيح التصحيح السرية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -13915,7 +14268,7 @@
     },
     "/api/v1/quizzes/{quiz}/attempts": {
       "post": {
-        "operationId": "QuizAttemptController_start_POST_118",
+        "operationId": "QuizAttemptController_start_POST_120",
         "summary": "QuizAttemptController@start",
         "description": "201 data:{attempt,attempt_id,quiz_id,attempts_remaining}. لا يمكن تجاوز attempts_allowed.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -14019,7 +14372,7 @@
     },
     "/api/v1/quiz-attempts/{quizAttempt}/answers": {
       "post": {
-        "operationId": "AnswerController_submitForAttempt_POST_119",
+        "operationId": "AnswerController_submitForAttempt_POST_121",
         "summary": "AnswerController@submitForAttempt",
         "description": "data: Answer مع score/status من الباك؛ لا يقبل score من الطالب.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -14147,7 +14500,7 @@
     },
     "/api/v1/contents/{id}/playback-token": {
       "post": {
-        "operationId": "StudentContentAssetController_playbackToken_POST_120",
+        "operationId": "StudentContentAssetController_playbackToken_POST_122",
         "summary": "StudentContentAssetController@playbackToken",
         "description": "200 data: HLS playback_url/expires_at/format/drm=false/encryption=aes-128/renditions للفيديو، أوالرابط الخاص السابق للـPDF.409 VIDEO_PROCESSING/VIDEO_PROCESSING_FAILED دونرابط الأصل.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -14258,7 +14611,7 @@
     },
     "/api/v1/content-assets/{contentAsset}/hls/{file}": {
       "get": {
-        "operationId": "HlsPlaybackController_file_GET_121",
+        "operationId": "HlsPlaybackController_file_GET_123",
         "summary": "HlsPlaybackController@file",
         "description": "ملف HLS خاص: playlist أوsegment أوAES key. الرابط موقّع من الباك ويرتبط بالطالب والإصدار؛ Bearer مطلوب لكل طلب. راجع HLS_IMPLEMENTATION_AR.md.\nMiddleware: api, auth:sanctum, role:student, student.device, signed",
         "tags": [
@@ -14406,7 +14759,7 @@
     },
     "/api/v1/content-assets/{contentAsset}/play": {
       "get": {
-        "operationId": "StudentContentAssetController_play_GET_122",
+        "operationId": "StudentContentAssetController_play_GET_124",
         "summary": "StudentContentAssetController@play",
         "description": "ملف PDF خاص. طلب فيديو أصلي هنا يُرفض404 حتى لوكان الرابط قديماً صحيح التوقيع.\nMiddleware: api, auth:sanctum, role:student, student.device, signed",
         "tags": [
@@ -14499,7 +14852,7 @@
     },
     "/api/v1/sessions/{id}/book": {
       "post": {
-        "operationId": "SessionController_book_POST_123",
+        "operationId": "SessionController_book_POST_125",
         "summary": "SessionController@book",
         "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -14603,7 +14956,7 @@
     },
     "/api/v1/sessions/{id}/booking": {
       "delete": {
-        "operationId": "SessionController_cancelBooking_DELETE_124",
+        "operationId": "SessionController_cancelBooking_DELETE_126",
         "summary": "SessionController@cancelBooking",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -14696,7 +15049,7 @@
     },
     "/api/v1/auth/device/transfer-requests/{transfer}": {
       "get": {
-        "operationId": "StudentAuthController_transferStatus_GET_125",
+        "operationId": "StudentAuthController_transferStatus_GET_127",
         "summary": "StudentAuthController@transferStatus",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, throttle:30,1",
         "tags": [
@@ -14785,7 +15138,7 @@
     },
     "/api/v1/auth/device/transfer-requests": {
       "post": {
-        "operationId": "StudentAuthController_studentDeviceTransfer_POST_126",
+        "operationId": "StudentAuthController_studentDeviceTransfer_POST_128",
         "summary": "StudentAuthController@studentDeviceTransfer",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -14914,7 +15267,7 @@
     },
     "/api/v1/auth/device/transfer-requests/{transfer}/claim": {
       "post": {
-        "operationId": "StudentAuthController_claimTransfer_POST_127",
+        "operationId": "StudentAuthController_claimTransfer_POST_129",
         "summary": "StudentAuthController@claimTransfer",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -15014,7 +15367,7 @@
     },
     "/api/v1/teachers/{teacher}": {
       "get": {
-        "operationId": "StudentLearningController_teacher_GET_128",
+        "operationId": "StudentLearningController_teacher_GET_130",
         "summary": "StudentLearningController@teacher",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api",
         "tags": [
@@ -15103,7 +15456,7 @@
     },
     "/api/v1/profile": {
       "put": {
-        "operationId": "StudentProfileController_update_PUT_129",
+        "operationId": "StudentProfileController_update_PUT_131",
         "summary": "StudentProfileController@update",
         "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15233,7 +15586,7 @@
         }
       },
       "patch": {
-        "operationId": "StudentProfileController_update_PATCH_129",
+        "operationId": "StudentProfileController_update_PATCH_131",
         "summary": "StudentProfileController@update",
         "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15365,7 +15718,7 @@
     },
     "/api/v1/contents/{content}/assets": {
       "get": {
-        "operationId": "StudentContentAssetController_assets_GET_130",
+        "operationId": "StudentContentAssetController_assets_GET_132",
         "summary": "StudentContentAssetController@assets",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15458,7 +15811,7 @@
     },
     "/api/v1/content-assets/{contentAsset}/access-token": {
       "post": {
-        "operationId": "StudentContentAssetController_accessToken_POST_131",
+        "operationId": "StudentContentAssetController_accessToken_POST_133",
         "summary": "StudentContentAssetController@accessToken",
         "description": "نفس عقد HLS للفيديو وPDF السابق. راجع HLS_IMPLEMENTATION_AR.md؛Bearer يلزم كل قوائم HLS والمقاطع والمفاتيح.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15569,7 +15922,7 @@
     },
     "/api/v1/student/contents/{content}/complete": {
       "post": {
-        "operationId": "StudentLearningController_complete_POST_132",
+        "operationId": "StudentLearningController_complete_POST_134",
         "summary": "StudentLearningController@complete",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15673,7 +16026,7 @@
     },
     "/api/v1/student/teacher-subjects/{teacherSubject}/progress": {
       "get": {
-        "operationId": "StudentLearningController_progress_GET_133",
+        "operationId": "StudentLearningController_progress_GET_135",
         "summary": "StudentLearningController@progress",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15766,7 +16119,7 @@
     },
     "/api/v1/student/teacher-subjects/{teacherSubject}": {
       "get": {
-        "operationId": "StudentLearningController_course_GET_134",
+        "operationId": "StudentLearningController_course_GET_136",
         "summary": "StudentLearningController@course",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15859,7 +16212,7 @@
     },
     "/api/v1/student/sessions/{session}": {
       "get": {
-        "operationId": "StudentBookingController_show_GET_135",
+        "operationId": "StudentBookingController_show_GET_137",
         "summary": "StudentBookingController@show",
         "description": "data: StudentSessionSummary.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -15952,7 +16305,7 @@
     },
     "/api/v1/student/device-transfer-requests": {
       "get": {
-        "operationId": "StudentAuthController_pendingTransfers_GET_136",
+        "operationId": "StudentAuthController_pendingTransfers_GET_138",
         "summary": "StudentAuthController@pendingTransfers",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16036,7 +16389,7 @@
     },
     "/api/v1/student/device-transfer-requests/{transfer}/{decision}": {
       "post": {
-        "operationId": "StudentAuthController_decideTransfer_POST_137",
+        "operationId": "StudentAuthController_decideTransfer_POST_139",
         "summary": "StudentAuthController@decideTransfer",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16148,7 +16501,7 @@
     },
     "/api/v1/student/notifications": {
       "get": {
-        "operationId": "StudentNotificationController_index_GET_138",
+        "operationId": "StudentNotificationController_index_GET_140",
         "summary": "StudentNotificationController@index",
         "description": "data:[{id,type,title,body,data,created_at,related_payment_id,read,read_at}] وmeta.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16253,7 +16606,7 @@
     },
     "/api/v1/student/notifications/{notification}/read": {
       "post": {
-        "operationId": "StudentNotificationController_read_POST_139",
+        "operationId": "StudentNotificationController_read_POST_141",
         "summary": "StudentNotificationController@read",
         "description": "data:{id,read:true,read_at}. سجل المستخدم نفسه فقط.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16357,7 +16710,7 @@
     },
     "/api/v1/teachers/{teacher}/available-slots": {
       "get": {
-        "operationId": "AvailabilityBookingController_index_GET_140",
+        "operationId": "AvailabilityBookingController_index_GET_142",
         "summary": "AvailabilityBookingController@index",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16470,7 +16823,7 @@
     },
     "/api/v1/teacher-availabilities/{availability}/book": {
       "post": {
-        "operationId": "AvailabilityBookingController_store_POST_141",
+        "operationId": "AvailabilityBookingController_store_POST_143",
         "summary": "AvailabilityBookingController@store",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16609,7 +16962,7 @@
     },
     "/api/v1/quiz-attempts/{quizAttempt}/submit": {
       "post": {
-        "operationId": "QuizAttemptController_submit_POST_142",
+        "operationId": "QuizAttemptController_submit_POST_144",
         "summary": "QuizAttemptController@submit",
         "description": "data:{attempt_id,quiz_id,status,submitted_at,score,grading_pending}. simple الموضوعي يُصحح آلياً والمقالي ينتظر مراجعة الأستاذ.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16713,7 +17066,7 @@
     },
     "/api/v1/contents/{content}": {
       "get": {
-        "operationId": "CurriculumBrowseController_show_GET_143",
+        "operationId": "CurriculumBrowseController_show_GET_145",
         "summary": "CurriculumBrowseController@show",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16806,7 +17159,7 @@
     },
     "/api/v1/teachers/{teacher}/calendar": {
       "get": {
-        "operationId": "TeacherCalendarController_index_GET_144",
+        "operationId": "TeacherCalendarController_index_GET_146",
         "summary": "TeacherCalendarController@index",
         "description": "استجابة JSON مخصصة لهذا المسار؛ لا تفترض أنها تتبع غلاف paginated العام. راجع تفاصيل هذا المورد في ملفات docs الخاصة به ومرجع النموذج.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -16946,7 +17299,7 @@
     },
     "/api/v1/student/my-quizzes": {
       "get": {
-        "operationId": "StudentQuizReadController_index_GET_145",
+        "operationId": "StudentQuizReadController_index_GET_147",
         "summary": "StudentQuizReadController@index",
         "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -17079,7 +17432,7 @@
     },
     "/api/v1/student/my-quizzes/{quiz}/attempts": {
       "get": {
-        "operationId": "StudentQuizReadController_attempts_GET_146",
+        "operationId": "StudentQuizReadController_attempts_GET_148",
         "summary": "StudentQuizReadController@attempts",
         "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -17190,7 +17543,7 @@
     },
     "/api/v1/student/groups": {
       "get": {
-        "operationId": "StudentGroupReadController_index_GET_147",
+        "operationId": "StudentGroupReadController_index_GET_149",
         "summary": "StudentGroupReadController@index",
         "description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -17307,7 +17660,7 @@
     },
     "/api/v1/student/groups/{group}/members": {
       "get": {
-        "operationId": "StudentGroupReadController_members_GET_148",
+        "operationId": "StudentGroupReadController_members_GET_150",
         "summary": "StudentGroupReadController@members",
         "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -17400,7 +17753,7 @@
     },
     "/api/v1/contents/{content}/quizzes": {
       "get": {
-        "operationId": "CurriculumBrowseController_quizzes_GET_149",
+        "operationId": "CurriculumBrowseController_quizzes_GET_151",
         "summary": "CurriculumBrowseController@quizzes",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -17493,7 +17846,7 @@
     },
     "/api/v1/profile/avatar": {
       "post": {
-        "operationId": "ProfileAvatarController_store_POST_150",
+        "operationId": "ProfileAvatarController_store_POST_152",
         "summary": "ProfileAvatarController@store",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student,teacher, App\\Http\\Middleware\\StudentDeviceWhenRequired, throttle:20,1",
         "tags": [
@@ -17606,7 +17959,7 @@
         }
       },
       "delete": {
-        "operationId": "ProfileAvatarController_destroy_DELETE_151",
+        "operationId": "ProfileAvatarController_destroy_DELETE_153",
         "summary": "ProfileAvatarController@destroy",
         "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.\nMiddleware: api, auth:sanctum, role:student,teacher, App\\Http\\Middleware\\StudentDeviceWhenRequired",
         "tags": [
@@ -17690,7 +18043,7 @@
     },
     "/api/v1/student/register": {
       "post": {
-        "operationId": "StudentAuthController_register_POST_152",
+        "operationId": "StudentAuthController_register_POST_154",
         "summary": "StudentAuthController@register",
         "description": "201 استجابة تسجيل دخول الطالب: status,message,token_type,access_token,access_token_expires_at,refresh_token,refresh_token_expires_at,user,student,device. البريد غير ظاهر في user.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -17844,7 +18197,7 @@
     },
     "/api/v1/student/login": {
       "post": {
-        "operationId": "StudentAuthController_studentLogin_POST_153",
+        "operationId": "StudentAuthController_studentLogin_POST_155",
         "summary": "StudentAuthController@studentLogin",
         "description": "نفس بيانات جلسة الطالب والتوكنات وuser/student/device. لا تتجاوز بيانات الجهاز.\nMiddleware: api, throttle:10,1",
         "tags": [
@@ -17973,7 +18326,7 @@
     },
     "/api/v1/student/profile": {
       "get": {
-        "operationId": "StudentAuthController_studentMe_GET_154",
+        "operationId": "StudentAuthController_studentMe_GET_156",
         "summary": "StudentAuthController@studentMe",
         "description": "status,user,student على المستوى الأعلى، دون data wrapper؛ لا email داخل user.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -18055,7 +18408,7 @@
         }
       },
       "put": {
-        "operationId": "StudentProfileController_update_PUT_155",
+        "operationId": "StudentProfileController_update_PUT_157",
         "summary": "StudentProfileController@update",
         "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -18185,7 +18538,7 @@
         }
       },
       "patch": {
-        "operationId": "StudentProfileController_update_PATCH_155",
+        "operationId": "StudentProfileController_update_PATCH_157",
         "summary": "StudentProfileController@update",
         "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -18315,7 +18668,7 @@
         }
       },
       "post": {
-        "operationId": "StudentProfileController_update_POST_155",
+        "operationId": "StudentProfileController_update_POST_157",
         "summary": "StudentProfileController@update",
         "description": "استجابة studentMe نفسها: status,user,student. لا يقبل الهاتف والبريد والصف والمدرسة والمنطقة أو كلمة المرور.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -18458,7 +18811,7 @@
     },
     "/api/v1/student/teachers": {
       "get": {
-        "operationId": "TeacherDirectoryController_index_GET_156",
+        "operationId": "TeacherDirectoryController_index_GET_158",
         "summary": "TeacherDirectoryController@index",
         "description": "data:[{id,name,specialization,avatar_url,modes:[online,physical],status,region_id}] وmeta. mode سياق عرض، وليس مفتاح تفعيل قدرة الأستاذ.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -18621,7 +18974,7 @@
     },
     "/api/v1/student/teachers/{teacher}/physical/groups": {
       "get": {
-        "operationId": "PhysicalTeachingController_groups_GET_157",
+        "operationId": "PhysicalTeachingController_groups_GET_159",
         "summary": "PhysicalTeachingController@groups",
         "description": "data قائمة بالمجموعات ونطاقها وأسعار الحصة والجدول والأسماء؛ meta للصفحات.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -18734,11 +19087,11 @@
     },
     "/api/v1/student/groups/{group}/join": {
       "post": {
-        "operationId": "PhysicalTeachingController_join_POST_158",
-        "summary": "PhysicalTeachingController@join",
-        "description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.\nMiddleware: api, auth:sanctum, role:student, student.device",
+        "operationId": "GroupJoinRequestController_store_POST_160",
+        "summary": "GroupJoinRequestController@store",
+        "description": "201 data:{join_request,requires_teacher_approval:true,seat_reserved:false,payment_method:cash_to_teacher}. 200 لإعادة الطلب المعلق. المقعد يثبت عند الموافقة، وليس تقديم الطلب.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
-          "PhysicalTeaching"
+          "GroupJoinRequest"
         ],
         "parameters": [
           {
@@ -18829,6 +19182,31 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Laravel validation: ['sometimes', 'nullable', 'string', 'max:1000']"
+                  },
+                  "student_id": {
+                    "type": "string",
+                    "description": "Laravel validation: ['prohibited']"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Laravel validation: ['prohibited']"
+                  }
                 }
               }
             }
@@ -18838,11 +19216,11 @@
     },
     "/api/v1/student/groups/{group}/join-request": {
       "post": {
-        "operationId": "PhysicalTeachingController_join_POST_159",
-        "summary": "PhysicalTeachingController@join",
-        "description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.\nMiddleware: api, auth:sanctum, role:student, student.device",
+        "operationId": "GroupJoinRequestController_store_POST_161",
+        "summary": "GroupJoinRequestController@store",
+        "description": "201 data:{join_request,requires_teacher_approval:true,seat_reserved:false,payment_method:cash_to_teacher}. 200 لإعادة الطلب المعلق. المقعد يثبت عند الموافقة، وليس تقديم الطلب.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
-          "PhysicalTeaching"
+          "GroupJoinRequest"
         ],
         "parameters": [
           {
@@ -18928,6 +19306,144 @@
           },
           "201": {
             "description": "إنشاء ناجح حسب العملية",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Laravel validation: ['sometimes', 'nullable', 'string', 'max:1000']"
+                  },
+                  "student_id": {
+                    "type": "string",
+                    "description": "Laravel validation: ['prohibited']"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Laravel validation: ['prohibited']"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/student/groups/{group}/join-requests": {
+      "get": {
+        "operationId": "GroupJoinRequestController_studentIndex_GET_162",
+        "summary": "GroupJoinRequestController@studentIndex",
+        "description": "data طلبات الطالب نفسه وmeta.\nMiddleware: api, auth:sanctum, role:student, student.device",
+        "tags": [
+          "GroupJoinRequest"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "pagination; per_page is capped by server"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "pagination; per_page is capped by server"
+            }
+          },
+          {
+            "name": "group",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "نجاح أو إعادة طلب ناجح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "توكن مفقود/غير صالح",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "غير مخول أو غير موثق",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "غير موجود أو خارج ملكية الحساب",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "تعارض موعد/سعة/رصيد/حالة",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "حقول غير صالحة",
             "content": {
               "application/json": {
                 "schema": {
@@ -18942,7 +19458,7 @@
     },
     "/api/v1/student/groups/{group}/withdraw": {
       "post": {
-        "operationId": "PhysicalTeachingController_withdraw_POST_160",
+        "operationId": "PhysicalTeachingController_withdraw_POST_163",
         "summary": "PhysicalTeachingController@withdraw",
         "description": "data: {membership_status:left,refund_eligible:false,payment_method:cash_to_teacher}. 409 بعد بدء المجموعة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19046,7 +19562,7 @@
     },
     "/api/v1/student/teachers/{teacher}/physical/individual-offers": {
       "get": {
-        "operationId": "PhysicalTeachingController_offers_GET_161",
+        "operationId": "PhysicalTeachingController_offers_GET_164",
         "summary": "PhysicalTeachingController@offers",
         "description": "data قائمة IndividualOffer مع content.type/id/title وpayment_method=cash_to_teacher؛ meta للصفحات.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19159,7 +19675,7 @@
     },
     "/api/v1/student/teachers/{teacher}/availability": {
       "get": {
-        "operationId": "PhysicalAvailabilityController_index_GET_162",
+        "operationId": "PhysicalAvailabilityController_index_GET_165",
         "summary": "PhysicalAvailabilityController@index",
         "description": "data: {date,offer_id,slots:[{availability_id,starts_at,ends_at,timezone,status:available|booked|unavailable}]}.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19270,7 +19786,7 @@
     },
     "/api/v1/student/individual-bookings": {
       "post": {
-        "operationId": "PhysicalTeachingController_book_POST_163",
+        "operationId": "PhysicalTeachingController_book_POST_166",
         "summary": "PhysicalTeachingController@book",
         "description": "data: {session: Session, individual: Individual, payment_method: cash_to_teacher, payment_required_on_platform: false}. لا Payment ولا Enrollment جديد.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19401,7 +19917,7 @@
     },
     "/api/v1/student/teachers/{teacher}/online-content": {
       "get": {
-        "operationId": "OnlineLearningController_tree_GET_164",
+        "operationId": "OnlineLearningController_tree_GET_167",
         "summary": "OnlineLearningController@tree",
         "description": "data.teacher وdata.subjects[].units[].lessons[].contents[]؛ أسعار وعدادات وhas_access، دون ملفات مدفوعة مكشوفة.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19494,7 +20010,7 @@
     },
     "/api/v1/student/lessons/{lesson}/content": {
       "get": {
-        "operationId": "OnlineLearningController_content_GET_165",
+        "operationId": "OnlineLearningController_content_GET_168",
         "summary": "OnlineLearningController@content",
         "description": "data: {lesson,access:{allowed,reason},contents:[{id,type,title,description,has_access,protected,assets_endpoint,playback_token_endpoint,quizzes}]}. الاختبارات البسيطة تظهر دون شراء.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19587,7 +20103,7 @@
     },
     "/api/v1/student/lessons/{lesson}/complete": {
       "post": {
-        "operationId": "OnlineLearningController_complete_POST_166",
+        "operationId": "OnlineLearningController_complete_POST_169",
         "summary": "OnlineLearningController@complete",
         "description": "data: {lesson_id,completed:true,completed_at}. 422 إن لم تُكمل كل المحتويات التعليمية المنشورة غير الاختبارات، و404 عند غياب حق الوصول.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19691,7 +20207,7 @@
     },
     "/api/v1/student/teacher-subjects/{teacherSubject}/learning-summary": {
       "get": {
-        "operationId": "OnlineLearningController_progress_GET_167",
+        "operationId": "OnlineLearningController_progress_GET_170",
         "summary": "OnlineLearningController@progress",
         "description": "data: {teacher_subject_id,total_lessons,completed_lessons,total_quizzes,completed_quizzes,lesson_weight:1,quiz_weight:0.30,earned_progress_points,total_progress_points,progress_percentage}.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19784,7 +20300,7 @@
     },
     "/api/v1/student/refunds/eligibility": {
       "get": {
-        "operationId": "RefundController_eligibility_GET_168",
+        "operationId": "RefundController_eligibility_GET_171",
         "summary": "RefundController@eligibility",
         "description": "data: {payment_id,currency,eligible,refundable_amount,consumed_amount,refunded_amount,reserved_amount,lesson_allocations,code,message} عند payment_id؛ وإلا قائمة paginated.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -19898,7 +20414,7 @@
     },
     "/api/v1/student/refunds": {
       "get": {
-        "operationId": "RefundController_index_GET_169",
+        "operationId": "RefundController_index_GET_172",
         "summary": "RefundController@index",
         "description": "data قائمة RefundRequest DTO؛ meta للصفحات.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -20016,7 +20532,7 @@
         }
       },
       "post": {
-        "operationId": "RefundController_store_POST_170",
+        "operationId": "RefundController_store_POST_173",
         "summary": "RefundController@store",
         "description": "201 data: RefundRequest DTO مع refund_status وproof URLs المصرح بها. المبلغ من الباك ولا يقبل قيمة من الطالب.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -20165,7 +20681,7 @@
     },
     "/api/v1/student/refunds/{refund}": {
       "get": {
-        "operationId": "RefundController_show_GET_171",
+        "operationId": "RefundController_show_GET_174",
         "summary": "RefundController@show",
         "description": "data: RefundRequest مع refund_status وrefund_proof_url وoriginal_proof_url؛ حقول مسار الملفات الداخلية مخفية.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [
@@ -20258,7 +20774,7 @@
     },
     "/api/v1/student/refunds/{refund}/payout-details": {
       "patch": {
-        "operationId": "RefundController_payout_PATCH_172",
+        "operationId": "RefundController_payout_PATCH_175",
         "summary": "RefundController@payout",
         "description": "data: RefundRequest؛ يُسمح بتعديل account_id لطلبك pending/approved فقط.\nMiddleware: api, auth:sanctum, role:student, student.device",
         "tags": [

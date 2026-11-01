@@ -42,7 +42,7 @@ abstract class AdminController extends Controller
             foreach ($query->lazy(500)->take(10000) as $row) {
                 $values = [];
                 foreach ($columns as $value) {
-                    $cell = (string) (is_callable($value) ? $value($row) : data_get($row, $value));
+                    $cell = (string) ($value instanceof \Closure ? $value($row) : data_get($row, $value));
                     $values[] = preg_match('/^[=+@\-\t\r]/u', $cell) ? "'".$cell : $cell;
                 }
                 fputcsv($out, $values);

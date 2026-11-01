@@ -7,6 +7,7 @@ use App\Models\Individual;
 use App\Models\Session;
 use App\Models\Teacher;
 use App\Models\TeacherAvailability;
+use App\Models\User;
 use App\Services\PaidLessonBookings;
 use App\Services\SessionRules;
 use Illuminate\Http\Request;
@@ -15,10 +16,11 @@ use Illuminate\Validation\ValidationException;
 
 class SessionsController extends AdminController
 {
-    public function index(Request $request)
+    public function index(Request $request, User $teacherUser)
     {
         $data = $this->filters($request);
-        $query = Session::with(['teacher.user', 'target']);
+        $scope = Session::where('teacher_id', $teacherUser->teacher->id);
+        $query = (clone $scope)->with(['teacher.user', 'target']);
         if (! empty($data['search'])) {
             $term = $data['search'];
             $query->where(fn ($q) => $q->whereHas('teacher.user', fn ($q) => $q->where('name', 'like', "%{$term}%"))->orWhereHasMorph('target', [Group::class], fn ($q) => $q->where('name', 'like', "%{$term}%")));
@@ -40,27 +42,28 @@ class SessionsController extends AdminController
             return $this->csv($query->orderBy('id'), ['المعرف' => 'id', 'المدرس' => 'teacher.user.name', 'النوع' => 'type', 'البداية' => 'starts_at', 'النهاية' => 'ends_at', 'الحالة' => 'status'], 'sessions');
         }
         $items = $query->orderByDesc('starts_at')->paginate(15)->withQueryString();
-        $teachers = Teacher::with('user')->get();
-        $stats = ['total' => Session::count(), 'scheduled' => Session::where('status', 'scheduled')->count(), 'completed' => Session::where('status', 'completed')->count(), 'cancelled' => Session::where('status', 'cancelled')->count()];
 
-        return view('admin.sessions.index', compact('items', 'teachers', 'stats'));
+        $stats = ['total' => (clone $scope)->count(), 'scheduled' => (clone $scope)->where('status', 'scheduled')->count(), 'completed' => (clone $scope)->where('status', 'completed')->count(), 'cancelled' => (clone $scope)->where('status', 'cancelled')->count()];
+
+        return view('admin.sessions.index', compact('items', 'stats'));
     }
 
-    public function create()
+    public function create(User $teacherUser)
     {
-        $teachers = Teacher::with('user')->where('status', 'active')->get();
-        $groups = Group::with(['teacherSubject.teacher.user', 'teacherSubject.subject'])->whereIn('status', ['active', 'forming'])->get();
-        $individuals = Individual::with(['student.user', 'teacherSubject.teacher.user'])->where('status', 'active')->get();
-        $availability = TeacherAvailability::where('status', 'active')->get();
+        $teachers = collect([$teacherUser->teacher]);
+        $groups = Group::whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $teacherUser->teacher->id))->with(['teacherSubject.teacher.user', 'teacherSubject.subject'])->whereIn('status', ['active', 'forming'])->get();
+        $individuals = Individual::whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $teacherUser->teacher->id))->with(['student.user', 'teacherSubject.teacher.user'])->where('status', 'active')->get();
+        $availability = TeacherAvailability::where('teacher_id', $teacherUser->teacher->id)->where('status', 'active')->get();
 
         return view('admin.sessions.form', compact('teachers', 'groups', 'individuals', 'availability'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, User $teacherUser)
     {
         $data = $request->validate(['teacher_id' => ['required', 'integer', 'exists:teachers,id'], 'type' => ['required', 'in:individual,group'],
             'type_id' => ['required', 'integer', 'min:1'], 'group_id' => ['prohibited'], 'enrollment_id' => ['prohibited'], 'availability_id' => ['nullable', 'integer', 'exists:teacher_availabilities,id'],
             'starts_at' => ['required', 'date', 'after:now'], 'ends_at' => ['required', 'date', 'after:starts_at'], 'capacity' => ['nullable', 'integer', 'min:1']]);
+        abort_unless((int) $data['teacher_id'] === $teacherUser->teacher->id, 404);
         $session = DB::transaction(function () use ($data) {
             $teacher = Teacher::whereKey($data['teacher_id'])->lockForUpdate()->firstOrFail();
             if ($teacher->status !== 'active' || $teacher->user?->status !== 'active') {
@@ -77,17 +80,17 @@ class SessionsController extends AdminController
             return $session;
         }, 3);
 
-        return redirect()->route('admin.sessions.show', $session)->with('success', 'تمت جدولة الجلسة.');
+        return redirect()->route('admin.sessions.show', ['teacherUser' => $teacherUser, 'session' => $session])->with('success', 'تمت جدولة الجلسة.');
     }
 
-    public function show(Session $session)
+    public function show(User $teacherUser, Session $session)
     {
         $session->load(['teacher.user', 'target.teacherSubject.subject', 'attendance.student.user']);
 
         return view('admin.sessions.show', compact('session'));
     }
 
-    public function cancel(Session $session)
+    public function cancel(User $teacherUser, Session $session)
     {
         if ($session->paidBooking()->exists()) {
             app(PaidLessonBookings::class)->cancelSession($session, 'admin', auth()->id());

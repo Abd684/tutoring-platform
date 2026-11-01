@@ -348,19 +348,6 @@
         {
           "name": null,
           "columns": [
-            "session_id"
-          ],
-          "foreign_schema": "main",
-          "foreign_table": "sessions",
-          "foreign_columns": [
-            "id"
-          ],
-          "on_update": "no action",
-          "on_delete": "cascade"
-        },
-        {
-          "name": null,
-          "columns": [
             "student_id"
           ],
           "foreign_schema": "main",
@@ -370,6 +357,19 @@
           ],
           "on_update": "no action",
           "on_delete": "restrict"
+        },
+        {
+          "name": null,
+          "columns": [
+            "session_id"
+          ],
+          "foreign_schema": "main",
+          "foreign_table": "sessions",
+          "foreign_columns": [
+            "id"
+          ],
+          "on_update": "no action",
+          "on_delete": "cascade"
         }
       ],
       "indexes": [
@@ -393,7 +393,7 @@
           "primary": true
         }
       ],
-      "sqlite_definition": "CREATE TABLE \"attendance\" (\"id\" integer primary key autoincrement not null, \"session_id\" integer not null, \"status\" varchar not null, \"check_in_at\" datetime, \"check_out_at\" datetime, \"note\" text, \"student_id\" integer not null, foreign key(\"student_id\") references students(\"id\") on delete restrict on update no action, foreign key(\"session_id\") references sessions(\"id\") on delete cascade on update no action)",
+      "sqlite_definition": "CREATE TABLE \"attendance\" (\"id\" integer primary key autoincrement not null, \"session_id\" integer not null, \"status\" varchar not null, \"check_in_at\" datetime, \"check_out_at\" datetime, \"note\" text, \"student_id\" integer not null, foreign key(\"session_id\") references sessions(\"id\") on delete cascade on update no action, foreign key(\"student_id\") references students(\"id\") on delete restrict on update no action)",
       "declared_values": {
         "status": [
           "present",
@@ -2289,6 +2289,213 @@
       ],
       "sqlite_definition": "CREATE TABLE \"governortates\" (\"id\" integer primary key autoincrement not null, \"name\" varchar not null)"
     },
+    "group_join_requests": {
+      "columns": [
+        {
+          "name": "id",
+          "type_name": "integer",
+          "type": "integer",
+          "collation": null,
+          "nullable": false,
+          "default": null,
+          "auto_increment": true,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "group_id",
+          "type_name": "integer",
+          "type": "integer",
+          "collation": null,
+          "nullable": false,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "student_id",
+          "type_name": "integer",
+          "type": "integer",
+          "collation": null,
+          "nullable": false,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "status",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": false,
+          "default": "'pending'",
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "pending_guard",
+          "type_name": "integer",
+          "type": "integer",
+          "collation": null,
+          "nullable": true,
+          "default": "'1'",
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "message",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "review_note",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "reviewed_by",
+          "type_name": "integer",
+          "type": "integer",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "reviewed_at",
+          "type_name": "datetime",
+          "type": "datetime",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "created_at",
+          "type_name": "datetime",
+          "type": "datetime",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "updated_at",
+          "type_name": "datetime",
+          "type": "datetime",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "name": null,
+          "columns": [
+            "reviewed_by"
+          ],
+          "foreign_schema": "main",
+          "foreign_table": "users",
+          "foreign_columns": [
+            "id"
+          ],
+          "on_update": "no action",
+          "on_delete": "restrict"
+        },
+        {
+          "name": null,
+          "columns": [
+            "student_id"
+          ],
+          "foreign_schema": "main",
+          "foreign_table": "students",
+          "foreign_columns": [
+            "id"
+          ],
+          "on_update": "no action",
+          "on_delete": "restrict"
+        },
+        {
+          "name": null,
+          "columns": [
+            "group_id"
+          ],
+          "foreign_schema": "main",
+          "foreign_table": "groups",
+          "foreign_columns": [
+            "id"
+          ],
+          "on_update": "no action",
+          "on_delete": "restrict"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "group_join_requests_group_id_status_id_index",
+          "columns": [
+            "group_id",
+            "status",
+            "id"
+          ],
+          "type": null,
+          "unique": false,
+          "primary": false
+        },
+        {
+          "name": "group_join_requests_one_pending",
+          "columns": [
+            "group_id",
+            "student_id",
+            "pending_guard"
+          ],
+          "type": null,
+          "unique": true,
+          "primary": false
+        },
+        {
+          "name": "primary",
+          "columns": [
+            "id"
+          ],
+          "type": null,
+          "unique": true,
+          "primary": true
+        }
+      ],
+      "sqlite_definition": "CREATE TABLE \"group_join_requests\" (\"id\" integer primary key autoincrement not null, \"group_id\" integer not null, \"student_id\" integer not null, \"status\" varchar not null default 'pending', \"pending_guard\" integer default '1', \"message\" varchar, \"review_note\" varchar, \"reviewed_by\" integer, \"reviewed_at\" datetime, \"created_at\" datetime, \"updated_at\" datetime, foreign key(\"group_id\") references \"groups\"(\"id\") on delete restrict, foreign key(\"student_id\") references \"students\"(\"id\") on delete restrict, foreign key(\"reviewed_by\") references \"users\"(\"id\") on delete restrict)",
+      "declared_values": {
+        "status": [
+          "pending",
+          "approved",
+          "rejected"
+        ]
+      }
+    },
     "group_students": {
       "columns": [
         {
@@ -3852,49 +4059,10 @@
         {
           "name": null,
           "columns": [
-            "teacher_subject_id"
+            "session_id"
           ],
           "foreign_schema": "main",
-          "foreign_table": "teacher_subjects",
-          "foreign_columns": [
-            "id"
-          ],
-          "on_update": "no action",
-          "on_delete": "restrict"
-        },
-        {
-          "name": null,
-          "columns": [
-            "student_id"
-          ],
-          "foreign_schema": "main",
-          "foreign_table": "students",
-          "foreign_columns": [
-            "id"
-          ],
-          "on_update": "no action",
-          "on_delete": "restrict"
-        },
-        {
-          "name": null,
-          "columns": [
-            "teacher_id"
-          ],
-          "foreign_schema": "main",
-          "foreign_table": "teachers",
-          "foreign_columns": [
-            "id"
-          ],
-          "on_update": "no action",
-          "on_delete": "restrict"
-        },
-        {
-          "name": null,
-          "columns": [
-            "availability_id"
-          ],
-          "foreign_schema": "main",
-          "foreign_table": "teacher_availabilities",
+          "foreign_table": "sessions",
           "foreign_columns": [
             "id"
           ],
@@ -3917,10 +4085,49 @@
         {
           "name": null,
           "columns": [
-            "session_id"
+            "availability_id"
           ],
           "foreign_schema": "main",
-          "foreign_table": "sessions",
+          "foreign_table": "teacher_availabilities",
+          "foreign_columns": [
+            "id"
+          ],
+          "on_update": "no action",
+          "on_delete": "restrict"
+        },
+        {
+          "name": null,
+          "columns": [
+            "teacher_id"
+          ],
+          "foreign_schema": "main",
+          "foreign_table": "teachers",
+          "foreign_columns": [
+            "id"
+          ],
+          "on_update": "no action",
+          "on_delete": "restrict"
+        },
+        {
+          "name": null,
+          "columns": [
+            "student_id"
+          ],
+          "foreign_schema": "main",
+          "foreign_table": "students",
+          "foreign_columns": [
+            "id"
+          ],
+          "on_update": "no action",
+          "on_delete": "restrict"
+        },
+        {
+          "name": null,
+          "columns": [
+            "teacher_subject_id"
+          ],
+          "foreign_schema": "main",
+          "foreign_table": "teacher_subjects",
           "foreign_columns": [
             "id"
           ],
@@ -3988,7 +4195,7 @@
           "primary": true
         }
       ],
-      "sqlite_definition": "CREATE TABLE \"paid_bookings\" (\"id\" integer primary key autoincrement not null, \"student_id\" integer not null, \"teacher_id\" integer not null, \"availability_id\" integer not null, \"payment_id\" integer, \"session_id\" integer, \"status\" varchar not null default ('HELD'), \"starts_at\" datetime not null, \"ends_at\" datetime not null, \"hold_expires_at\" datetime not null, \"cancelled_by_role\" varchar, \"created_at\" datetime, \"updated_at\" datetime, \"teacher_subject_id\" integer, \"individual_id\" integer, foreign key(\"session_id\") references sessions(\"id\") on delete restrict on update no action, foreign key(\"payment_id\") references payments(\"id\") on delete restrict on update no action, foreign key(\"availability_id\") references teacher_availabilities(\"id\") on delete restrict on update no action, foreign key(\"teacher_id\") references teachers(\"id\") on delete restrict on update no action, foreign key(\"student_id\") references students(\"id\") on delete restrict on update no action, foreign key(\"teacher_subject_id\") references \"teacher_subjects\"(\"id\") on delete restrict, foreign key(\"individual_id\") references \"individuals\"(\"id\") on delete restrict)"
+      "sqlite_definition": "CREATE TABLE \"paid_bookings\" (\"id\" integer primary key autoincrement not null, \"student_id\" integer not null, \"teacher_id\" integer not null, \"availability_id\" integer not null, \"payment_id\" integer, \"session_id\" integer, \"status\" varchar not null default ('HELD'), \"starts_at\" datetime not null, \"ends_at\" datetime not null, \"hold_expires_at\" datetime not null, \"cancelled_by_role\" varchar, \"created_at\" datetime, \"updated_at\" datetime, \"teacher_subject_id\" integer, \"individual_id\" integer, foreign key(\"teacher_subject_id\") references teacher_subjects(\"id\") on delete restrict on update no action, foreign key(\"student_id\") references students(\"id\") on delete restrict on update no action, foreign key(\"teacher_id\") references teachers(\"id\") on delete restrict on update no action, foreign key(\"availability_id\") references teacher_availabilities(\"id\") on delete restrict on update no action, foreign key(\"payment_id\") references payments(\"id\") on delete restrict on update no action, foreign key(\"session_id\") references sessions(\"id\") on delete restrict on update no action, foreign key(\"individual_id\") references \"individuals\"(\"id\") on delete restrict)"
     },
     "password_reset_tokens": {
       "columns": [
@@ -5702,7 +5909,7 @@
           "primary": true
         },
         {
-          "name": "refund_lesson_items_refund_request_id_payment_lesson_allocation_id_unique",
+          "name": "refund_lesson_items_request_allocation_unique",
           "columns": [
             "refund_request_id",
             "payment_lesson_allocation_id"
@@ -6217,6 +6424,28 @@
           "auto_increment": false,
           "comment": null,
           "generation": null
+        },
+        {
+          "name": "code",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "education_stage",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
         }
       ],
       "foreign_keys": [
@@ -6256,9 +6485,18 @@
           "type": null,
           "unique": true,
           "primary": true
+        },
+        {
+          "name": "schools_code_unique",
+          "columns": [
+            "code"
+          ],
+          "type": null,
+          "unique": true,
+          "primary": false
         }
       ],
-      "sqlite_definition": "CREATE TABLE \"schools\" (\"id\" integer primary key autoincrement not null, \"name\" varchar not null, \"region_id\" integer not null, \"student_id\" integer, foreign key(\"region_id\") references regions(\"id\") on delete cascade on update no action, foreign key(\"student_id\") references \"students\"(\"id\") on delete set null)"
+      "sqlite_definition": "CREATE TABLE \"schools\" (\"id\" integer primary key autoincrement not null, \"name\" varchar not null, \"region_id\" integer not null, \"student_id\" integer, \"code\" varchar, \"education_stage\" varchar, foreign key(\"region_id\") references regions(\"id\") on delete cascade on update no action, foreign key(\"student_id\") references \"students\"(\"id\") on delete set null)"
     },
     "sessions": {
       "columns": [
@@ -6786,6 +7024,17 @@
           "auto_increment": false,
           "comment": null,
           "generation": null
+        },
+        {
+          "name": "code",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
         }
       ],
       "foreign_keys": [],
@@ -6798,6 +7047,15 @@
           "type": null,
           "unique": true,
           "primary": true
+        },
+        {
+          "name": "subjects_code_unique",
+          "columns": [
+            "code"
+          ],
+          "type": null,
+          "unique": true,
+          "primary": false
         },
         {
           "name": "subjects_name_idx",
@@ -6818,7 +7076,7 @@
           "primary": false
         }
       ],
-      "sqlite_definition": "CREATE TABLE \"subjects\" (\"id\" integer primary key autoincrement not null, \"name\" varchar not null, \"description\" text, \"status\" varchar not null default 'active')"
+      "sqlite_definition": "CREATE TABLE \"subjects\" (\"id\" integer primary key autoincrement not null, \"name\" varchar not null, \"description\" text, \"status\" varchar not null default 'active', \"code\" varchar)"
     },
     "subscription_plans": {
       "columns": [
@@ -8754,6 +9012,13 @@
           "related_table": "teacher_subjects"
         },
         {
+          "method": "joinRequests",
+          "json_key_when_loaded": "join_requests",
+          "kind": "HasMany",
+          "related_model": "App\\Models\\GroupJoinRequest",
+          "related_table": "group_join_requests"
+        },
+        {
           "method": "groupStudents",
           "json_key_when_loaded": "group_students",
           "kind": "HasMany",
@@ -8771,6 +9036,43 @@
           "method": "students",
           "json_key_when_loaded": "students",
           "kind": "BelongsToMany",
+          "related_model": "App\\Models\\Student",
+          "related_table": "students"
+        }
+      ]
+    },
+    "GroupJoinRequest": {
+      "table": "group_join_requests",
+      "fillable": [
+        "group_id",
+        "student_id",
+        "status",
+        "pending_guard",
+        "message",
+        "review_note",
+        "reviewed_by",
+        "reviewed_at"
+      ],
+      "hidden": [
+        "pending_guard"
+      ],
+      "appends": [],
+      "casts": {
+        "id": "int",
+        "reviewed_at": "datetime"
+      },
+      "relations": [
+        {
+          "method": "group",
+          "json_key_when_loaded": "group",
+          "kind": "BelongsTo",
+          "related_model": "App\\Models\\Group",
+          "related_table": "groups"
+        },
+        {
+          "method": "student",
+          "json_key_when_loaded": "student",
+          "kind": "BelongsTo",
           "related_model": "App\\Models\\Student",
           "related_table": "students"
         }
@@ -9461,7 +9763,9 @@
       "fillable": [
         "name",
         "region_id",
-        "student_id"
+        "student_id",
+        "code",
+        "education_stage"
       ],
       "hidden": [],
       "appends": [],
@@ -9688,7 +9992,8 @@
       "fillable": [
         "name",
         "description",
-        "status"
+        "status",
+        "code"
       ],
       "hidden": [],
       "appends": [],
@@ -11069,8 +11374,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 36,
-      "method_end_line": 49
+      "method_start_line": 38,
+      "method_end_line": 76
     },
     {
       "methods": [
@@ -11084,8 +11389,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 54,
-      "method_end_line": 76
+      "method_start_line": 81,
+      "method_end_line": 103
     },
     {
       "methods": [
@@ -11099,8 +11404,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 203,
-      "method_end_line": 234
+      "method_start_line": 230,
+      "method_end_line": 261
     },
     {
       "methods": [
@@ -11114,8 +11419,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 120,
-      "method_end_line": 188
+      "method_start_line": 147,
+      "method_end_line": 215
     },
     {
       "methods": [
@@ -11190,8 +11495,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/GroupStudentController.php",
-      "method_start_line": 15,
-      "method_end_line": 33
+      "method_start_line": 16,
+      "method_end_line": 36
     },
     {
       "methods": [
@@ -11205,8 +11510,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/GroupStudentController.php",
-      "method_start_line": 35,
-      "method_end_line": 48
+      "method_start_line": 38,
+      "method_end_line": 51
     },
     {
       "methods": [
@@ -11250,8 +11555,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 251,
-      "method_end_line": 263
+      "method_start_line": 278,
+      "method_end_line": 290
     },
     {
       "methods": [
@@ -11265,8 +11570,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 120,
-      "method_end_line": 188
+      "method_start_line": 147,
+      "method_end_line": 215
     },
     {
       "methods": [
@@ -11280,8 +11585,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 236,
-      "method_end_line": 249
+      "method_start_line": 263,
+      "method_end_line": 276
     },
     {
       "methods": [
@@ -11406,7 +11711,38 @@
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeacherGroupMembersController.php",
       "method_start_line": 10,
-      "method_end_line": 16
+      "method_end_line": 21
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "uri": "/api/v1/teacher/groups/{group}/join-requests",
+      "action": "App\\Http\\Controllers\\Api\\V1\\GroupJoinRequestController@teacherIndex",
+      "middleware": [
+        "api",
+        "auth:sanctum",
+        "role:teacher"
+      ],
+      "controller_file": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+      "method_start_line": 28,
+      "method_end_line": 38
+    },
+    {
+      "methods": [
+        "POST"
+      ],
+      "uri": "/api/v1/teacher/groups/{group}/join-requests/{joinRequest}/{decision}",
+      "action": "App\\Http\\Controllers\\Api\\V1\\GroupJoinRequestController@decide",
+      "middleware": [
+        "api",
+        "auth:sanctum",
+        "role:teacher"
+      ],
+      "controller_file": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+      "method_start_line": 40,
+      "method_end_line": 54
     },
     {
       "methods": [
@@ -12075,8 +12411,8 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 82,
-      "method_end_line": 87
+      "method_start_line": 109,
+      "method_end_line": 114
     },
     {
       "methods": [
@@ -12091,8 +12427,8 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/SessionController.php",
-      "method_start_line": 93,
-      "method_end_line": 115
+      "method_start_line": 120,
+      "method_end_line": 142
     },
     {
       "methods": [
@@ -12629,40 +12965,57 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-      "method_start_line": 26,
-      "method_end_line": 35
+      "method_start_line": 25,
+      "method_end_line": 34
     },
     {
       "methods": [
         "POST"
       ],
       "uri": "/api/v1/student/groups/{group}/join",
-      "action": "App\\Http\\Controllers\\Api\\V1\\PhysicalTeachingController@join",
+      "action": "App\\Http\\Controllers\\Api\\V1\\GroupJoinRequestController@store",
       "middleware": [
         "api",
         "auth:sanctum",
         "role:student",
         "student.device"
       ],
-      "controller_file": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-      "method_start_line": 49,
-      "method_end_line": 75
+      "controller_file": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+      "method_start_line": 12,
+      "method_end_line": 19
     },
     {
       "methods": [
         "POST"
       ],
       "uri": "/api/v1/student/groups/{group}/join-request",
-      "action": "App\\Http\\Controllers\\Api\\V1\\PhysicalTeachingController@join",
+      "action": "App\\Http\\Controllers\\Api\\V1\\GroupJoinRequestController@store",
       "middleware": [
         "api",
         "auth:sanctum",
         "role:student",
         "student.device"
       ],
-      "controller_file": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-      "method_start_line": 49,
-      "method_end_line": 75
+      "controller_file": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+      "method_start_line": 12,
+      "method_end_line": 19
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "uri": "/api/v1/student/groups/{group}/join-requests",
+      "action": "App\\Http\\Controllers\\Api\\V1\\GroupJoinRequestController@studentIndex",
+      "middleware": [
+        "api",
+        "auth:sanctum",
+        "role:student",
+        "student.device"
+      ],
+      "controller_file": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+      "method_start_line": 21,
+      "method_end_line": 26
     },
     {
       "methods": [
@@ -12677,8 +13030,8 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-      "method_start_line": 77,
-      "method_end_line": 88
+      "method_start_line": 48,
+      "method_end_line": 59
     },
     {
       "methods": [
@@ -12694,8 +13047,8 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-      "method_start_line": 90,
-      "method_end_line": 97
+      "method_start_line": 61,
+      "method_end_line": 68
     },
     {
       "methods": [
@@ -12727,8 +13080,8 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-      "method_start_line": 99,
-      "method_end_line": 119
+      "method_start_line": 70,
+      "method_end_line": 90
     },
     {
       "methods": [

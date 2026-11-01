@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\GroupController;
+use App\Http\Controllers\Api\V1\GroupJoinRequestController;
 use App\Http\Controllers\Api\V1\GroupStudentController;
 use App\Http\Controllers\Api\V1\IndividualController;
 use App\Http\Controllers\Api\V1\IndividualOfferController;
@@ -85,6 +86,8 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
     Route::post('/individual-offers', [IndividualOfferController::class, 'store']);
     Route::patch('/individual-offers/{individualOffer}', [IndividualOfferController::class, 'update']);
     Route::get('/groups/{group}/students', [TeacherGroupMembersController::class, 'index']);
+    Route::get('/groups/{group}/join-requests', [GroupJoinRequestController::class, 'teacherIndex']);
+    Route::post('/groups/{group}/join-requests/{joinRequest}/{decision}', [GroupJoinRequestController::class, 'decide'])->whereIn('decision', ['approve', 'reject']);
     Route::post('/units', [TeachingContentController::class, 'storeUnit']);
     Route::patch('/units/{unit}', [TeachingContentController::class, 'updateUnit']);
     Route::post('/lessons', [TeachingContentController::class, 'storeLesson']);

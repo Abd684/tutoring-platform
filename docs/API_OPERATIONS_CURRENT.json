@@ -1057,7 +1057,14 @@
     "method": "GET",
     "path": "/api/v1/teacher/sessions",
     "action": "SessionController@index",
-    "fields": {},
+    "fields": {
+      "scope": "['sometimes', 'in:today']",
+      "date": "['sometimes', 'date_format:Y-m-d', 'prohibits:scope']",
+      "timezone": "['sometimes', 'timezone']",
+      "type": "['required_with:type_id', 'in:group,individual']",
+      "type_id": "['sometimes', 'integer', 'min:1']",
+      "status": "['sometimes', 'in:scheduled,ongoing,completed,cancelled']"
+    },
     "response_description": "status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.",
     "middleware": [
       "api",
@@ -1065,7 +1072,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 36,
+    "line": 38,
     "multipart": false
   },
   {
@@ -1093,7 +1100,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 54,
+    "line": 81,
     "multipart": false
   },
   {
@@ -1121,7 +1128,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 203,
+    "line": 230,
     "multipart": false
   },
   {
@@ -1136,7 +1143,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 120,
+    "line": 147,
     "multipart": false
   },
   {
@@ -1232,7 +1239,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/GroupStudentController.php",
-    "line": 15,
+    "line": 16,
     "multipart": false
   },
   {
@@ -1247,7 +1254,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/GroupStudentController.php",
-    "line": 35,
+    "line": 38,
     "multipart": false
   },
   {
@@ -1308,7 +1315,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 251,
+    "line": 278,
     "multipart": false
   },
   {
@@ -1323,7 +1330,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 120,
+    "line": 147,
     "multipart": false
   },
   {
@@ -1340,7 +1347,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 236,
+    "line": 263,
     "multipart": false
   },
   {
@@ -1503,7 +1510,9 @@
     "method": "GET",
     "path": "/api/v1/teacher/groups/{group}/students",
     "action": "TeacherGroupMembersController@index",
-    "fields": {},
+    "fields": {
+      "status": "['sometimes', 'in:active,left,removed,all']"
+    },
     "response_description": "data: GroupStudent[] مع student(user:{id,name,phone,region_id,avatar_url},school.region)؛ للأستاذ المالك فقط، وmeta.",
     "middleware": [
       "api",
@@ -1512,6 +1521,41 @@
     ],
     "source": "app/Http/Controllers/Api/V1/TeacherGroupMembersController.php",
     "line": 10,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/teacher/groups/{group}/join-requests",
+    "action": "GroupJoinRequestController@teacherIndex",
+    "fields": {
+      "status": "['sometimes', 'in:pending,approved,rejected,all']"
+    },
+    "response_description": "data طلبات المجموعة للأستاذ المالك وstudent.user المختصر؛meta. الافتراضيpending.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+    "line": 28,
+    "multipart": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/teacher/groups/{group}/join-requests/{joinRequest}/{decision}",
+    "action": "GroupJoinRequestController@decide",
+    "fields": {
+      "review_note": "['required', 'string', 'max:1000', 'regex:/\\S/u']",
+      "status": "['prohibited']"
+    },
+    "response_description": "data:{join_request,membership}. approve ينشئ العضوية تحت قفل السعة؛reject يحتاج review_note. الطلبات pending/approved/rejected.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+    "line": 40,
     "multipart": false
   },
   {
@@ -2265,7 +2309,7 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 82,
+    "line": 109,
     "multipart": false
   },
   {
@@ -2281,7 +2325,7 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/SessionController.php",
-    "line": 93,
+    "line": 120,
     "multipart": false
   },
   {
@@ -2947,39 +2991,63 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-    "line": 26,
+    "line": 25,
     "multipart": false
   },
   {
     "method": "POST",
     "path": "/api/v1/student/groups/{group}/join",
-    "action": "PhysicalTeachingController@join",
-    "fields": {},
-    "response_description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+    "action": "GroupJoinRequestController@store",
+    "fields": {
+      "message": "['sometimes', 'nullable', 'string', 'max:1000']",
+      "student_id": "['prohibited']",
+      "status": "['prohibited']"
+    },
+    "response_description": "201 data:{join_request,requires_teacher_approval:true,seat_reserved:false,payment_method:cash_to_teacher}. 200 لإعادة الطلب المعلق. المقعد يثبت عند الموافقة، وليس تقديم الطلب.",
     "middleware": [
       "api",
       "auth:sanctum",
       "role:student",
       "student.device"
     ],
-    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-    "line": 49,
+    "source": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+    "line": 12,
     "multipart": false
   },
   {
     "method": "POST",
     "path": "/api/v1/student/groups/{group}/join-request",
-    "action": "PhysicalTeachingController@join",
-    "fields": {},
-    "response_description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+    "action": "GroupJoinRequestController@store",
+    "fields": {
+      "message": "['sometimes', 'nullable', 'string', 'max:1000']",
+      "student_id": "['prohibited']",
+      "status": "['prohibited']"
+    },
+    "response_description": "201 data:{join_request,requires_teacher_approval:true,seat_reserved:false,payment_method:cash_to_teacher}. 200 لإعادة الطلب المعلق. المقعد يثبت عند الموافقة، وليس تقديم الطلب.",
     "middleware": [
       "api",
       "auth:sanctum",
       "role:student",
       "student.device"
     ],
-    "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-    "line": 49,
+    "source": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+    "line": 12,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/student/groups/{group}/join-requests",
+    "action": "GroupJoinRequestController@studentIndex",
+    "fields": {},
+    "response_description": "data طلبات الطالب نفسه وmeta.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device"
+    ],
+    "source": "app/Http/Controllers/Api/V1/GroupJoinRequestController.php",
+    "line": 21,
     "multipart": false
   },
   {
@@ -2995,7 +3063,7 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-    "line": 77,
+    "line": 48,
     "multipart": false
   },
   {
@@ -3011,7 +3079,7 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-    "line": 90,
+    "line": 61,
     "multipart": false
   },
   {
@@ -3051,7 +3119,7 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/PhysicalTeachingController.php",
-    "line": 99,
+    "line": 70,
     "multipart": false
   },
   {

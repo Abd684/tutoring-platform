@@ -2414,6 +2414,67 @@
       }
     },
     {
+      "name": "GET /api/v1/teacher/groups/{group}/join-requests",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/teacher/groups/{{group_id}}/join-requests",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data طلبات المجموعة للأستاذ المالك وstudent.user المختصر؛meta. الافتراضيpending.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/groups/{group}/join-requests/{joinRequest}/{decision}",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/groups/{{group_id}}/join-requests/{{joinRequest_id}}/{{decision_id}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "data:{join_request,membership}. approve ينشئ العضوية تحت قفل السعة؛reject يحتاج review_note. الطلبات pending/approved/rejected.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"review_note\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "POST /api/v1/teacher/units",
       "request": {
         "method": "POST",
@@ -3549,7 +3610,7 @@
             "value": "application/json"
           }
         ],
-        "description": "ملف HLS خاص: playlist أوsegment أوAES key. الرابط موقّع من الباك ويرتبط بالطالب والإصدار؛ Bearer مطلوب لكل طلب. راجع HLS_IMPLEMENTATION_AR.md. Paste a full server-generated playlist/segment/key signed URL into hls_playback_url. Authorization is required.",
+        "description": "ملف HLS خاص: playlist أوsegment أوAES key. الرابط موقّع من الباك ويرتبط بالطالب والإصدار؛ Bearer مطلوب لكل طلب. راجع HLS_IMPLEMENTATION_AR.md.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -4584,9 +4645,13 @@
           {
             "key": "Accept",
             "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
           }
         ],
-        "description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+        "description": "201 data:{join_request,requires_teacher_approval:true,seat_reserved:false,payment_method:cash_to_teacher}. 200 لإعادة الطلب المعلق. المقعد يثبت عند الموافقة، وليس تقديم الطلب.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -4596,6 +4661,15 @@
               "type": "string"
             }
           ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         }
       }
     },
@@ -4608,9 +4682,46 @@
           {
             "key": "Accept",
             "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
           }
         ],
-        "description": "data: {membership: GroupStudent, payment_method: cash_to_teacher, requires_teacher_approval: false}. 201 للانضمام و200 لإعادة الطلب نفسه. 409 GROUP_FULL عند اكتمال السعة.",
+        "description": "201 data:{join_request,requires_teacher_approval:true,seat_reserved:false,payment_method:cash_to_teacher}. 200 لإعادة الطلب المعلق. المقعد يثبت عند الموافقة، وليس تقديم الطلب.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"example\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/student/groups/{group}/join-requests",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/student/groups/{{group_id}}/join-requests",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "data طلبات الطالب نفسه وmeta.",
         "auth": {
           "type": "bearer",
           "bearer": [

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\Group;
+use App\Models\Individual;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -39,9 +41,34 @@ class SessionController extends ApiController
 
         $teacherId = $this->currentTeacherId($request);
 
-        $query = Session::query()
-            ->where('teacher_id', $teacherId)
-            ->orderByDesc('id');
+        $data = $request->validate([
+            'scope' => ['sometimes', 'in:today'], 'date' => ['sometimes', 'date_format:Y-m-d', 'prohibits:scope'],
+            'timezone' => ['sometimes', 'timezone'], 'type' => ['required_with:type_id', 'in:group,individual'],
+            'type_id' => ['sometimes', 'integer', 'min:1'], 'status' => ['sometimes', 'in:scheduled,ongoing,completed,cancelled'],
+        ]);
+        if (isset($data['type_id'])) {
+            $class = $data['type'] === 'group' ? Group::class : Individual::class;
+            $this->authorize('manage', $class::findOrFail($data['type_id']));
+        }
+        $query = Session::where('teacher_id', $teacherId);
+        if (isset($data['type'])) {
+            $query->where('type', $data['type']);
+        }
+        if (isset($data['type_id'])) {
+            $query->where('type_id', $data['type_id']);
+        }
+        if (isset($data['status'])) {
+            $query->where('status', $data['status']);
+        }
+        if (isset($data['scope']) || isset($data['date'])) {
+            $timezone = $data['timezone'] ?? 'Asia/Damascus';
+            $day = isset($data['date']) ? Carbon::createFromFormat('!Y-m-d', $data['date'], $timezone) : Carbon::now($timezone)->startOfDay();
+            $end = $day->copy()->addDay()->setTimezone(config('app.timezone'));
+            $start = $day->copy()->setTimezone(config('app.timezone'));
+            $query->where('starts_at', '<', $end)->where('ends_at', '>', $start)->orderBy('starts_at')->orderBy('id');
+        } else {
+            $query->orderByDesc('id');
+        }
 
         return $this->paginated(
             $query->paginate($this->perPage($request))

@@ -100,21 +100,20 @@
 
 استكشاف الطالب: `GET /student/teachers/{teacher}/physical/groups`، قائمة paginated تتضمن id/name وcontent.type/id/title،members_count،max_members،session_price،currency،starts_at،ends_at،membership_status،members،sessions،payment_method=cash_to_teacher وpayment_required_on_platform=false.
 
-الانضمام: `POST /student/groups/{group}/join` دون body. alias `/join-request` ينفذ الانضمام المباشر نفسه، ولا ينشئ مرحلة موافقة.
+الانضمام حسب قرار 2026-11-01: `POST /student/groups/{group}/join` أوalias `/join-request` ينشئ طلباً بانتظار موافقة الأستاذ. body اختياري: message حتى1000 حرف. student_id/status ممنوعان من العميل.
 
 ```json
-{
-  "status":true,
-  "message":"تم تثبيت مقعدك بالمجموعة.",
-  "data":{
-    "membership":{"id":1,"group_id":3,"student_id":12,"status":"active","joined_at":"...","left_at":null},
-    "payment_method":"cash_to_teacher",
-    "requires_teacher_approval":false
-  }
-}
+{"status":true,"message":"طلب الانضمام بانتظار الأستاذ.","data":{"join_request":{"id":1,"group_id":3,"student_id":12,"status":"pending"},"requires_teacher_approval":true,"seat_reserved":false,"payment_method":"cash_to_teacher"}}
 ```
 
-201 عند الإنشاء،200 عند إعادة الطلب لنفس العضوية الفعالة،409 مع GROUP_FULL عند امتلاء السعة. الباك يسلسل الطلبات بقفل المجموعة والأستاذ؛ لا يقبل أكثر من السعة. الرسالة: «نعتذر، اكتمل العدد المتاح لأن المقعد حُجز لطلب سابق. يمكنك اختيار مجموعة أو موعد آخر.» لا دفع شام كاش ولا Enrollment إلكتروني ينشآن للعضوية.
+201 لإنشاء الطلب و200 لإعادة نفس الطلب المعلق. الطلب لا يحجز مقعداً ولا ينشئ عضوية أوPayment أوEnrollment. تثبيت المقعد عند الموافقة فقط، مع إعادة فحص السعة والتعارض تحت قفل. الطلبات الزائدة عن السعة لا يمكن اعتمادها.
+
+- الطالب: `GET /student/groups/{group}/join-requests` يعرض طلباته وحده.
+- الأستاذ المالك: `GET /teacher/groups/{group}/join-requests?status=pending|approved|rejected|all`، الافتراضيpending.
+- الأستاذ: `POST /teacher/groups/{group}/join-requests/{joinRequest}/approve`؛ review_note اختياري.
+- الرفض: نفس المسار مع `/reject`؛ review_note مطلوب وغير فارغ.
+- القرار يرجع data.join_request وdata.membership. عند القبول تصبح العضويةactive ويصل تنبيه للطالب. الدفع يظل نقداً عند الأستاذ دون انتظار تأكيد دفع المنصة.
+- استكشاف المجموعات يضيف requires_teacher_approval=true وآخرjoin_request للطالب.
 
 الأعضاء للطالب: `GET /student/groups/{group}/members` يعيد data.group_id،members_count وmembers:[{student_id,name}] فقط. للأستاذ المالك `GET /teacher/groups/{group}/students` يعيد عضويات paginated مع بيانات الطالب والاتصال والمدرسة اللازمة للتدريس؛ لا passwords ولا tokens.
 
@@ -294,7 +293,7 @@ reason_code الاختياري exceptional|service_unavailable|teacher_suspended
 
 ## 12. ما أُلغي وما بقي للتاريخ
 
-- لا موافقة أستاذ أو group_join_requests؛ الانضمام مباشر حسب السعة.
+- تحديث 2026-11-01: أُقر انتظار موافقة الأستاذ، وأصبح group_join_requests هو سجل الطلبات؛ استُبدلت قاعدة الانضمام المباشر السابقة.
 - لا دفع جديد للفيزيائي على المنصة. service_type=lesson_booking لم يعد مقبولاً في checkout.
 - `/teachers/{teacher}/paid-slots` يعيد410 PHYSICAL_CASH_ONLY، وإعادة جدولة paid-bookings القديمة تعيد410 LEGACY_BOOKING_REQUIRES_SUPPORT.
 - لم تُحذف جداول paid_bookings أودفعاتها أو ملفاتها. قوائمها القديمة محفوظة للتاريخ والدعم، ولا تستخدمها لحجز فيزيائي جديد.
