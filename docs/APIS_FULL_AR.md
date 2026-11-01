@@ -1,8 +1,10 @@
-# مرجع جميع عمليات API المسجلة — 2026-10-31
+# مرجع جميع عمليات API المسجلة — 2026-11-01
 
-يغطي 171 مساراً مسجلاً و177 عملية HTTP بعد استبعاد HEAD المكرر. المصدر هو RouteCollection الفعلي بعد تطبيق Migrations في ذاكرة مؤقتة.
+يغطي 173 مساراً مسجلاً و179 عملية HTTP بعد استبعاد HEAD المكرر. المصدر هو RouteCollection الفعلي بعد تطبيق Migrations في ذاكرة مؤقتة.
 
 ابدأ بـ FRONTEND_CONTRACT_FINAL_AR.md لتدفقات العمل والأمثلة المعتمدة، ثم استخدم هذا الملف كفهرس كامل لكل المسارات. ملف OpenAPI قابل للاستيراد في أدوات API وملف Postman جاهز للاستيراد مع تعبئة التوكن والمعرّفات والملفات.
+
+تحديث الفيديو: راجع HLS_IMPLEMENTATION_AR.md. الفيديو HLS/AES-128 دون DRM، والمصدر الأصلي غير متاح للطالب.
 
 ## قواعد عامة
 
@@ -594,7 +596,21 @@ Controller: `TeacherAuthController@registerTeacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherAuthController.php:15`.
 
-## 36. `POST /api/v1/teacher/login`
+## 36. `POST /api/v1/teacher/content-assets/{contentAsset}/hls/retry`
+
+Controller: `TeacherContentAssetController@retry`.
+
+الصلاحيات/Middleware: `api, auth:sanctum, role:teacher`.
+
+Path parameters: `contentAsset`.
+
+لا توجد حقول body متحقَّق منها مباشرة في هذه العملية. استخدم Path parameters، وأضف page/per_page للقوائم إن كانت مدعومة. بعض العمليات تفوّض التحقق لخدمة؛ شروط التدفق موضحة بالعقد النهائي.
+
+الاستجابة والسلوك: 202 data: ContentAsset مع video_asset.processing_status=pending. للأستاذ المالك فقط؛409 إن كانت المعالجة قائمة أوالفيديو جاهز.
+
+المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:134`.
+
+## 37. `POST /api/v1/teacher/login`
 
 Controller: `AuthController@login`.
 
@@ -611,7 +627,7 @@ Controller: `AuthController@login`.
 
 المصدر: `app/Http/Controllers/Api/V1/AuthController.php:16`.
 
-## 37. `POST /api/v1/teacher/refresh`
+## 38. `POST /api/v1/teacher/refresh`
 
 Controller: `AuthController@refresh`.
 
@@ -627,7 +643,7 @@ Controller: `AuthController@refresh`.
 
 المصدر: `app/Http/Controllers/Api/V1/AuthController.php:75`.
 
-## 38. `GET /api/v1/teacher/subjects`
+## 39. `GET /api/v1/teacher/subjects`
 
 Controller: `TeacherSubjectManagementController@index`.
 
@@ -639,7 +655,7 @@ Controller: `TeacherSubjectManagementController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php:16`.
 
-## 39. `POST /api/v1/teacher/subjects`
+## 40. `POST /api/v1/teacher/subjects`
 
 Controller: `TeacherSubjectManagementController@store`.
 
@@ -660,7 +676,7 @@ Controller: `TeacherSubjectManagementController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php:26`.
 
-## 40. `GET /api/v1/teacher/subjects/{teacherSubject}`
+## 41. `GET /api/v1/teacher/subjects/{teacherSubject}`
 
 Controller: `TeacherSubjectManagementController@show`.
 
@@ -674,7 +690,7 @@ Path parameters: `teacherSubject`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php:52`.
 
-## 41. `PUT /api/v1/teacher/subjects/{teacherSubject}`
+## 42. `PUT /api/v1/teacher/subjects/{teacherSubject}`
 
 Controller: `TeacherSubjectManagementController@update`.
 
@@ -697,7 +713,7 @@ Path parameters: `teacherSubject`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php:59`.
 
-## 42. `PATCH /api/v1/teacher/subjects/{teacherSubject}`
+## 43. `PATCH /api/v1/teacher/subjects/{teacherSubject}`
 
 Controller: `TeacherSubjectManagementController@update`.
 
@@ -720,7 +736,7 @@ Path parameters: `teacherSubject`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php:59`.
 
-## 43. `DELETE /api/v1/teacher/subjects/{teacherSubject}`
+## 44. `DELETE /api/v1/teacher/subjects/{teacherSubject}`
 
 Controller: `TeacherSubjectManagementController@destroy`.
 
@@ -734,7 +750,7 @@ Path parameters: `teacherSubject`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherSubjectManagementController.php:72`.
 
-## 44. `GET /api/v1/teacher/me`
+## 45. `GET /api/v1/teacher/me`
 
 Controller: `AuthController@me`.
 
@@ -746,7 +762,7 @@ Controller: `AuthController@me`.
 
 المصدر: `app/Http/Controllers/Api/V1/AuthController.php:70`.
 
-## 45. `GET /api/v1/teacher/subject-catalog`
+## 46. `GET /api/v1/teacher/subject-catalog`
 
 Controller: `TeacherCourseController@catalog`.
 
@@ -763,7 +779,7 @@ Controller: `TeacherCourseController@catalog`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherCourseController.php:11`.
 
-## 46. `GET /api/v1/teacher/subscription`
+## 47. `GET /api/v1/teacher/subscription`
 
 Controller: `TeacherDashboardController@current`.
 
@@ -775,7 +791,7 @@ Controller: `TeacherDashboardController@current`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherDashboardController.php:11`.
 
-## 47. `GET /api/v1/teacher/subscriptions`
+## 48. `GET /api/v1/teacher/subscriptions`
 
 Controller: `TeacherDashboardController@history`.
 
@@ -792,7 +808,7 @@ Controller: `TeacherDashboardController@history`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherDashboardController.php:19`.
 
-## 48. `GET /api/v1/teacher/usage`
+## 49. `GET /api/v1/teacher/usage`
 
 Controller: `TeacherDashboardController@usage`.
 
@@ -804,7 +820,7 @@ Controller: `TeacherDashboardController@usage`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherDashboardController.php:29`.
 
-## 49. `POST /api/v1/teacher/logout`
+## 50. `POST /api/v1/teacher/logout`
 
 Controller: `AuthController@logout`.
 
@@ -820,7 +836,7 @@ Controller: `AuthController@logout`.
 
 المصدر: `app/Http/Controllers/Api/V1/AuthController.php:51`.
 
-## 50. `GET /api/v1/teacher/subscription-plans`
+## 51. `GET /api/v1/teacher/subscription-plans`
 
 Controller: `SubscriptionPlanController@available`.
 
@@ -837,7 +853,7 @@ Controller: `SubscriptionPlanController@available`.
 
 المصدر: `app/Http/Controllers/Api/V1/SubscriptionPlanController.php:12`.
 
-## 51. `POST /api/v1/teacher/subscription-plans/{subscriptionPlan}/subscribe`
+## 52. `POST /api/v1/teacher/subscription-plans/{subscriptionPlan}/subscribe`
 
 Controller: `TeacherSubscriptionController@subscribe`.
 
@@ -855,7 +871,7 @@ Path parameters: `subscriptionPlan`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherSubscriptionController.php:15`.
 
-## 52. `GET /api/v1/teacher/content-assets`
+## 53. `GET /api/v1/teacher/content-assets`
 
 Controller: `TeacherContentAssetController@index`.
 
@@ -865,9 +881,9 @@ Controller: `TeacherContentAssetController@index`.
 
 الاستجابة والسلوك: status=true وdata قائمة بالعناصر التي يختارها Controller وmeta(current_page,per_page,total,last_page). العلاقات اختيارية؛ راجع موديل المورد في DATABASE_REFERENCE_AR.md.
 
-المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:18`.
+المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:20`.
 
-## 53. `POST /api/v1/teacher/contents`
+## 54. `POST /api/v1/teacher/contents`
 
 Controller: `TeacherContentController@store`.
 
@@ -892,7 +908,7 @@ Controller: `TeacherContentController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherContentController.php:13`.
 
-## 54. `POST /api/v1/teacher/contents/{content}/asset`
+## 55. `POST /api/v1/teacher/contents/{content}/asset`
 
 Controller: `TeacherContentAssetController@store`.
 
@@ -916,9 +932,9 @@ Path parameters: `content`.
 
 الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:34`.
+المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:36`.
 
-## 55. `GET /api/v1/teacher/content-assets/{contentAsset}`
+## 56. `GET /api/v1/teacher/content-assets/{contentAsset}`
 
 Controller: `TeacherContentAssetController@show`.
 
@@ -930,9 +946,9 @@ Path parameters: `contentAsset`.
 
 الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:115`.
+المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:117`.
 
-## 56. `DELETE /api/v1/teacher/content-assets/{contentAsset}`
+## 57. `DELETE /api/v1/teacher/content-assets/{contentAsset}`
 
 Controller: `TeacherContentAssetController@destroy`.
 
@@ -944,9 +960,9 @@ Path parameters: `contentAsset`.
 
 الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:122`.
+المصدر: `app/Http/Controllers/Api/V1/TeacherContentAssetController.php:124`.
 
-## 57. `GET /api/v1/teacher/availability`
+## 58. `GET /api/v1/teacher/availability`
 
 Controller: `TeacherAvailabilityController@index`.
 
@@ -958,7 +974,7 @@ Controller: `TeacherAvailabilityController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherAvailabilityController.php:26`.
 
-## 58. `POST /api/v1/teacher/availability`
+## 59. `POST /api/v1/teacher/availability`
 
 Controller: `TeacherAvailabilityController@store`.
 
@@ -981,7 +997,7 @@ Controller: `TeacherAvailabilityController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherAvailabilityController.php:46`.
 
-## 59. `PUT /api/v1/teacher/availability/{teacherAvailability}`
+## 60. `PUT /api/v1/teacher/availability/{teacherAvailability}`
 
 Controller: `TeacherAvailabilityController@update`.
 
@@ -1006,7 +1022,7 @@ Path parameters: `teacherAvailability`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherAvailabilityController.php:120`.
 
-## 60. `DELETE /api/v1/teacher/availability/{teacherAvailability}`
+## 61. `DELETE /api/v1/teacher/availability/{teacherAvailability}`
 
 Controller: `TeacherAvailabilityController@destroy`.
 
@@ -1020,7 +1036,7 @@ Path parameters: `teacherAvailability`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherAvailabilityController.php:203`.
 
-## 61. `GET /api/v1/teacher/sessions`
+## 62. `GET /api/v1/teacher/sessions`
 
 Controller: `SessionController@index`.
 
@@ -1032,7 +1048,7 @@ Controller: `SessionController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:36`.
 
-## 62. `POST /api/v1/teacher/sessions`
+## 63. `POST /api/v1/teacher/sessions`
 
 Controller: `SessionController@store`.
 
@@ -1059,7 +1075,7 @@ Controller: `SessionController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:54`.
 
-## 63. `PATCH /api/v1/teacher/sessions/{session}`
+## 64. `PATCH /api/v1/teacher/sessions/{session}`
 
 Controller: `SessionController@update`.
 
@@ -1088,7 +1104,7 @@ Path parameters: `session`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:203`.
 
-## 64. `POST /api/v1/teacher/v1/sessions/{session}/cancel`
+## 65. `POST /api/v1/teacher/v1/sessions/{session}/cancel`
 
 Controller: `SessionController@cancel`.
 
@@ -1102,7 +1118,7 @@ Path parameters: `session`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:120`.
 
-## 65. `POST /api/v1/teacher/sessions/{id}/attendance`
+## 66. `POST /api/v1/teacher/sessions/{id}/attendance`
 
 Controller: `AttendanceController@recordForSession`.
 
@@ -1126,7 +1142,7 @@ Path parameters: `id`.
 
 المصدر: `app/Http/Controllers/Api/V1/AttendanceController.php:41`.
 
-## 66. `PATCH /api/v1/teacher/{teacher}/activate`
+## 67. `PATCH /api/v1/teacher/{teacher}/activate`
 
 Controller: `TeacherAuthController@activateTeacher`.
 
@@ -1140,7 +1156,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherAuthController.php:64`.
 
-## 67. `GET /api/v1/teacher/groups`
+## 68. `GET /api/v1/teacher/groups`
 
 Controller: `GroupController@indexForTeacher`.
 
@@ -1152,7 +1168,7 @@ Controller: `GroupController@indexForTeacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/GroupController.php:14`.
 
-## 68. `POST /api/v1/teacher/groups`
+## 69. `POST /api/v1/teacher/groups`
 
 Controller: `GroupController@storeForTeacher`.
 
@@ -1176,7 +1192,7 @@ Controller: `GroupController@storeForTeacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/GroupController.php:69`.
 
-## 69. `POST /api/v1/teacher/groups/{id}/students`
+## 70. `POST /api/v1/teacher/groups/{id}/students`
 
 Controller: `GroupStudentController@addToTeacherGroup`.
 
@@ -1195,7 +1211,7 @@ Path parameters: `id`.
 
 المصدر: `app/Http/Controllers/Api/V1/GroupStudentController.php:15`.
 
-## 70. `DELETE /api/v1/teacher/groups/{id}/students/{student}`
+## 71. `DELETE /api/v1/teacher/groups/{id}/students/{student}`
 
 Controller: `GroupStudentController@removeFromTeacherGroup`.
 
@@ -1209,7 +1225,7 @@ Path parameters: `id`, `student`.
 
 المصدر: `app/Http/Controllers/Api/V1/GroupStudentController.php:35`.
 
-## 71. `PATCH /api/v1/teacher/profile`
+## 72. `PATCH /api/v1/teacher/profile`
 
 Controller: `StudentLearningController@updateTeacher`.
 
@@ -1231,7 +1247,7 @@ Controller: `StudentLearningController@updateTeacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentLearningController.php:111`.
 
-## 72. `PATCH /api/v1/teacher/contents/{content}`
+## 73. `PATCH /api/v1/teacher/contents/{content}`
 
 Controller: `TeacherContentController@update`.
 
@@ -1255,7 +1271,7 @@ Path parameters: `content`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherContentController.php:48`.
 
-## 73. `POST /api/v1/teacher/sessions/{session}/complete`
+## 74. `POST /api/v1/teacher/sessions/{session}/complete`
 
 Controller: `SessionController@complete`.
 
@@ -1269,7 +1285,7 @@ Path parameters: `session`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:251`.
 
-## 74. `POST /api/v1/teacher/sessions/{session}/cancel`
+## 75. `POST /api/v1/teacher/sessions/{session}/cancel`
 
 Controller: `SessionController@cancel`.
 
@@ -1283,7 +1299,7 @@ Path parameters: `session`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:120`.
 
-## 75. `PATCH /api/v1/teacher/sessions/{session}/progress`
+## 76. `PATCH /api/v1/teacher/sessions/{session}/progress`
 
 Controller: `SessionController@progress`.
 
@@ -1301,7 +1317,7 @@ Path parameters: `session`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:236`.
 
-## 76. `GET /api/v1/teacher/individuals`
+## 77. `GET /api/v1/teacher/individuals`
 
 Controller: `IndividualController@index`.
 
@@ -1313,7 +1329,7 @@ Controller: `IndividualController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualController.php:15`.
 
-## 77. `POST /api/v1/teacher/individuals`
+## 78. `POST /api/v1/teacher/individuals`
 
 Controller: `IndividualController@store`.
 
@@ -1336,7 +1352,7 @@ Controller: `IndividualController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualController.php:23`.
 
-## 78. `GET /api/v1/teacher/individuals/{individual}`
+## 79. `GET /api/v1/teacher/individuals/{individual}`
 
 Controller: `IndividualController@show`.
 
@@ -1350,7 +1366,7 @@ Path parameters: `individual`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualController.php:42`.
 
-## 79. `PUT /api/v1/teacher/individuals/{individual}`
+## 80. `PUT /api/v1/teacher/individuals/{individual}`
 
 Controller: `IndividualController@update`.
 
@@ -1373,7 +1389,7 @@ Path parameters: `individual`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualController.php:49`.
 
-## 80. `PATCH /api/v1/teacher/individuals/{individual}`
+## 81. `PATCH /api/v1/teacher/individuals/{individual}`
 
 Controller: `IndividualController@update`.
 
@@ -1396,7 +1412,7 @@ Path parameters: `individual`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualController.php:49`.
 
-## 81. `GET /api/v1/teacher/individual-offers`
+## 82. `GET /api/v1/teacher/individual-offers`
 
 Controller: `IndividualOfferController@index`.
 
@@ -1408,7 +1424,7 @@ Controller: `IndividualOfferController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualOfferController.php:15`.
 
-## 82. `POST /api/v1/teacher/individual-offers`
+## 83. `POST /api/v1/teacher/individual-offers`
 
 Controller: `IndividualOfferController@store`.
 
@@ -1428,7 +1444,7 @@ Controller: `IndividualOfferController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualOfferController.php:20`.
 
-## 83. `PATCH /api/v1/teacher/individual-offers/{individualOffer}`
+## 84. `PATCH /api/v1/teacher/individual-offers/{individualOffer}`
 
 Controller: `IndividualOfferController@update`.
 
@@ -1451,7 +1467,7 @@ Path parameters: `individualOffer`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualOfferController.php:30`.
 
-## 84. `GET /api/v1/teacher/groups/{group}/students`
+## 85. `GET /api/v1/teacher/groups/{group}/students`
 
 Controller: `TeacherGroupMembersController@index`.
 
@@ -1465,7 +1481,7 @@ Path parameters: `group`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherGroupMembersController.php:10`.
 
-## 85. `POST /api/v1/teacher/units`
+## 86. `POST /api/v1/teacher/units`
 
 Controller: `TeachingContentController@storeUnit`.
 
@@ -1481,11 +1497,11 @@ Controller: `TeachingContentController@storeUnit`.
 | `order_no` | `['sometimes', 'integer', 'min:0']` |
 | `status` | `['sometimes', 'in:draft,published,archived']` |
 
-الاستجابة والسلوك: مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.
+الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:15`.
+المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:17`.
 
-## 86. `PATCH /api/v1/teacher/units/{unit}`
+## 87. `PATCH /api/v1/teacher/units/{unit}`
 
 Controller: `TeachingContentController@updateUnit`.
 
@@ -1503,11 +1519,11 @@ Path parameters: `unit`.
 | `status` | `['sometimes', 'in:draft,published,archived']` |
 | `teacher_subject_id` | `['prohibited']` |
 
-الاستجابة والسلوك: مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.
+الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:23`.
+المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:25`.
 
-## 87. `POST /api/v1/teacher/lessons`
+## 88. `POST /api/v1/teacher/lessons`
 
 Controller: `TeachingContentController@storeLesson`.
 
@@ -1523,11 +1539,11 @@ Controller: `TeachingContentController@storeLesson`.
 | `order_no` | `['sometimes', 'integer', 'min:0']` |
 | `status` | `['sometimes', 'in:draft,published,archived']` |
 
-الاستجابة والسلوك: مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.
+الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:32`.
+المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:34`.
 
-## 88. `PATCH /api/v1/teacher/lessons/{lesson}`
+## 89. `PATCH /api/v1/teacher/lessons/{lesson}`
 
 Controller: `TeachingContentController@updateLesson`.
 
@@ -1545,11 +1561,11 @@ Path parameters: `lesson`.
 | `status` | `['sometimes', 'in:draft,published,archived']` |
 | `unit_id` | `['prohibited']` |
 
-الاستجابة والسلوك: مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.
+الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:40`.
+المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:42`.
 
-## 89. `PUT /api/v1/teacher/contents/{content}/quiz`
+## 90. `PUT /api/v1/teacher/contents/{content}/quiz`
 
 Controller: `TeachingContentController@quiz`.
 
@@ -1576,9 +1592,9 @@ Path parameters: `content`.
 
 الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:49`.
+المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:51`.
 
-## 90. `GET /api/v1/teacher/notifications`
+## 91. `GET /api/v1/teacher/notifications`
 
 Controller: `StudentNotificationController@index`.
 
@@ -1590,7 +1606,7 @@ Controller: `StudentNotificationController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentNotificationController.php:10`.
 
-## 91. `POST /api/v1/teacher/notifications/{notification}/read`
+## 92. `POST /api/v1/teacher/notifications/{notification}/read`
 
 Controller: `StudentNotificationController@read`.
 
@@ -1604,7 +1620,7 @@ Path parameters: `notification`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentNotificationController.php:18`.
 
-## 92. `POST /api/v1/teacher/answers/{answer}/grade`
+## 93. `POST /api/v1/teacher/answers/{answer}/grade`
 
 Controller: `TeachingContentController@grade`.
 
@@ -1620,9 +1636,9 @@ Path parameters: `answer`.
 
 الاستجابة والسلوك: data:{answer,attempt}. يراجع المدرّس صاحب الاختبار فقط، والعلامة لا تتجاوز points للسؤال؛ يُعاد حساب نتيجة المحاولة.
 
-المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:74`.
+المصدر: `app/Http/Controllers/Api/V1/TeachingContentController.php:76`.
 
-## 93. `POST /api/v1/auth/register`
+## 94. `POST /api/v1/auth/register`
 
 Controller: `StudentAuthController@register`.
 
@@ -1646,7 +1662,7 @@ Controller: `StudentAuthController@register`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:31`.
 
-## 94. `POST /api/v1/auth/login`
+## 95. `POST /api/v1/auth/login`
 
 Controller: `StudentAuthController@studentLogin`.
 
@@ -1665,7 +1681,7 @@ Controller: `StudentAuthController@studentLogin`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:78`.
 
-## 95. `POST /api/v1/auth/refresh`
+## 96. `POST /api/v1/auth/refresh`
 
 Controller: `StudentAuthController@studentRefresh`.
 
@@ -1682,7 +1698,7 @@ Controller: `StudentAuthController@studentRefresh`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:181`.
 
-## 96. `POST /api/v1/auth/device/transfer`
+## 97. `POST /api/v1/auth/device/transfer`
 
 Controller: `StudentAuthController@studentDeviceTransfer`.
 
@@ -1701,7 +1717,7 @@ Controller: `StudentAuthController@studentDeviceTransfer`.
 
 المصدر: `app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php:17`.
 
-## 97. `POST /api/v1/auth/logout`
+## 98. `POST /api/v1/auth/logout`
 
 Controller: `StudentAuthController@studentLogout`.
 
@@ -1713,7 +1729,7 @@ Controller: `StudentAuthController@studentLogout`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:123`.
 
-## 98. `GET /api/v1/me`
+## 99. `GET /api/v1/me`
 
 Controller: `StudentAuthController@studentMe`.
 
@@ -1725,7 +1741,7 @@ Controller: `StudentAuthController@studentMe`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:350`.
 
-## 99. `POST /api/v1/teachers/{teacher}/bookings`
+## 100. `POST /api/v1/teachers/{teacher}/bookings`
 
 Controller: `IndividualBookingController@store`.
 
@@ -1747,7 +1763,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/IndividualBookingController.php:12`.
 
-## 100. `GET /api/v1/teachers/{teacher}/available-sessions`
+## 101. `GET /api/v1/teachers/{teacher}/available-sessions`
 
 Controller: `AvailableSessionController@index`.
 
@@ -1766,7 +1782,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/AvailableSessionController.php:17`.
 
-## 101. `GET /api/v1/student/bookings`
+## 102. `GET /api/v1/student/bookings`
 
 Controller: `StudentBookingController@index`.
 
@@ -1782,7 +1798,7 @@ Controller: `StudentBookingController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentBookingController.php:10`.
 
-## 102. `POST /api/v1/student/enrollments/{enrollment}/payments`
+## 103. `POST /api/v1/student/enrollments/{enrollment}/payments`
 
 Controller: `EnrollmentPaymentController@store`.
 
@@ -1796,7 +1812,7 @@ Path parameters: `enrollment`.
 
 المصدر: `app/Http/Controllers/Api/V1/EnrollmentPaymentController.php:16`.
 
-## 103. `POST /api/v1/payments/checkout`
+## 104. `POST /api/v1/payments/checkout`
 
 Controller: `ShamCashPaymentController@checkout`.
 
@@ -1813,7 +1829,7 @@ Controller: `ShamCashPaymentController@checkout`.
 
 المصدر: `app/Http/Controllers/Api/V1/ShamCashPaymentController.php:21`.
 
-## 104. `GET /api/v1/teachers/{teacher}/paid-slots`
+## 105. `GET /api/v1/teachers/{teacher}/paid-slots`
 
 Controller: `Closure`.
 
@@ -1825,7 +1841,7 @@ Path parameters: `teacher`.
 
 الاستجابة والسلوك: 410 PHYSICAL_CASH_ONLY؛ استخدم الحجز الفيزيائي النقدي.
 
-## 105. `GET /api/v1/student/paid-bookings`
+## 106. `GET /api/v1/student/paid-bookings`
 
 Controller: `PaidLessonController@index`.
 
@@ -1837,7 +1853,7 @@ Controller: `PaidLessonController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/PaidLessonController.php:184`.
 
-## 106. `GET /api/v1/student/paid-bookings/{booking}`
+## 107. `GET /api/v1/student/paid-bookings/{booking}`
 
 Controller: `PaidLessonController@show`.
 
@@ -1851,7 +1867,7 @@ Path parameters: `booking`.
 
 المصدر: `app/Http/Controllers/Api/V1/PaidLessonController.php:192`.
 
-## 107. `POST /api/v1/student/paid-bookings/{booking}/reschedule`
+## 108. `POST /api/v1/student/paid-bookings/{booking}/reschedule`
 
 Controller: `Closure`.
 
@@ -1863,7 +1879,7 @@ Path parameters: `booking`.
 
 الاستجابة والسلوك: 410 LEGACY_BOOKING_REQUIRES_SUPPORT؛ استخدم الحجز الفيزيائي النقدي.
 
-## 108. `POST /api/v1/refunds`
+## 109. `POST /api/v1/refunds`
 
 Controller: `RefundController@store`.
 
@@ -1885,7 +1901,7 @@ Controller: `RefundController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/RefundController.php:36`.
 
-## 109. `GET /api/v1/refunds/my`
+## 110. `GET /api/v1/refunds/my`
 
 Controller: `RefundController@index`.
 
@@ -1901,7 +1917,7 @@ Controller: `RefundController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/RefundController.php:65`.
 
-## 110. `GET /api/v1/payments/checkout/{checkout}/qr`
+## 111. `GET /api/v1/payments/checkout/{checkout}/qr`
 
 Controller: `ShamCashPaymentController@checkoutQr`.
 
@@ -1915,7 +1931,7 @@ Path parameters: `checkout`.
 
 المصدر: `app/Http/Controllers/Api/V1/ShamCashPaymentController.php:123`.
 
-## 111. `POST /api/v1/student/payments`
+## 112. `POST /api/v1/student/payments`
 
 Controller: `ShamCashPaymentController@store`.
 
@@ -1933,7 +1949,7 @@ Controller: `ShamCashPaymentController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/ShamCashPaymentController.php:44`.
 
-## 112. `GET /api/v1/student/payments`
+## 113. `GET /api/v1/student/payments`
 
 Controller: `ShamCashPaymentController@index`.
 
@@ -1949,7 +1965,7 @@ Controller: `ShamCashPaymentController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/ShamCashPaymentController.php:132`.
 
-## 113. `GET /api/v1/student/payments/{payment}`
+## 114. `GET /api/v1/student/payments/{payment}`
 
 Controller: `EnrollmentPaymentController@show`.
 
@@ -1963,7 +1979,7 @@ Path parameters: `payment`.
 
 المصدر: `app/Http/Controllers/Api/V1/EnrollmentPaymentController.php:27`.
 
-## 114. `GET /api/v1/student/enrollments`
+## 115. `GET /api/v1/student/enrollments`
 
 Controller: `StudentEnrollmentController@index`.
 
@@ -1975,7 +1991,7 @@ Controller: `StudentEnrollmentController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentEnrollmentController.php:20`.
 
-## 115. `GET /api/v1/student/booking`
+## 116. `GET /api/v1/student/booking`
 
 Controller: `StudentEnrollmentController@current`.
 
@@ -1987,7 +2003,7 @@ Controller: `StudentEnrollmentController@current`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentEnrollmentController.php:27`.
 
-## 116. `POST /api/v1/teacher-subjects/{id}/enroll`
+## 117. `POST /api/v1/teacher-subjects/{id}/enroll`
 
 Controller: `StudentEnrollmentController@enrollTeacherSubject`.
 
@@ -2001,7 +2017,7 @@ Path parameters: `id`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentEnrollmentController.php:83`.
 
-## 117. `POST /api/v1/units/{id}/enroll`
+## 118. `POST /api/v1/units/{id}/enroll`
 
 Controller: `StudentEnrollmentController@enrollUnit`.
 
@@ -2015,7 +2031,7 @@ Path parameters: `id`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentEnrollmentController.php:127`.
 
-## 118. `POST /api/v1/contents/{id}/enroll`
+## 119. `POST /api/v1/contents/{id}/enroll`
 
 Controller: `StudentEnrollmentController@enrollContent`.
 
@@ -2029,7 +2045,7 @@ Path parameters: `id`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentEnrollmentController.php:185`.
 
-## 119. `GET /api/v1/student/attendance/percentage`
+## 120. `GET /api/v1/student/attendance/percentage`
 
 Controller: `AttendanceController@percentage`.
 
@@ -2041,7 +2057,7 @@ Controller: `AttendanceController@percentage`.
 
 المصدر: `app/Http/Controllers/Api/V1/AttendanceController.php:105`.
 
-## 120. `GET /api/v1/quizzes/{quiz}/data`
+## 121. `GET /api/v1/quizzes/{quiz}/data`
 
 Controller: `QuizController@studentData`.
 
@@ -2055,7 +2071,7 @@ Path parameters: `quiz`.
 
 المصدر: `app/Http/Controllers/Api/V1/QuizController.php:43`.
 
-## 121. `POST /api/v1/quizzes/{quiz}/attempts`
+## 122. `POST /api/v1/quizzes/{quiz}/attempts`
 
 Controller: `QuizAttemptController@start`.
 
@@ -2069,7 +2085,7 @@ Path parameters: `quiz`.
 
 المصدر: `app/Http/Controllers/Api/V1/QuizAttemptController.php:47`.
 
-## 122. `POST /api/v1/quiz-attempts/{quizAttempt}/answers`
+## 123. `POST /api/v1/quiz-attempts/{quizAttempt}/answers`
 
 Controller: `AnswerController@submitForAttempt`.
 
@@ -2088,7 +2104,7 @@ Path parameters: `quizAttempt`.
 
 المصدر: `app/Http/Controllers/Api/V1/AnswerController.php:46`.
 
-## 123. `POST /api/v1/contents/{id}/playback-token`
+## 124. `POST /api/v1/contents/{id}/playback-token`
 
 Controller: `StudentContentAssetController@playbackToken`.
 
@@ -2098,11 +2114,25 @@ Path parameters: `id`.
 
 لا توجد حقول body متحقَّق منها مباشرة في هذه العملية. استخدم Path parameters، وأضف page/per_page للقوائم إن كانت مدعومة. بعض العمليات تفوّض التحقق لخدمة؛ شروط التدفق موضحة بالعقد النهائي.
 
-الاستجابة والسلوك: مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.
+الاستجابة والسلوك: 200 data: HLS playback_url/expires_at/format/drm=false/encryption=aes-128/renditions للفيديو، أوالرابط الخاص السابق للـPDF.409 VIDEO_PROCESSING/VIDEO_PROCESSING_FAILED دونرابط الأصل.
 
-المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:19`.
+المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:20`.
 
-## 124. `GET /api/v1/content-assets/{contentAsset}/play`
+## 125. `GET /api/v1/content-assets/{contentAsset}/hls/{file}`
+
+Controller: `HlsPlaybackController@file`.
+
+الصلاحيات/Middleware: `api, auth:sanctum, role:student, student.device, signed`.
+
+Path parameters: `contentAsset`, `file`.
+
+لا توجد حقول body متحقَّق منها مباشرة في هذه العملية. استخدم Path parameters، وأضف page/per_page للقوائم إن كانت مدعومة. بعض العمليات تفوّض التحقق لخدمة؛ شروط التدفق موضحة بالعقد النهائي.
+
+الاستجابة والسلوك: ملف HLS خاص: playlist أوsegment أوAES key. الرابط موقّع من الباك ويرتبط بالطالب والإصدار؛ Bearer مطلوب لكل طلب. راجع HLS_IMPLEMENTATION_AR.md.
+
+المصدر: `app/Http/Controllers/Api/V1/HlsPlaybackController.php:14`.
+
+## 126. `GET /api/v1/content-assets/{contentAsset}/play`
 
 Controller: `StudentContentAssetController@play`.
 
@@ -2112,11 +2142,11 @@ Path parameters: `contentAsset`.
 
 لا توجد حقول body متحقَّق منها مباشرة في هذه العملية. استخدم Path parameters، وأضف page/per_page للقوائم إن كانت مدعومة. بعض العمليات تفوّض التحقق لخدمة؛ شروط التدفق موضحة بالعقد النهائي.
 
-الاستجابة والسلوك: مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.
+الاستجابة والسلوك: ملف PDF خاص. طلب فيديو أصلي هنا يُرفض404 حتى لوكان الرابط قديماً صحيح التوقيع.
 
-المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:79`.
+المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:84`.
 
-## 125. `POST /api/v1/sessions/{id}/book`
+## 127. `POST /api/v1/sessions/{id}/book`
 
 Controller: `SessionController@book`.
 
@@ -2130,7 +2160,7 @@ Path parameters: `id`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:82`.
 
-## 126. `DELETE /api/v1/sessions/{id}/booking`
+## 128. `DELETE /api/v1/sessions/{id}/booking`
 
 Controller: `SessionController@cancelBooking`.
 
@@ -2144,7 +2174,7 @@ Path parameters: `id`.
 
 المصدر: `app/Http/Controllers/Api/V1/SessionController.php:93`.
 
-## 127. `GET /api/v1/auth/device/transfer-requests/{transfer}`
+## 129. `GET /api/v1/auth/device/transfer-requests/{transfer}`
 
 Controller: `StudentAuthController@transferStatus`.
 
@@ -2158,7 +2188,7 @@ Path parameters: `transfer`.
 
 المصدر: `app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php:49`.
 
-## 128. `POST /api/v1/auth/device/transfer-requests`
+## 130. `POST /api/v1/auth/device/transfer-requests`
 
 Controller: `StudentAuthController@studentDeviceTransfer`.
 
@@ -2177,7 +2207,7 @@ Controller: `StudentAuthController@studentDeviceTransfer`.
 
 المصدر: `app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php:17`.
 
-## 129. `POST /api/v1/auth/device/transfer-requests/{transfer}/claim`
+## 131. `POST /api/v1/auth/device/transfer-requests/{transfer}/claim`
 
 Controller: `StudentAuthController@claimTransfer`.
 
@@ -2191,7 +2221,7 @@ Path parameters: `transfer`.
 
 المصدر: `app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php:63`.
 
-## 130. `GET /api/v1/teachers/{teacher}`
+## 132. `GET /api/v1/teachers/{teacher}`
 
 Controller: `StudentLearningController@teacher`.
 
@@ -2205,7 +2235,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentLearningController.php:89`.
 
-## 131. `PUT /api/v1/profile`
+## 133. `PUT /api/v1/profile`
 
 Controller: `StudentProfileController@update`.
 
@@ -2228,7 +2258,7 @@ Controller: `StudentProfileController@update`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentProfileController.php:11`.
 
-## 132. `PATCH /api/v1/profile`
+## 134. `PATCH /api/v1/profile`
 
 Controller: `StudentProfileController@update`.
 
@@ -2251,7 +2281,7 @@ Controller: `StudentProfileController@update`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentProfileController.php:11`.
 
-## 133. `GET /api/v1/contents/{content}/assets`
+## 135. `GET /api/v1/contents/{content}/assets`
 
 Controller: `StudentContentAssetController@assets`.
 
@@ -2263,9 +2293,9 @@ Path parameters: `content`.
 
 الاستجابة والسلوك: غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.
 
-المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:40`.
+المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:41`.
 
-## 134. `POST /api/v1/content-assets/{contentAsset}/access-token`
+## 136. `POST /api/v1/content-assets/{contentAsset}/access-token`
 
 Controller: `StudentContentAssetController@accessToken`.
 
@@ -2275,11 +2305,11 @@ Path parameters: `contentAsset`.
 
 لا توجد حقول body متحقَّق منها مباشرة في هذه العملية. استخدم Path parameters، وأضف page/per_page للقوائم إن كانت مدعومة. بعض العمليات تفوّض التحقق لخدمة؛ شروط التدفق موضحة بالعقد النهائي.
 
-الاستجابة والسلوك: مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.
+الاستجابة والسلوك: نفس عقد HLS للفيديو وPDF السابق. راجع HLS_IMPLEMENTATION_AR.md؛Bearer يلزم كل قوائم HLS والمقاطع والمفاتيح.
 
-المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:52`.
+المصدر: `app/Http/Controllers/Api/V1/StudentContentAssetController.php:54`.
 
-## 135. `POST /api/v1/student/contents/{content}/complete`
+## 137. `POST /api/v1/student/contents/{content}/complete`
 
 Controller: `StudentLearningController@complete`.
 
@@ -2293,7 +2323,7 @@ Path parameters: `content`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentLearningController.php:20`.
 
-## 136. `GET /api/v1/student/teacher-subjects/{teacherSubject}/progress`
+## 138. `GET /api/v1/student/teacher-subjects/{teacherSubject}/progress`
 
 Controller: `StudentLearningController@progress`.
 
@@ -2307,7 +2337,7 @@ Path parameters: `teacherSubject`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentLearningController.php:40`.
 
-## 137. `GET /api/v1/student/teacher-subjects/{teacherSubject}`
+## 139. `GET /api/v1/student/teacher-subjects/{teacherSubject}`
 
 Controller: `StudentLearningController@course`.
 
@@ -2321,7 +2351,7 @@ Path parameters: `teacherSubject`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentLearningController.php:64`.
 
-## 138. `GET /api/v1/student/sessions/{session}`
+## 140. `GET /api/v1/student/sessions/{session}`
 
 Controller: `StudentBookingController@show`.
 
@@ -2335,7 +2365,7 @@ Path parameters: `session`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentBookingController.php:23`.
 
-## 139. `GET /api/v1/student/device-transfer-requests`
+## 141. `GET /api/v1/student/device-transfer-requests`
 
 Controller: `StudentAuthController@pendingTransfers`.
 
@@ -2347,7 +2377,7 @@ Controller: `StudentAuthController@pendingTransfers`.
 
 المصدر: `app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php:88`.
 
-## 140. `POST /api/v1/student/device-transfer-requests/{transfer}/{decision}`
+## 142. `POST /api/v1/student/device-transfer-requests/{transfer}/{decision}`
 
 Controller: `StudentAuthController@decideTransfer`.
 
@@ -2361,7 +2391,7 @@ Path parameters: `transfer`, `decision`.
 
 المصدر: `app/Http/Controllers/Api/V1/Concerns/HandlesDeviceTransfers.php:97`.
 
-## 141. `GET /api/v1/student/notifications`
+## 143. `GET /api/v1/student/notifications`
 
 Controller: `StudentNotificationController@index`.
 
@@ -2373,7 +2403,7 @@ Controller: `StudentNotificationController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentNotificationController.php:10`.
 
-## 142. `POST /api/v1/student/notifications/{notification}/read`
+## 144. `POST /api/v1/student/notifications/{notification}/read`
 
 Controller: `StudentNotificationController@read`.
 
@@ -2387,7 +2417,7 @@ Path parameters: `notification`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentNotificationController.php:18`.
 
-## 143. `GET /api/v1/teachers/{teacher}/available-slots`
+## 145. `GET /api/v1/teachers/{teacher}/available-slots`
 
 Controller: `AvailabilityBookingController@index`.
 
@@ -2406,7 +2436,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/AvailabilityBookingController.php:14`.
 
-## 144. `POST /api/v1/teacher-availabilities/{availability}/book`
+## 146. `POST /api/v1/teacher-availabilities/{availability}/book`
 
 Controller: `AvailabilityBookingController@store`.
 
@@ -2427,7 +2457,7 @@ Path parameters: `availability`.
 
 المصدر: `app/Http/Controllers/Api/V1/AvailabilityBookingController.php:26`.
 
-## 145. `POST /api/v1/quiz-attempts/{quizAttempt}/submit`
+## 147. `POST /api/v1/quiz-attempts/{quizAttempt}/submit`
 
 Controller: `QuizAttemptController@submit`.
 
@@ -2441,7 +2471,7 @@ Path parameters: `quizAttempt`.
 
 المصدر: `app/Http/Controllers/Api/V1/QuizAttemptController.php:113`.
 
-## 146. `GET /api/v1/contents/{content}`
+## 148. `GET /api/v1/contents/{content}`
 
 Controller: `CurriculumBrowseController@show`.
 
@@ -2455,7 +2485,7 @@ Path parameters: `content`.
 
 المصدر: `app/Http/Controllers/Api/V1/CurriculumBrowseController.php:37`.
 
-## 147. `GET /api/v1/teachers/{teacher}/calendar`
+## 149. `GET /api/v1/teachers/{teacher}/calendar`
 
 Controller: `TeacherCalendarController@index`.
 
@@ -2477,7 +2507,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherCalendarController.php:15`.
 
-## 148. `GET /api/v1/student/my-quizzes`
+## 150. `GET /api/v1/student/my-quizzes`
 
 Controller: `StudentQuizReadController@index`.
 
@@ -2496,7 +2526,7 @@ Controller: `StudentQuizReadController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentQuizReadController.php:28`.
 
-## 149. `GET /api/v1/student/my-quizzes/{quiz}/attempts`
+## 151. `GET /api/v1/student/my-quizzes/{quiz}/attempts`
 
 Controller: `StudentQuizReadController@attempts`.
 
@@ -2515,7 +2545,7 @@ Path parameters: `quiz`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentQuizReadController.php:92`.
 
-## 150. `GET /api/v1/student/groups`
+## 152. `GET /api/v1/student/groups`
 
 Controller: `StudentGroupReadController@index`.
 
@@ -2533,7 +2563,7 @@ Controller: `StudentGroupReadController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentGroupReadController.php:12`.
 
-## 151. `GET /api/v1/student/groups/{group}/members`
+## 153. `GET /api/v1/student/groups/{group}/members`
 
 Controller: `StudentGroupReadController@members`.
 
@@ -2547,7 +2577,7 @@ Path parameters: `group`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentGroupReadController.php:59`.
 
-## 152. `GET /api/v1/contents/{content}/quizzes`
+## 154. `GET /api/v1/contents/{content}/quizzes`
 
 Controller: `CurriculumBrowseController@quizzes`.
 
@@ -2561,7 +2591,7 @@ Path parameters: `content`.
 
 المصدر: `app/Http/Controllers/Api/V1/CurriculumBrowseController.php:44`.
 
-## 153. `POST /api/v1/profile/avatar`
+## 155. `POST /api/v1/profile/avatar`
 
 Controller: `ProfileAvatarController@store`.
 
@@ -2577,7 +2607,7 @@ Controller: `ProfileAvatarController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/ProfileAvatarController.php:15`.
 
-## 154. `DELETE /api/v1/profile/avatar`
+## 156. `DELETE /api/v1/profile/avatar`
 
 Controller: `ProfileAvatarController@destroy`.
 
@@ -2589,7 +2619,7 @@ Controller: `ProfileAvatarController@destroy`.
 
 المصدر: `app/Http/Controllers/Api/V1/ProfileAvatarController.php:43`.
 
-## 155. `POST /api/v1/student/register`
+## 157. `POST /api/v1/student/register`
 
 Controller: `StudentAuthController@register`.
 
@@ -2613,7 +2643,7 @@ Controller: `StudentAuthController@register`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:31`.
 
-## 156. `POST /api/v1/student/login`
+## 158. `POST /api/v1/student/login`
 
 Controller: `StudentAuthController@studentLogin`.
 
@@ -2632,7 +2662,7 @@ Controller: `StudentAuthController@studentLogin`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:78`.
 
-## 157. `GET /api/v1/student/profile`
+## 159. `GET /api/v1/student/profile`
 
 Controller: `StudentAuthController@studentMe`.
 
@@ -2644,7 +2674,7 @@ Controller: `StudentAuthController@studentMe`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentAuthController.php:350`.
 
-## 158. `PUT /api/v1/student/profile`
+## 160. `PUT /api/v1/student/profile`
 
 Controller: `StudentProfileController@update`.
 
@@ -2667,7 +2697,7 @@ Controller: `StudentProfileController@update`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentProfileController.php:11`.
 
-## 159. `PATCH /api/v1/student/profile`
+## 161. `PATCH /api/v1/student/profile`
 
 Controller: `StudentProfileController@update`.
 
@@ -2690,7 +2720,7 @@ Controller: `StudentProfileController@update`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentProfileController.php:11`.
 
-## 160. `POST /api/v1/student/profile`
+## 162. `POST /api/v1/student/profile`
 
 Controller: `StudentProfileController@update`.
 
@@ -2713,7 +2743,7 @@ Controller: `StudentProfileController@update`.
 
 المصدر: `app/Http/Controllers/Api/V1/StudentProfileController.php:11`.
 
-## 161. `GET /api/v1/student/teachers`
+## 163. `GET /api/v1/student/teachers`
 
 Controller: `TeacherDirectoryController@index`.
 
@@ -2736,7 +2766,7 @@ Controller: `TeacherDirectoryController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/TeacherDirectoryController.php:10`.
 
-## 162. `GET /api/v1/student/teachers/{teacher}/physical/groups`
+## 164. `GET /api/v1/student/teachers/{teacher}/physical/groups`
 
 Controller: `PhysicalTeachingController@groups`.
 
@@ -2750,7 +2780,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/PhysicalTeachingController.php:26`.
 
-## 163. `POST /api/v1/student/groups/{group}/join`
+## 165. `POST /api/v1/student/groups/{group}/join`
 
 Controller: `PhysicalTeachingController@join`.
 
@@ -2764,7 +2794,7 @@ Path parameters: `group`.
 
 المصدر: `app/Http/Controllers/Api/V1/PhysicalTeachingController.php:49`.
 
-## 164. `POST /api/v1/student/groups/{group}/join-request`
+## 166. `POST /api/v1/student/groups/{group}/join-request`
 
 Controller: `PhysicalTeachingController@join`.
 
@@ -2778,7 +2808,7 @@ Path parameters: `group`.
 
 المصدر: `app/Http/Controllers/Api/V1/PhysicalTeachingController.php:49`.
 
-## 165. `POST /api/v1/student/groups/{group}/withdraw`
+## 167. `POST /api/v1/student/groups/{group}/withdraw`
 
 Controller: `PhysicalTeachingController@withdraw`.
 
@@ -2792,7 +2822,7 @@ Path parameters: `group`.
 
 المصدر: `app/Http/Controllers/Api/V1/PhysicalTeachingController.php:77`.
 
-## 166. `GET /api/v1/student/teachers/{teacher}/physical/individual-offers`
+## 168. `GET /api/v1/student/teachers/{teacher}/physical/individual-offers`
 
 Controller: `PhysicalTeachingController@offers`.
 
@@ -2806,7 +2836,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/PhysicalTeachingController.php:90`.
 
-## 167. `GET /api/v1/student/teachers/{teacher}/availability`
+## 169. `GET /api/v1/student/teachers/{teacher}/availability`
 
 Controller: `PhysicalAvailabilityController@index`.
 
@@ -2825,7 +2855,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/PhysicalAvailabilityController.php:15`.
 
-## 168. `POST /api/v1/student/individual-bookings`
+## 170. `POST /api/v1/student/individual-bookings`
 
 Controller: `PhysicalTeachingController@book`.
 
@@ -2844,7 +2874,7 @@ Controller: `PhysicalTeachingController@book`.
 
 المصدر: `app/Http/Controllers/Api/V1/PhysicalTeachingController.php:99`.
 
-## 169. `GET /api/v1/student/teachers/{teacher}/online-content`
+## 171. `GET /api/v1/student/teachers/{teacher}/online-content`
 
 Controller: `OnlineLearningController@tree`.
 
@@ -2858,7 +2888,7 @@ Path parameters: `teacher`.
 
 المصدر: `app/Http/Controllers/Api/V1/OnlineLearningController.php:25`.
 
-## 170. `GET /api/v1/student/lessons/{lesson}/content`
+## 172. `GET /api/v1/student/lessons/{lesson}/content`
 
 Controller: `OnlineLearningController@content`.
 
@@ -2872,7 +2902,7 @@ Path parameters: `lesson`.
 
 المصدر: `app/Http/Controllers/Api/V1/OnlineLearningController.php:36`.
 
-## 171. `POST /api/v1/student/lessons/{lesson}/complete`
+## 173. `POST /api/v1/student/lessons/{lesson}/complete`
 
 Controller: `OnlineLearningController@complete`.
 
@@ -2886,7 +2916,7 @@ Path parameters: `lesson`.
 
 المصدر: `app/Http/Controllers/Api/V1/OnlineLearningController.php:52`.
 
-## 172. `GET /api/v1/student/teacher-subjects/{teacherSubject}/learning-summary`
+## 174. `GET /api/v1/student/teacher-subjects/{teacherSubject}/learning-summary`
 
 Controller: `OnlineLearningController@progress`.
 
@@ -2900,7 +2930,7 @@ Path parameters: `teacherSubject`.
 
 المصدر: `app/Http/Controllers/Api/V1/OnlineLearningController.php:69`.
 
-## 173. `GET /api/v1/student/refunds/eligibility`
+## 175. `GET /api/v1/student/refunds/eligibility`
 
 Controller: `RefundController@eligibility`.
 
@@ -2916,7 +2946,7 @@ Controller: `RefundController@eligibility`.
 
 المصدر: `app/Http/Controllers/Api/V1/RefundController.php:23`.
 
-## 174. `GET /api/v1/student/refunds`
+## 176. `GET /api/v1/student/refunds`
 
 Controller: `RefundController@index`.
 
@@ -2932,7 +2962,7 @@ Controller: `RefundController@index`.
 
 المصدر: `app/Http/Controllers/Api/V1/RefundController.php:65`.
 
-## 175. `POST /api/v1/student/refunds`
+## 177. `POST /api/v1/student/refunds`
 
 Controller: `RefundController@store`.
 
@@ -2954,7 +2984,7 @@ Controller: `RefundController@store`.
 
 المصدر: `app/Http/Controllers/Api/V1/RefundController.php:36`.
 
-## 176. `GET /api/v1/student/refunds/{refund}`
+## 178. `GET /api/v1/student/refunds/{refund}`
 
 Controller: `RefundController@show`.
 
@@ -2968,7 +2998,7 @@ Path parameters: `refund`.
 
 المصدر: `app/Http/Controllers/Api/V1/RefundController.php:76`.
 
-## 177. `PATCH /api/v1/student/refunds/{refund}/payout-details`
+## 179. `PATCH /api/v1/student/refunds/{refund}/payout-details`
 
 Controller: `RefundController@payout`.
 

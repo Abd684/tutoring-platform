@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\Teacher;
+use App\Services\HlsVideos;
 use App\Services\VideoMetadata;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +24,7 @@ class TeacherContentAssetController extends ApiController
         $teacher = $this->teacher($request);
 
         $assets = ContentAsset::query()
-            ->with('content:id,lesson_id,type,title,status')
+            ->with(['content:id,lesson_id,type,title,status', 'videoAsset'])
             ->whereHas('content.lesson.unit.teacherSubject', fn ($query) => $query->where('teacher_id', $teacher->id))
             ->when($request->filled('content_id'), fn ($query) => $query->where('content_id', $request->integer('content_id')))
             ->orderByDesc('id')
@@ -75,7 +77,7 @@ class TeacherContentAssetController extends ApiController
         $file = $validated['file'];
         $allowedMimeTypes = $content->type === 'pdf'
             ? ['application/pdf']
-            : ['application/pdf', 'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'];
+            : ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'];
 
         if (! in_array($file->getMimeType(), $allowedMimeTypes, true)) {
             throw ValidationException::withMessages([
@@ -116,7 +118,7 @@ class TeacherContentAssetController extends ApiController
     {
         $this->authorize('manage', $contentAsset);
 
-        return $this->success($contentAsset->load('content:id,lesson_id,type,title,status'));
+        return $this->success($contentAsset->load(['content:id,lesson_id,type,title,status', 'videoAsset']));
     }
 
     public function destroy(Request $request, ContentAsset $contentAsset): JsonResponse
@@ -127,6 +129,20 @@ class TeacherContentAssetController extends ApiController
         $contentAsset->delete();
 
         return $this->success(message: 'File deleted successfully.');
+    }
+
+    public function retry(ContentAsset $contentAsset): JsonResponse
+    {
+        $this->authorize('manage', $contentAsset);
+        abort_unless($contentAsset->status === 'active' && str_starts_with($contentAsset->mime_type ?? '', 'video/'), 422);
+
+        return DB::transaction(function () use ($contentAsset) {
+            $asset = ContentAsset::whereKey($contentAsset->id)->lockForUpdate()->firstOrFail();
+            abort_if(in_array($asset->videoAsset?->processing_status, ['pending', 'processing', 'ready'], true), 409, 'الفيديو جاهز أو توجد معالجة قائمة.');
+            app(HlsVideos::class)->enqueue($asset);
+
+            return $this->success($asset->fresh()->load('videoAsset'), 'تمت جدولة إعادة المعالجة.', 202);
+        });
     }
 
     private function teacher(Request $request): Teacher

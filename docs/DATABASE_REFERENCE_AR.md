@@ -1,4 +1,4 @@
-# مرجع قاعدة بيانات لقاء الحالية — 2026-10-31
+# مرجع قاعدة بيانات لقاء الحالية — 2026-11-01
 
 مرجع البنية الكاملة من الصفر: **60 جدولاً، 51 موديل**. استُخرج من جميع Migrations على قاعدة SQLite مؤقتة بالذاكرة، وليس من القاعدة الفعلية.
 
@@ -380,10 +380,20 @@ student_id حقل تاريخي اختياري موجود؛ يوجد أيضاً s
 | `duration_seconds` | `integer` | نعم | — | int أو null |
 | `key_reference` | `varchar` | نعم | — | String أو null |
 | `watermark_enabled` | `tinyint(1)` | لا | `'1'` | bool |
+| `processing_status` | `varchar` | لا | `'pending'` | String |
+| `processing_error` | `varchar` | نعم | — | String أو null |
+| `hls_directory` | `varchar` | نعم | — | String أو null |
+| `source_fingerprint` | `varchar` | نعم | — | String أو null |
+| `renditions` | `text` | نعم | — | JSON أو null |
+| `processed_at` | `datetime` | نعم | — | نص تاريخ/وقت أو null |
+
+قيم `processing_status`: `pending`, `processing`, `ready`, `failed`.
 
 - FK `content_asset_id` → `content_assets.id`؛ عند الحذف: `cascade`.
 - قيد فريد: `(id)`.
 - قيد فريد: `(content_asset_id)`.
+
+حقول مخفية بالموديل: `hls_manifest_key`, `hls_directory`, `source_fingerprint`, `key_reference`.
 
 علاقات ORM، عند تحميلها فقط:
 

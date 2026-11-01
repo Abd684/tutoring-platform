@@ -7900,6 +7900,72 @@
           "auto_increment": false,
           "comment": null,
           "generation": null
+        },
+        {
+          "name": "processing_status",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": false,
+          "default": "'pending'",
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "processing_error",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "hls_directory",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "source_fingerprint",
+          "type_name": "varchar",
+          "type": "varchar",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "renditions",
+          "type_name": "text",
+          "type": "text",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
+        },
+        {
+          "name": "processed_at",
+          "type_name": "datetime",
+          "type": "datetime",
+          "collation": null,
+          "nullable": true,
+          "default": null,
+          "auto_increment": false,
+          "comment": null,
+          "generation": null
         }
       ],
       "foreign_keys": [
@@ -7935,9 +8001,26 @@
           "type": null,
           "unique": true,
           "primary": false
+        },
+        {
+          "name": "video_assets_processing_status_index",
+          "columns": [
+            "processing_status"
+          ],
+          "type": null,
+          "unique": false,
+          "primary": false
         }
       ],
-      "sqlite_definition": "CREATE TABLE \"video_assets\" (\"id\" integer primary key autoincrement not null, \"content_asset_id\" integer not null, \"hls_manifest_key\" varchar, \"duration_seconds\" integer, \"key_reference\" varchar, \"watermark_enabled\" tinyint(1) not null default ('1'), foreign key(\"content_asset_id\") references content_assets(\"id\") on delete cascade on update no action)"
+      "sqlite_definition": "CREATE TABLE \"video_assets\" (\"id\" integer primary key autoincrement not null, \"content_asset_id\" integer not null, \"hls_manifest_key\" varchar, \"duration_seconds\" integer, \"key_reference\" varchar, \"watermark_enabled\" tinyint(1) not null default ('1'), \"processing_status\" varchar not null default 'pending', \"processing_error\" varchar, \"hls_directory\" varchar, \"source_fingerprint\" varchar, \"renditions\" text, \"processed_at\" datetime, foreign key(\"content_asset_id\") references content_assets(\"id\") on delete cascade on update no action)",
+      "declared_values": {
+        "processing_status": [
+          "pending",
+          "processing",
+          "ready",
+          "failed"
+        ]
+      }
     },
     "wallet_transactions": {
       "columns": [
@@ -9975,13 +10058,26 @@
         "hls_manifest_key",
         "duration_seconds",
         "key_reference",
-        "watermark_enabled"
+        "watermark_enabled",
+        "processing_status",
+        "processing_error",
+        "hls_directory",
+        "source_fingerprint",
+        "renditions",
+        "processed_at"
       ],
-      "hidden": [],
+      "hidden": [
+        "hls_manifest_key",
+        "hls_directory",
+        "source_fingerprint",
+        "key_reference"
+      ],
       "appends": [],
       "casts": {
         "id": "int",
-        "watermark_enabled": "boolean"
+        "watermark_enabled": "boolean",
+        "renditions": "array",
+        "processed_at": "datetime"
       },
       "relations": [
         {
@@ -10581,6 +10677,21 @@
       "methods": [
         "POST"
       ],
+      "uri": "/api/v1/teacher/content-assets/{contentAsset}/hls/retry",
+      "action": "App\\Http\\Controllers\\Api\\V1\\TeacherContentAssetController@retry",
+      "middleware": [
+        "api",
+        "auth:sanctum",
+        "role:teacher"
+      ],
+      "controller_file": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
+      "method_start_line": 134,
+      "method_end_line": 146
+    },
+    {
+      "methods": [
+        "POST"
+      ],
       "uri": "/api/v1/teacher/login",
       "action": "App\\Http\\Controllers\\Api\\V1\\AuthController@login",
       "middleware": [
@@ -10820,8 +10931,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-      "method_start_line": 18,
-      "method_end_line": 32
+      "method_start_line": 20,
+      "method_end_line": 34
     },
     {
       "methods": [
@@ -10850,8 +10961,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-      "method_start_line": 34,
-      "method_end_line": 113
+      "method_start_line": 36,
+      "method_end_line": 115
     },
     {
       "methods": [
@@ -10866,8 +10977,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-      "method_start_line": 115,
-      "method_end_line": 120
+      "method_start_line": 117,
+      "method_end_line": 122
     },
     {
       "methods": [
@@ -10881,8 +10992,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-      "method_start_line": 122,
-      "method_end_line": 130
+      "method_start_line": 124,
+      "method_end_line": 132
     },
     {
       "methods": [
@@ -11309,8 +11420,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-      "method_start_line": 15,
-      "method_end_line": 21
+      "method_start_line": 17,
+      "method_end_line": 23
     },
     {
       "methods": [
@@ -11324,8 +11435,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-      "method_start_line": 23,
-      "method_end_line": 30
+      "method_start_line": 25,
+      "method_end_line": 32
     },
     {
       "methods": [
@@ -11339,8 +11450,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-      "method_start_line": 32,
-      "method_end_line": 38
+      "method_start_line": 34,
+      "method_end_line": 40
     },
     {
       "methods": [
@@ -11354,8 +11465,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-      "method_start_line": 40,
-      "method_end_line": 47
+      "method_start_line": 42,
+      "method_end_line": 49
     },
     {
       "methods": [
@@ -11369,8 +11480,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-      "method_start_line": 49,
-      "method_end_line": 72
+      "method_start_line": 51,
+      "method_end_line": 74
     },
     {
       "methods": [
@@ -11415,8 +11526,8 @@
         "role:teacher"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-      "method_start_line": 74,
-      "method_end_line": 86
+      "method_start_line": 76,
+      "method_end_line": 94
     },
     {
       "methods": [
@@ -11912,8 +12023,26 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-      "method_start_line": 19,
-      "method_end_line": 38
+      "method_start_line": 20,
+      "method_end_line": 39
+    },
+    {
+      "methods": [
+        "GET",
+        "HEAD"
+      ],
+      "uri": "/api/v1/content-assets/{contentAsset}/hls/{file}",
+      "action": "App\\Http\\Controllers\\Api\\V1\\HlsPlaybackController@file",
+      "middleware": [
+        "api",
+        "auth:sanctum",
+        "role:student",
+        "student.device",
+        "signed"
+      ],
+      "controller_file": "app/Http/Controllers/Api/V1/HlsPlaybackController.php",
+      "method_start_line": 14,
+      "method_end_line": 36
     },
     {
       "methods": [
@@ -11930,8 +12059,8 @@
         "signed"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-      "method_start_line": 79,
-      "method_end_line": 116
+      "method_start_line": 84,
+      "method_end_line": 123
     },
     {
       "methods": [
@@ -12053,8 +12182,8 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-      "method_start_line": 40,
-      "method_end_line": 50
+      "method_start_line": 41,
+      "method_end_line": 52
     },
     {
       "methods": [
@@ -12069,8 +12198,8 @@
         "student.device"
       ],
       "controller_file": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-      "method_start_line": 52,
-      "method_end_line": 60
+      "method_start_line": 54,
+      "method_end_line": 62
     },
     {
       "methods": [

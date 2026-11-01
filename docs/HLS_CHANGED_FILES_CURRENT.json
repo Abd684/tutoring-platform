@@ -1,0 +1,120 @@
+{
+  "baseline_commit": "02625b3",
+  "date": "2026-11-01",
+  "live_migration_applied": false,
+  "pushed": false,
+  "files": [
+    {
+      "status": " M",
+      "path": ".env.example"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/StudentContentAssetController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Models/VideoAsset.php"
+    },
+    {
+      "status": " M",
+      "path": "app/Providers/AppServiceProvider.php"
+    },
+    {
+      "status": " M",
+      "path": "config/media.php"
+    },
+    {
+      "status": " M",
+      "path": "config/queue.php"
+    },
+    {
+      "status": " M",
+      "path": "docs/APIS_FULL_AR.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/API_OPERATIONS_CURRENT.json"
+    },
+    {
+      "status": " M",
+      "path": "docs/DATABASE_REFERENCE_AR.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/DATABASE_SCHEMA_CURRENT.json"
+    },
+    {
+      "status": " M",
+      "path": "docs/FRONTEND_CONTRACT_FINAL_AR.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/IMPLEMENTATION_CHANGELOG_AR.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/LIQAA_OPENAPI_2026-10-31.json"
+    },
+    {
+      "status": " M",
+      "path": "docs/LIQAA_POSTMAN_2026-10-31.json"
+    },
+    {
+      "status": " M",
+      "path": "docs/VIDEO_HLS_DRM_PLAN.md"
+    },
+    {
+      "status": " M",
+      "path": "routes/student.php"
+    },
+    {
+      "status": " M",
+      "path": "routes/teacher.php"
+    },
+    {
+      "status": " M",
+      "path": "tests/Feature/StudentFeaturesTest.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Console/Commands/ProcessExistingHlsVideos.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Http/Controllers/Api/V1/HlsPlaybackController.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Jobs/ProcessHlsVideo.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Observers/ContentAssetObserver.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Services/HlsPlayback.php"
+    },
+    {
+      "status": "??",
+      "path": "app/Services/HlsVideos.php"
+    },
+    {
+      "status": "??",
+      "path": "database/migrations/2026_11_01_000001_add_hls_processing_to_video_assets.php"
+    },
+    {
+      "status": "??",
+      "path": "docs/HLS_IMPLEMENTATION_AR.md"
+    },
+    {
+      "status": "??",
+      "path": "tests/Feature/HlsVideoTest.php"
+    }
+  ]
+}

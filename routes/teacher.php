@@ -23,6 +23,9 @@ use App\Http\Controllers\Api\V1\TeachingContentController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [TeacherAuthController::class, 'registerTeacher']);
+
+Route::post('/content-assets/{contentAsset}/hls/retry', [TeacherContentAssetController::class, 'retry'])
+    ->middleware(['auth:sanctum', 'role:teacher']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
 

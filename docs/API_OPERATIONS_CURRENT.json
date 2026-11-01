@@ -591,6 +591,21 @@
   },
   {
     "method": "POST",
+    "path": "/api/v1/teacher/content-assets/{contentAsset}/hls/retry",
+    "action": "TeacherContentAssetController@retry",
+    "fields": {},
+    "response_description": "202 data: ContentAsset مع video_asset.processing_status=pending. للأستاذ المالك فقط؛409 إن كانت المعالجة قائمة أوالفيديو جاهز.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:teacher"
+    ],
+    "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
+    "line": 134,
+    "multipart": false
+  },
+  {
+    "method": "POST",
     "path": "/api/v1/teacher/login",
     "action": "AuthController@login",
     "fields": {
@@ -876,7 +891,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-    "line": 18,
+    "line": 20,
     "multipart": false
   },
   {
@@ -927,7 +942,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-    "line": 34,
+    "line": 36,
     "multipart": true
   },
   {
@@ -942,7 +957,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-    "line": 115,
+    "line": 117,
     "multipart": false
   },
   {
@@ -957,7 +972,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeacherContentAssetController.php",
-    "line": 122,
+    "line": 124,
     "multipart": false
   },
   {
@@ -1510,14 +1525,14 @@
       "order_no": "['sometimes', 'integer', 'min:0']",
       "status": "['sometimes', 'in:draft,published,archived']"
     },
-    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
     "middleware": [
       "api",
       "auth:sanctum",
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-    "line": 15,
+    "line": 17,
     "multipart": false
   },
   {
@@ -1531,14 +1546,14 @@
       "status": "['sometimes', 'in:draft,published,archived']",
       "teacher_subject_id": "['prohibited']"
     },
-    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
     "middleware": [
       "api",
       "auth:sanctum",
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-    "line": 23,
+    "line": 25,
     "multipart": false
   },
   {
@@ -1552,14 +1567,14 @@
       "order_no": "['sometimes', 'integer', 'min:0']",
       "status": "['sometimes', 'in:draft,published,archived']"
     },
-    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
     "middleware": [
       "api",
       "auth:sanctum",
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-    "line": 32,
+    "line": 34,
     "multipart": false
   },
   {
@@ -1573,14 +1588,14 @@
       "status": "['sometimes', 'in:draft,published,archived']",
       "unit_id": "['prohibited']"
     },
-    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "response_description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
     "middleware": [
       "api",
       "auth:sanctum",
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-    "line": 40,
+    "line": 42,
     "multipart": false
   },
   {
@@ -1608,7 +1623,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-    "line": 49,
+    "line": 51,
     "multipart": false
   },
   {
@@ -1655,7 +1670,7 @@
       "role:teacher"
     ],
     "source": "app/Http/Controllers/Api/V1/TeachingContentController.php",
-    "line": 74,
+    "line": 76,
     "multipart": false
   },
   {
@@ -2192,7 +2207,7 @@
     "path": "/api/v1/contents/{id}/playback-token",
     "action": "StudentContentAssetController@playbackToken",
     "fields": {},
-    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "response_description": "200 data: HLS playback_url/expires_at/format/drm=false/encryption=aes-128/renditions للفيديو، أوالرابط الخاص السابق للـPDF.409 VIDEO_PROCESSING/VIDEO_PROCESSING_FAILED دونرابط الأصل.",
     "middleware": [
       "api",
       "auth:sanctum",
@@ -2200,7 +2215,24 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-    "line": 19,
+    "line": 20,
+    "multipart": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/content-assets/{contentAsset}/hls/{file}",
+    "action": "HlsPlaybackController@file",
+    "fields": {},
+    "response_description": "ملف HLS خاص: playlist أوsegment أوAES key. الرابط موقّع من الباك ويرتبط بالطالب والإصدار؛ Bearer مطلوب لكل طلب. راجع HLS_IMPLEMENTATION_AR.md.",
+    "middleware": [
+      "api",
+      "auth:sanctum",
+      "role:student",
+      "student.device",
+      "signed"
+    ],
+    "source": "app/Http/Controllers/Api/V1/HlsPlaybackController.php",
+    "line": 14,
     "multipart": false
   },
   {
@@ -2208,7 +2240,7 @@
     "path": "/api/v1/content-assets/{contentAsset}/play",
     "action": "StudentContentAssetController@play",
     "fields": {},
-    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "response_description": "ملف PDF خاص. طلب فيديو أصلي هنا يُرفض404 حتى لوكان الرابط قديماً صحيح التوقيع.",
     "middleware": [
       "api",
       "auth:sanctum",
@@ -2217,7 +2249,7 @@
       "signed"
     ],
     "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-    "line": 79,
+    "line": 84,
     "multipart": false
   },
   {
@@ -2375,7 +2407,7 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-    "line": 40,
+    "line": 41,
     "multipart": false
   },
   {
@@ -2383,7 +2415,7 @@
     "path": "/api/v1/content-assets/{contentAsset}/access-token",
     "action": "StudentContentAssetController@accessToken",
     "fields": {},
-    "response_description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+    "response_description": "نفس عقد HLS للفيديو وPDF السابق. راجع HLS_IMPLEMENTATION_AR.md؛Bearer يلزم كل قوائم HLS والمقاطع والمفاتيح.",
     "middleware": [
       "api",
       "auth:sanctum",
@@ -2391,7 +2423,7 @@
       "student.device"
     ],
     "source": "app/Http/Controllers/Api/V1/StudentContentAssetController.php",
-    "line": 52,
+    "line": 54,
     "multipart": false
   },
   {

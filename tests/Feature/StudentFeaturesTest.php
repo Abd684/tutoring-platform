@@ -116,14 +116,13 @@ class StudentFeaturesTest extends TestCase
         Storage::disk('local')->put('video.mp4', 'video');
         Storage::disk('local')->put('notes.pdf', 'pdf');
         $video = ContentAsset::create(['content_id' => $content->id, 'disk' => 'local', 'storage_key' => 'video.mp4', 'mime_type' => 'video/mp4', 'status' => 'active']);
-        VideoAsset::create(['content_asset_id' => $video->id, 'duration_seconds' => 121]);
+        VideoAsset::where('content_asset_id', $video->id)->update(['duration_seconds' => 121]);
         $pdf = ContentAsset::create(['content_id' => $content->id, 'disk' => 'local', 'storage_key' => 'notes.pdf', 'mime_type' => 'application/pdf', 'status' => 'active']);
         Sanctum::actingAs($user);
         $assets = $this->getJson('/api/v1/contents/'.$content->id.'/assets')->assertOk()->json('data');
         $this->assertCount(2, $assets);
         $this->assertArrayNotHasKey('storage_key', $assets[0]);
-        $videoUrl = $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')->assertOk()->json('data.playback_url');
-        $this->assertStringContainsString('/'.$video->id.'/play', $videoUrl);
+        $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')->assertConflict()->assertJsonPath('code', 'VIDEO_PROCESSING');
         $pdfUrl = $this->postJson('/api/v1/content-assets/'.$pdf->id.'/access-token')->assertOk()->json('data.playback_url');
         $this->get($pdfUrl)->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->withHeader('Range', 'bytes=0-1')->get($pdfUrl)->assertStatus(206)->assertHeader('Content-Range', 'bytes 0-1/3');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\Student;
+use App\Services\HlsPlayback;
 use App\Services\ProtectedS3Media;
 use Illuminate\Filesystem\AwsS3V3Adapter;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +46,7 @@ class StudentContentAssetController extends ApiController
         return $this->success($content->assets()->where('status', 'active')->with('videoAsset')->get()->map(fn ($asset) => [
             'id' => $asset->id, 'mime_type' => $asset->mime_type, 'file_size' => $asset->file_size,
             'duration_seconds' => $asset->videoAsset?->duration_seconds,
+            'processing_status' => str_starts_with($asset->mime_type ?? '', 'video/') ? ($asset->videoAsset?->processing_status ?? 'pending') : null,
             'token_endpoint' => url('/api/v1/content-assets/'.$asset->id.'/access-token'),
         ]));
     }
@@ -61,6 +63,9 @@ class StudentContentAssetController extends ApiController
 
     private function assetToken(ContentAsset $contentAsset, Student $student): JsonResponse
     {
+        if (str_starts_with($contentAsset->mime_type ?? '', 'video/')) {
+            return $this->success(app(HlsPlayback::class)->token($contentAsset, $student), 'Playback token created successfully.')->header('Cache-Control', 'private, no-store');
+        }
         abort_if($contentAsset->disk === 'public', 404, 'Protected files require private storage.');
         abort_unless(Storage::disk($contentAsset->disk)->exists($contentAsset->storage_key), 404);
 
@@ -78,6 +83,8 @@ class StudentContentAssetController extends ApiController
 
     public function play(Request $request, ContentAsset $contentAsset): StreamedResponse|BinaryFileResponse
     {
+        // Original video is never served to students, even through old signed URLs.
+        abort_if(str_starts_with($contentAsset->mime_type ?? '', 'video/'), 404);
         $this->authorize('accessStudent', Content::class);
 
         $student = $request->user()->student;

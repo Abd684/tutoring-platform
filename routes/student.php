@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AvailabilityBookingController;
 use App\Http\Controllers\Api\V1\AvailableSessionController;
 use App\Http\Controllers\Api\V1\CurriculumBrowseController;
 use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
+use App\Http\Controllers\Api\V1\HlsPlaybackController;
 use App\Http\Controllers\Api\V1\IndividualBookingController;
 use App\Http\Controllers\Api\V1\OnlineLearningController;
 use App\Http\Controllers\Api\V1\PaidLessonController;
@@ -79,6 +80,11 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
 
 Route::post('/contents/{id}/playback-token', [StudentContentAssetController::class, 'playbackToken'])
     ->middleware(['auth:sanctum', 'role:student', 'student.device']);
+
+Route::get('/content-assets/{contentAsset}/hls/{file}', [HlsPlaybackController::class, 'file'])
+    ->where('file', '[a-zA-Z0-9_./-]+')
+    ->middleware(['auth:sanctum', 'role:student', 'student.device', 'signed'])
+    ->name('student.content.hls');
 
 Route::get('/content-assets/{contentAsset}/play', [StudentContentAssetController::class, 'play'])
     ->middleware(['auth:sanctum', 'role:student', 'student.device', 'signed'])

@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "LIQAA — API 2026-10-31",
+    "name": "LIQAA — API 2026-11-01",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": "اختَر توكن الطالب/الأستاذ/الإدارة حسب المسار. الأمثلة مولدة ويجب تعبئة المعرفات والملفات وحقول المصفوفات حسب الدليل."
   },
@@ -27,6 +27,10 @@
     },
     {
       "key": "checkout_id",
+      "value": ""
+    },
+    {
+      "key": "hls_playback_url",
       "value": ""
     }
   ],
@@ -877,6 +881,30 @@
               "language": "json"
             }
           }
+        }
+      }
+    },
+    {
+      "name": "POST /api/v1/teacher/content-assets/{contentAsset}/hls/retry",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/api/v1/teacher/content-assets/{{contentAsset_id}}/hls/retry",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "202 data: ContentAsset مع video_asset.processing_status=pending. للأستاذ المالك فقط؛409 إن كانت المعالجة قائمة أوالفيديو جاهز.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
         }
       }
     },
@@ -2400,7 +2428,7 @@
             "value": "application/json"
           }
         ],
-        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -2437,7 +2465,7 @@
             "value": "application/json"
           }
         ],
-        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -2474,7 +2502,7 @@
             "value": "application/json"
           }
         ],
-        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -2511,7 +2539,7 @@
             "value": "application/json"
           }
         ],
-        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "description": "غلاف success الحالي: status=true وdata للمورد/العملية وmessage عند توفرها. الحقول الإضافية والعلاقات تختلف حسب العملية؛ مخططات DB مرجع أسماء وليست تعهداً بإرجاع كل الأعمدة.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -3497,7 +3525,31 @@
             "value": "application/json"
           }
         ],
-        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "description": "200 data: HLS playback_url/expires_at/format/drm=false/encryption=aes-128/renditions للفيديو، أوالرابط الخاص السابق للـPDF.409 VIDEO_PROCESSING/VIDEO_PROCESSING_FAILED دونرابط الأصل.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "GET /api/v1/content-assets/{contentAsset}/hls/{file}",
+      "request": {
+        "method": "GET",
+        "url": "{{hls_playback_url}}",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "description": "ملف HLS خاص: playlist أوsegment أوAES key. الرابط موقّع من الباك ويرتبط بالطالب والإصدار؛ Bearer مطلوب لكل طلب. راجع HLS_IMPLEMENTATION_AR.md. Paste a full server-generated playlist/segment/key signed URL into hls_playback_url. Authorization is required.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -3521,7 +3573,7 @@
             "value": "application/json"
           }
         ],
-        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "description": "ملف PDF خاص. طلب فيديو أصلي هنا يُرفض404 حتى لوكان الرابط قديماً صحيح التوقيع.",
         "auth": {
           "type": "bearer",
           "bearer": [
@@ -3764,7 +3816,7 @@
             "value": "application/json"
           }
         ],
-        "description": "مسار خاص/ملف أو إجراء مفوّض إلى خدمة؛ الشروط والصلاحيات موضحة في middleware ومصدر العملية.",
+        "description": "نفس عقد HLS للفيديو وPDF السابق. راجع HLS_IMPLEMENTATION_AR.md؛Bearer يلزم كل قوائم HLS والمقاطع والمفاتيح.",
         "auth": {
           "type": "bearer",
           "bearer": [
