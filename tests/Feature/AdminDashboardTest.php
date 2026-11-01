@@ -9,6 +9,7 @@ use App\Models\GroupStudent;
 use App\Models\Individual;
 use App\Models\Lesson;
 use App\Models\Payment;
+use App\Models\PaymentLessonAllocation;
 use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
@@ -62,7 +63,7 @@ class AdminDashboardTest extends TestCase
 
     private function protectedPages(): array
     {
-        return ['/admin', '/admin/students', '/admin/students/create', '/admin/teachers', '/admin/teachers/create', '/admin/groups', '/admin/groups/create', '/admin/sessions', '/admin/sessions/create', '/admin/payments', '/admin/refunds', '/admin/subscriptions', '/admin/plans', '/admin/plans/create', '/admin/content', '/admin/content/create', '/admin/settings', '/admin/payment-settings', '/admin/audit', '/admin/search?q=Test'];
+        return ['/admin', '/admin/students', '/admin/students/create', '/admin/teachers', '/admin/teachers/create', '/admin/payments', '/admin/refunds', '/admin/subscriptions', '/admin/plans', '/admin/plans/create', '/admin/content', '/admin/content/create', '/admin/settings', '/admin/payment-settings', '/admin/audit', '/admin/search?q=Test'];
     }
 
     public function test_dashboard_requires_active_administrator_on_every_page(): void
@@ -86,13 +87,13 @@ class AdminDashboardTest extends TestCase
     {
         $admin = $this->admin();
         $this->get('/admin/login')->assertOk()->assertSee('تسجيل الدخول');
-        $this->post('/admin/login', ['phone' => $admin->phone, 'password' => 'wrong'])->assertSessionHasErrors('phone');
-        $this->post('/admin/login', ['phone' => $admin->phone, 'password' => 'TestPassword123!'])->assertRedirect('/admin');
+        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'wrong'])->assertSessionHasErrors('email');
+        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'TestPassword123!'])->assertRedirect('/admin');
         $this->assertAuthenticatedAs($admin);
         $this->post('/admin/logout')->assertRedirect('/admin/login');
         $this->assertGuest();
         $teacher = User::factory()->create(['role' => 'teacher', 'password_hash' => Hash::make('TestPassword123!')]);
-        $this->post('/admin/login', ['phone' => $teacher->phone, 'password' => 'TestPassword123!'])->assertSessionHasErrors('phone');
+        $this->post('/admin/login', ['email' => $teacher->email, 'password' => 'TestPassword123!'])->assertSessionHasErrors('email');
         $this->assertGuest();
     }
 
@@ -112,7 +113,7 @@ class AdminDashboardTest extends TestCase
         $this->actingAs($this->admin());
         $session = Session::create(['teacher_id' => $f['teacher']->id, 'type' => 'group', 'type_id' => $f['group']->id, 'capacity' => 3, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour(), 'status' => 'scheduled']);
         $plan = SubscriptionPlan::create(['name' => 'خطة تجريبية', 'price' => 10, 'billing_cycle' => 'monthly', 'status' => 'active']);
-        foreach (['/admin/students/'.$f['studentUser']->id, '/admin/students/'.$f['studentUser']->id.'/edit', '/admin/teachers/'.$f['teacherUser']->id, '/admin/teachers/'.$f['teacherUser']->id.'/edit', '/admin/groups/'.$f['group']->id, '/admin/groups/'.$f['group']->id.'/edit', '/admin/sessions/'.$session->id, '/admin/plans/'.$plan->id.'/edit', '/admin/content/'.$f['content']->id.'/edit', '/admin/content/'.$f['content']->id.'/quiz'] as $path) {
+        foreach (['/admin/students/'.$f['studentUser']->id, '/admin/students/'.$f['studentUser']->id.'/edit', '/admin/teachers/'.$f['teacherUser']->id, '/admin/teachers/'.$f['teacherUser']->id.'/edit', '/admin/teachers/'.$f['teacherUser']->id.'/groups/'.$f['group']->id, '/admin/teachers/'.$f['teacherUser']->id.'/groups/'.$f['group']->id.'/edit', '/admin/teachers/'.$f['teacherUser']->id.'/sessions/'.$session->id, '/admin/plans/'.$plan->id.'/edit', '/admin/content/'.$f['content']->id.'/edit', '/admin/content/'.$f['content']->id.'/quiz'] as $path) {
             $this->get($path)->assertOk();
         }
     }
@@ -169,13 +170,13 @@ class AdminDashboardTest extends TestCase
     {
         $f = $this->fixture();
         $this->actingAs($this->admin());
-        $path = '/admin/groups/'.$f['group']->id.'/members';
+        $path = '/admin/teachers/'.$f['teacherUser']->id.'/groups/'.$f['group']->id.'/members';
         $this->post($path, ['student_id' => $f['student']->id])->assertRedirect();
         $this->assertDatabaseCount('group_students', 1);
         $this->post($path, ['student_id' => $f['student']->id])->assertSessionHasErrors('student_id');
         $m = GroupStudent::firstOrFail();
         $other = Group::create(['teacher_subject_id' => $f['course']->id, 'name' => 'Other', 'capacity' => 1, 'status' => 'active']);
-        $this->delete('/admin/groups/'.$other->id.'/members/'.$m->id)->assertNotFound();
+        $this->delete('/admin/teachers/'.$f['teacherUser']->id.'/groups/'.$other->id.'/members/'.$m->id)->assertNotFound();
         $this->delete($path.'/'.$m->id)->assertRedirect();
         $this->assertSame('removed', $m->fresh()->status);
     }
@@ -185,11 +186,11 @@ class AdminDashboardTest extends TestCase
         $f = $this->fixture();
         $this->actingAs($this->admin());
         $state = ['teacher_id' => $f['teacher']->id, 'type' => 'individual', 'type_id' => $f['individual']->id, 'starts_at' => now()->addDays(2)->toIso8601String(), 'ends_at' => now()->addDays(2)->addHour()->toIso8601String()];
-        $this->post('/admin/sessions', $state)->assertRedirect();
+        $this->post('/admin/teachers/'.$f['teacherUser']->id.'/sessions', $state)->assertRedirect();
         $this->assertDatabaseHas('sessions', ['type' => 'individual', 'capacity' => 1, 'type_id' => $f['individual']->id]);
-        $this->post('/admin/sessions', $state)->assertSessionHasErrors('starts_at');
-        $this->post('/admin/sessions', [...$state, 'group_id' => $f['group']->id])->assertSessionHasErrors('group_id');
-        $this->post('/admin/sessions/'.$f['individual']->sessions()->firstOrFail()->id.'/cancel')->assertRedirect();
+        $this->post('/admin/teachers/'.$f['teacherUser']->id.'/sessions', $state)->assertSessionHasErrors('starts_at');
+        $this->post('/admin/teachers/'.$f['teacherUser']->id.'/sessions', [...$state, 'group_id' => $f['group']->id])->assertSessionHasErrors('group_id');
+        $this->post('/admin/teachers/'.$f['teacherUser']->id.'/sessions/'.$f['individual']->sessions()->firstOrFail()->id.'/cancel')->assertRedirect();
         $this->assertDatabaseHas('sessions', ['status' => 'cancelled', 'type_id' => $f['individual']->id]);
     }
 
@@ -202,10 +203,10 @@ class AdminDashboardTest extends TestCase
         $state = ['teacher_id' => $f['teacher']->id, 'type' => 'individual', 'type_id' => $f['individual']->id, 'starts_at' => $start->toIso8601String(), 'ends_at' => $start->copy()->addHour()->toIso8601String(), 'availability_id' => $slot->id];
         $other = $this->fixture();
         $slot->update(['teacher_id' => $other['teacher']->id]);
-        $this->post('/admin/sessions', $state)->assertSessionHasErrors('availability_id');
+        $this->post('/admin/teachers/'.$f['teacherUser']->id.'/sessions', $state)->assertSessionHasErrors('availability_id');
         $this->assertDatabaseCount('sessions', 0);
         $slot->update(['teacher_id' => $f['teacher']->id]);
-        $this->post('/admin/sessions', $state)->assertRedirect();
+        $this->post('/admin/teachers/'.$f['teacherUser']->id.'/sessions', $state)->assertRedirect();
         $this->assertDatabaseHas('sessions', ['availability_id' => $slot->id, 'teacher_id' => $f['teacher']->id]);
     }
 
@@ -236,13 +237,16 @@ class AdminDashboardTest extends TestCase
     {
         $f = $this->fixture();
         $payment = Payment::create(['payer_id' => $f['studentUser']->id, 'payable_type' => $f['enrollment']->getMorphClass(), 'payable_id' => $f['enrollment']->id, 'amount' => 50, 'currency' => 'SYP', 'provider' => 'sham_cash', 'provider_reference' => 'INCOMING', 'status' => 'succeeded']);
+        Storage::fake('local');
+        PaymentLessonAllocation::create(['payment_id' => $payment->id, 'lesson_id' => $f['lesson']->id, 'lesson_title' => $f['lesson']->title, 'lesson_price_snapshot' => 50, 'allocated_amount' => 50, 'content_ids_snapshot' => [$f['content']->id]]);
         $refund = RefundRequest::create(['payment_id' => $payment->id, 'active_payment_id' => $payment->id, 'user_id' => $f['studentUser']->id, 'amount' => 50, 'currency' => 'SYP', 'account_id' => 'QA-ACCOUNT', 'reason_code' => 'exceptional', 'reason' => 'سبب تجريبي', 'status' => 'PENDING_REVIEW']);
         $this->actingAs($this->admin());
         $this->get('/admin/refunds/'.$refund->id)->assertOk();
-        $this->post('/admin/refunds/'.$refund->id.'/complete', ['transfer_reference' => 'OUTGOING'])->assertSessionHasErrors('operation');
+        $this->post('/admin/refunds/'.$refund->id.'/complete', ['transfer_reference' => 'OUTGOING', 'refund_transferred_at' => now()->subMinute()->toIso8601String(), 'refund_proof' => UploadedFile::fake()->image('refund.png')])->assertStatus(409);
         $this->post('/admin/refunds/'.$refund->id.'/review', ['decision' => 'approve', 'review_note' => 'تم التحقق'])->assertRedirect();
         $this->assertSame('APPROVED', $refund->fresh()->status);
-        $this->post('/admin/refunds/'.$refund->id.'/complete', ['transfer_reference' => 'OUTGOING'])->assertRedirect();
+        $this->get('/admin/refunds/'.$refund->id)->assertOk()->assertSee('name="refund_transferred_at"',false)->assertSee('name="refund_proof"',false)->assertSee('enctype="multipart/form-data"',false);
+        $this->post('/admin/refunds/'.$refund->id.'/complete', ['transfer_reference' => 'OUTGOING', 'refund_transferred_at' => now()->subMinute()->toIso8601String(), 'refund_proof' => UploadedFile::fake()->image('refund.png')])->assertRedirect();
         $this->assertSame('COMPLETED', $refund->fresh()->status);
         $this->assertSame('succeeded', $payment->fresh()->status);
         $this->assertSame('cancelled', $f['enrollment']->fresh()->status);

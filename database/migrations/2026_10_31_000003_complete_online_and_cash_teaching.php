@@ -84,7 +84,7 @@ return new class extends Migration
             $t->foreignId('refund_request_id')->constrained('refund_requests')->restrictOnDelete();
             $t->foreignId('payment_lesson_allocation_id')->constrained('payment_lesson_allocations')->restrictOnDelete();
             $t->decimal('amount', 12, 2);
-            $t->unique(['refund_request_id', 'payment_lesson_allocation_id']);
+            $t->unique(['refund_request_id', 'payment_lesson_allocation_id'], 'refund_lesson_items_request_allocation_unique');
         });
         DB::table('refund_requests')->where('status', 'COMPLETED')->update(['active_payment_id' => null]);
         Schema::table('notifications', function (Blueprint $t) {

@@ -7,10 +7,13 @@ use App\Models\Content;
 use App\Models\Enrollment;
 use App\Models\Governortate;
 use App\Models\Group;
-use App\Models\GroupEnrollment;
+use App\Models\GroupStudent;
+use App\Models\Individual;
 use App\Models\Lesson;
+use App\Models\LessonCompletion;
 use App\Models\PaidBooking;
 use App\Models\Payment;
+use App\Models\PaymentLessonAllocation;
 use App\Models\RefundRequest;
 use App\Models\Region;
 use App\Models\School;
@@ -109,11 +112,11 @@ class AdminDashboardRevisionTest extends TestCase
         $a = $this->teacher('أ');
         $b = $this->teacher('ب');
         $this->actingAs($this->admin());
-        $session = Session::create(['teacher_id' => $b['teacher']->id, 'type' => 'GROUP', 'group_id' => $b['group']->id, 'status' => 'scheduled', 'capacity' => 5, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour()]);
+        $session = Session::create(['teacher_id' => $b['teacher']->id, 'type' => 'group', 'type_id' => $b['group']->id, 'status' => 'scheduled', 'capacity' => 5, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour()]);
         $base = '/admin/teachers/'.$a['user']->id.'/sessions';
         $this->get($base.'/'.$session->id)->assertNotFound();
         $this->post($base.'/'.$session->id.'/cancel')->assertNotFound();
-        $this->post($base, ['teacher_id' => $b['teacher']->id, 'group_id' => $b['group']->id, 'type' => 'GROUP', 'starts_at' => now()->addDays(2)->toIso8601String(), 'ends_at' => now()->addDays(2)->addHour()->toIso8601String()])->assertNotFound();
+        $this->post($base, ['teacher_id' => $b['teacher']->id, 'type_id' => $b['group']->id, 'type' => 'group', 'starts_at' => now()->addDays(2)->toIso8601String(), 'ends_at' => now()->addDays(2)->addHour()->toIso8601String()])->assertNotFound();
         $this->get($base)->assertOk()->assertDontSee($b['group']->name);
         $this->assertSame('scheduled', $session->fresh()->status);
     }
@@ -172,12 +175,13 @@ class AdminDashboardRevisionTest extends TestCase
         $student = $this->student();
         $this->actingAs($this->admin());
         $grant = Enrollment::create(['student_id' => $student->id, 'teacher_id' => $a['teacher']->id, 'enrollable_type' => 'teacher_subject', 'enrollable_id' => $a['course']->id, 'price' => 0, 'status' => 'active']);
-        $membership = GroupEnrollment::create(['group_id' => $a['group']->id, 'enrollment_id' => $grant->id, 'status' => 'active', 'joined_at' => now()]);
-        $session = Session::create(['teacher_id' => $a['teacher']->id, 'enrollment_id' => $grant->id, 'type' => 'INDIVIDUAL', 'status' => 'scheduled', 'capacity' => 1, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour()]);
+        $membership = GroupStudent::create(['group_id' => $a['group']->id, 'student_id' => $student->id, 'status' => 'active', 'joined_at' => now()]);
+        $individual = Individual::create(['student_id' => $student->id, 'teacher_subject_id' => $a['course']->id, 'status' => 'active']);
+        $session = Session::create(['teacher_id' => $a['teacher']->id, 'type_id' => $individual->id, 'type' => 'individual', 'status' => 'scheduled', 'capacity' => 1, 'starts_at' => now()->addDay(), 'ends_at' => now()->addDay()->addHour()]);
         $this->post('/admin/enrollments/'.$grant->id.'/cancel', ['reason' => 'انتهت المنحة'])->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame('cancelled', $grant->fresh()->status);
-        $this->assertSame('removed', $membership->fresh()->status);
-        $this->assertSame('cancelled', $session->fresh()->status);
+        $this->assertSame('active', $membership->fresh()->status);
+        $this->assertSame('scheduled', $session->fresh()->status);
         $grant = $grant->fresh();
         $grant->update(['status' => 'active', 'price' => 50]);
         $this->post('/admin/enrollments/'.$grant->id.'/cancel', ['reason' => 'غير مسموح'])->assertSessionHasErrors('reason');
@@ -217,11 +221,14 @@ class AdminDashboardRevisionTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['id' => $entry->id]);
     }
 
-    public function test_administrator_can_sign_in_with_phone_identifier(): void
+    public function test_administrator_signs_in_with_email_and_rejects_phone_only_login(): void
     {
         $admin = $this->admin();
-        $admin->update(['password_hash' => Hash::make('PhoneLogin123!')]);
-        $this->post('/admin/login', ['email' => $admin->phone, 'password' => 'PhoneLogin123!'])->assertRedirect('/admin');
+        $admin->update(['password_hash' => Hash::make('EmailLogin123!')]);
+        $this->get('/admin/login')->assertOk()->assertSee('type="email"', false)->assertSee('name="email"', false)->assertDontSee('name="phone"', false);
+        $this->post('/admin/login', ['phone' => $admin->phone, 'password' => 'EmailLogin123!'])->assertSessionHasErrors('email');
+        $this->assertGuest();
+        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'EmailLogin123!'])->assertRedirect('/admin');
         $this->assertAuthenticatedAs($admin);
     }
 
@@ -232,6 +239,7 @@ class AdminDashboardRevisionTest extends TestCase
         $this->actingAs($this->admin());
         $enrollment = Enrollment::create(['student_id' => $student->id, 'teacher_id' => $a['teacher']->id, 'enrollable_type' => 'teacher_subject', 'enrollable_id' => $a['course']->id, 'status' => 'active', 'price' => 50]);
         $payment = Payment::create(['payer_id' => $student->user_id, 'payable_type' => $enrollment->getMorphClass(), 'payable_id' => $enrollment->id, 'provider' => 'sham_cash', 'provider_reference' => 'EXCEPTIONAL-01', 'amount' => 50, 'currency' => 'SYP', 'status' => 'succeeded']);
+        PaymentLessonAllocation::create(['payment_id' => $payment->id, 'lesson_id' => $a['lesson']->id, 'lesson_title' => $a['lesson']->title, 'lesson_price_snapshot' => 50, 'allocated_amount' => 50, 'content_ids_snapshot' => [$a['content']->id]]);
         $this->get('/admin/refunds/create')->assertOk()->assertSee('EXCEPTIONAL-01');
         $data = ['payment_id' => $payment->id, 'account_id' => 'REFUND-ACCOUNT', 'reason' => 'تسوية استثنائية موثقة', 'amount' => 999, 'user_id' => $this->admin()->id, 'status' => 'COMPLETED'];
         $this->post('/admin/refunds', $data)->assertRedirect()->assertSessionHasNoErrors();
@@ -241,9 +249,34 @@ class AdminDashboardRevisionTest extends TestCase
         $this->assertSame('PENDING_REVIEW', $refund->status);
         $this->post('/admin/refunds', $data)->assertSessionHasErrors('payment_id');
         $this->assertSame('succeeded', $payment->fresh()->status);
-        $this->assertSame('active',$enrollment->fresh()->status);
+        $this->assertSame('active', $enrollment->fresh()->status);
+        $this->assertNotNull($enrollment->fresh()->access_frozen_at);
+        $this->assertDatabaseCount('refund_lesson_items', 1);
         $this->get('/admin/refunds/'.$refund->id)->assertOk()->assertSee('قرار المراجعة الإدارية');
         $export = $this->get('/admin/refunds?export=1')->assertOk()->streamedContent();
-        $this->assertStringContainsString('EXCEPTIONAL-01',$export);
+        $this->assertStringContainsString('EXCEPTIONAL-01', $export);
+    }
+
+    public function test_admin_refund_respects_new_lesson_consumption_and_rejects_unsnapshotted_legacy_prices(): void
+    {
+        $a = $this->teacher();
+        $student = $this->student();
+        $this->actingAs($this->admin());
+        $e = Enrollment::create(['student_id' => $student->id, 'teacher_id' => $a['teacher']->id, 'enrollable_type' => 'teacher_subject', 'enrollable_id' => $a['course']->id, 'status' => 'active', 'price' => 50]);
+        $p = Payment::create(['payer_id' => $student->user_id, 'payable_type' => $e->getMorphClass(), 'payable_id' => $e->id, 'provider' => 'sham_cash', 'provider_reference' => 'CONSUMED-REFUND', 'amount' => 50, 'currency' => 'SYP', 'status' => 'succeeded']);
+        $body = ['payment_id' => $p->id, 'account_id' => 'FIXTURE-ACCOUNT', 'reason' => 'طلب اختبار', 'amount' => 999];
+        $this->post('/admin/refunds', $body)->assertSessionHasErrors('payment_id');
+        $this->assertDatabaseCount('refund_requests', 0);
+        $next = Lesson::create(['unit_id' => $a['unit']->id, 'title' => 'درس غير مستهلك', 'status' => 'published']);
+        foreach ([[$a['lesson'], 20, [$a['content']->id]], [$next, 30, []]] as [$lesson, $amount, $ids]) {
+            PaymentLessonAllocation::create(['payment_id' => $p->id, 'lesson_id' => $lesson->id, 'lesson_title' => $lesson->title, 'lesson_price_snapshot' => $amount, 'allocated_amount' => $amount, 'content_ids_snapshot' => $ids]);
+        }
+        LessonCompletion::create(['student_id' => $student->id, 'lesson_id' => $a['lesson']->id, 'completed_at' => now()]);
+        $this->post('/admin/refunds', $body)->assertRedirect()->assertSessionHasNoErrors();
+        $r = RefundRequest::firstOrFail();
+        $this->assertSame('30.00', $r->amount);
+        $this->assertNotNull($e->fresh()->access_frozen_at);
+        $this->assertDatabaseHas('refund_lesson_items', ['refund_request_id' => $r->id, 'amount' => 30]);
+        $this->get('/admin/refunds/'.$r->id)->assertOk()->assertSee('name="rejection_code"', false);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\GroupStudent;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
+use App\Models\User;
 use App\Services\GroupMembershipRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,10 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 class GroupsController extends AdminController
 {
-    public function index(Request $request)
+    public function index(Request $request, User $teacherUser)
     {
         $data = $this->filters($request);
-        $query = Group::with(['teacherSubject.teacher.user', 'teacherSubject.subject'])->withCount(['groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active')]);
+        $scope = Group::whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $teacherUser->teacher->id));
+        $query = (clone $scope)->with(['teacherSubject.teacher.user', 'teacherSubject.subject'])->withCount(['groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active')]);
         if (! empty($data['search'])) {
             $query->where('name', 'like', '%'.$data['search'].'%');
         }
@@ -31,42 +33,43 @@ class GroupsController extends AdminController
             return $this->csv($query->orderBy('id'), ['المعرف' => 'id', 'المجموعة' => 'name', 'المدرس' => 'teacherSubject.teacher.user.name', 'المادة' => 'teacherSubject.subject.name', 'الحالة' => 'status', 'السعة' => 'capacity'], 'groups');
         }
         $items = $query->orderByDesc('id')->paginate(15)->withQueryString();
-        $teachers = Teacher::with('user')->get();
-        $stats = ['total' => Group::count(), 'active' => Group::whereIn('status', ['active', 'forming'])->count(), 'closed' => Group::where('status', 'closed')->count()];
 
-        return view('admin.groups.index', compact('items', 'teachers', 'stats'));
+        $stats = ['total' => (clone $scope)->count(), 'active' => (clone $scope)->whereIn('status', ['active', 'forming'])->count(), 'closed' => (clone $scope)->where('status', 'closed')->count()];
+
+        return view('admin.groups.index', compact('items', 'stats'));
     }
 
-    public function create()
+    public function create(User $teacherUser)
     {
-        return $this->form(new Group(['capacity' => 12, 'status' => 'forming']));
+        return $this->form($teacherUser, new Group(['capacity' => 12, 'status' => 'forming']));
     }
 
-    public function edit(Group $group)
+    public function edit(User $teacherUser, Group $group)
     {
-        return $this->form($group);
+        return $this->form($teacherUser, $group);
     }
 
-    private function form(Group $group)
+    private function form(User $teacherUser, Group $group)
     {
-        $courses = TeacherSubject::with(['teacher.user', 'subject'])->where('status', 'active')->get();
+        $courses = TeacherSubject::where('teacher_id', $teacherUser->teacher->id)->with(['teacher.user', 'subject'])->where('status', 'active')->get();
 
         return view('admin.groups.form', compact('group', 'courses'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, User $teacherUser)
     {
-        return $this->save($request, new Group);
+        return $this->save($request, $teacherUser, new Group);
     }
 
-    public function update(Request $request, Group $group)
+    public function update(Request $request, User $teacherUser, Group $group)
     {
-        return $this->save($request, $group);
+        return $this->save($request, $teacherUser, $group);
     }
 
-    private function save(Request $request, Group $group)
+    private function save(Request $request, User $teacherUser, Group $group)
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:255'], 'teacher_subject_id' => ['required', 'integer', 'exists:teacher_subjects,id'], 'capacity' => ['required', 'integer', 'between:1,100000'], 'status' => ['required', 'in:forming,active,closed']]);
+        abort_unless(TeacherSubject::whereKey($data['teacher_subject_id'])->where('teacher_id', $teacherUser->teacher->id)->exists(), 404);
         DB::transaction(function () use ($group, $data) {
             $course = TeacherSubject::with(['teacher.user', 'subject'])->findOrFail($data['teacher_subject_id']);
             Teacher::whereKey($course->teacher_id)->lockForUpdate()->firstOrFail();
@@ -86,10 +89,10 @@ class GroupsController extends AdminController
             $this->audit('group.saved', $group);
         });
 
-        return redirect()->route('admin.groups.index')->with('success', 'تم حفظ المجموعة.');
+        return redirect()->route('admin.groups.index', ['teacherUser' => $teacherUser])->with('success', 'تم حفظ المجموعة.');
     }
 
-    public function show(Group $group)
+    public function show(User $teacherUser, Group $group)
     {
         $group->load(['teacherSubject.teacher.user', 'teacherSubject.subject', 'groupStudents.student.user', 'sessions.attendance']);
         $students = Student::with('user')->where('status', 'active')->get();
@@ -97,7 +100,7 @@ class GroupsController extends AdminController
         return view('admin.groups.show', compact('group', 'students'));
     }
 
-    public function add(Request $request, Group $group)
+    public function add(Request $request, User $teacherUser, Group $group)
     {
         $data = $request->validate(['student_id' => ['required', 'integer', 'exists:students,id']]);
         DB::transaction(function () use ($group, $data) {
@@ -119,7 +122,7 @@ class GroupsController extends AdminController
         return back()->with('success', 'تمت إضافة العضوية.');
     }
 
-    public function remove(Group $group, GroupStudent $membership)
+    public function remove(User $teacherUser, Group $group, GroupStudent $membership)
     {
         abort_unless($membership->group_id === $group->id, 404);
         DB::transaction(function () use ($group, $membership) {

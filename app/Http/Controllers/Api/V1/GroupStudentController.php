@@ -6,6 +6,7 @@ use App\Models\Group;
 use App\Models\GroupStudent;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Services\GroupJoinRequests;
 use App\Services\GroupMembershipRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,7 @@ class GroupStudentController extends ApiController
         $group = Group::findOrFail($id);
         $this->authorize('manage', $group);
 
-        return DB::transaction(function () use ($data, $group) {
+        return DB::transaction(function () use ($data, $group, $request) {
             Teacher::whereKey($group->teacherSubject->teacher_id)->lockForUpdate()->firstOrFail();
             $group = Group::whereKey($group->id)->lockForUpdate()->firstOrFail();
             $student = Student::whereKey($data['student_id'])->lockForUpdate()->firstOrFail();
@@ -27,6 +28,8 @@ class GroupStudentController extends ApiController
             abort_if($group->groupStudents()->where('student_id', $student->id)->where('status', 'active')->exists(), 409, 'Student is already a member.');
             abort_if($group->groupStudents()->where('status', 'active')->count() >= $group->capacity, 409, 'Group is full.');
             $member = GroupStudent::updateOrCreate(['group_id' => $group->id, 'student_id' => $student->id], ['status' => 'active', 'joined_at' => now(), 'left_at' => null]);
+
+            app(GroupJoinRequests::class)->approveAfterDirectAdd($group, $student, $request->user()->id);
 
             return $this->success($member, 'Student added to group.', 201);
         }, 3);

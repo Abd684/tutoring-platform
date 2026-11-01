@@ -217,15 +217,18 @@ class PaidBookingRefundTest extends TestCase
         $this->getJson('/api/v1/student/notifications')->assertOk()->assertJsonPath('meta.total', 2);
     }
 
-    public function test_physical_checkout_is_rejected_and_direct_group_membership_claims_last_seat(): void
+    public function test_physical_checkout_is_rejected_and_teacher_approval_claims_last_seat(): void
     {
         $this->postJson('/api/v1/payments/checkout', ['service_type' => 'lesson_booking', 'service_id' => 1])->assertUnprocessable();
         $g = Group::create(['teacher_subject_id' => $this->course->id, 'name' => 'Group', 'capacity' => 1, 'status' => 'active', 'session_price' => 50, 'teaching_scope_type' => 'lesson', 'teaching_scope_id' => $this->first->id]);
-        $this->postJson('/api/v1/student/groups/'.$g->id.'/join-request')->assertCreated()->assertJsonPath('data.membership.status', 'active')->assertJsonPath('data.requires_teacher_approval', false);
+        $id = $this->postJson('/api/v1/student/groups/'.$g->id.'/join-request')->assertCreated()->assertJsonPath('data.join_request.status', 'pending')->assertJsonPath('data.requires_teacher_approval', true)->json('data.join_request.id');
+        $this->assertDatabaseCount('group_students', 0);
+        Sanctum::actingAs($this->teacherUser);
+        $this->postJson('/api/v1/teacher/groups/'.$g->id.'/join-requests/'.$id.'/approve')->assertOk();
         $other = User::factory()->create();
         Student::create(['user_id' => $other->id, 'status' => 'active']);
         Sanctum::actingAs($other);
-        $this->postJson('/api/v1/student/groups/'.$g->id.'/join')->assertConflict()->assertJsonPath('code', 'GROUP_FULL');
+        $this->postJson('/api/v1/student/groups/'.$g->id.'/join')->assertConflict();
         $this->getJson('/api/v1/student/groups/'.$g->id.'/members')->assertOk()->assertJsonPath('data.members_count', 1)->assertJsonMissingPath('data.members.0.phone');
         $this->assertDatabaseCount('payments', 0);
         $this->assertDatabaseCount('group_students', 1);

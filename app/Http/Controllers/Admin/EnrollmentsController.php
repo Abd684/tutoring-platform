@@ -18,13 +18,13 @@ class EnrollmentsController extends AdminController
 {
     private function query()
     {
-        return Enrollment::with(['student.user', 'teacher.user', 'enrollable', 'groupEnrollments.group']);
+        return Enrollment::with(['student.user', 'teacher.user', 'enrollable']);
     }
 
     public function index(Request $request)
     {
         $data = $this->filters($request);
-        $request->validate(['type' => ['nullable', 'in:teacher_subject,unit,content,paid_booking'], 'enrollment_id' => ['nullable', 'integer', 'exists:enrollments,id']]);
+        $request->validate(['type' => ['nullable', 'in:teacher_subject,unit,lesson,content,paid_booking'], 'enrollment_id' => ['nullable', 'integer', 'exists:enrollments,id']]);
         $query = $this->query();
         if (! empty($data['search'])) {
             $term = $data['search'];
@@ -109,15 +109,10 @@ class EnrollmentsController extends AdminController
             if ($record->enrollable_type === 'paid_booking' || (float) $record->price !== 0.0 || Payment::where('payable_type', (new Enrollment)->getMorphClass())->where('payable_id', $record->id)->exists() || $record->status !== 'active') {
                 throw ValidationException::withMessages(['reason' => 'الإلغاء المباشر للتسجيل المجاني فقط. التسجيل المدفوع يعالج عبر طلب استرداد.']);
             }
-            if ($record->sessions()->where('status', 'ongoing')->exists() || $record->sessions()->where('status', 'scheduled')->where('starts_at', '<=', now())->where('ends_at', '>', now())->exists()) {
-                throw ValidationException::withMessages(['reason' => 'لا يمكن إنهاء تسجيل له جلسة جارية.']);
-            }
             $record->update(['status' => 'cancelled']);
-            $record->groupEnrollments()->where('status', 'active')->update(['status' => 'removed', 'left_at' => now()]);
-            $record->sessions()->where('status','scheduled')->where('starts_at','>',now())->update(['status' => 'cancelled']);
-            $this->audit('enrollment.cancelled',$record,['reason' => $data['reason']]);
+            $this->audit('enrollment.cancelled', $record, ['reason' => $data['reason']]);
         }, 3);
 
-        return back()->with('success','تم إنهاء التسجيل المجاني مع حفظ السجل.');
+        return back()->with('success', 'تم إنهاء التسجيل المجاني مع حفظ السجل.');
     }
 }

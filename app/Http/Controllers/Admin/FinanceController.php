@@ -12,8 +12,9 @@ use App\Models\Payment;
 use App\Models\PaymentSetting;
 use App\Models\RefundRequest;
 use App\Models\User;
-use App\Services\PaidLessonBookings;
+use App\Services\OnlineRefunds;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -130,18 +131,17 @@ class FinanceController extends AdminController
         }
         try {
             $refund = DB::transaction(function () use ($seed, $data) {
-                [$payment] = app(PaidLessonBookings::class)->lockPayment($seed);
-                if ($payment->status !== 'succeeded' || $payment->provider !== 'sham_cash' || $payment->payer?->role !== 'student') {
-                    throw ValidationException::withMessages(['payment_id' => 'اختر دفعة طالب معتمدة عبر شام كاش.']);
-                }
+                [$payment, $enrollment] = app(OnlineRefunds::class)->lock($seed);
                 if (RefundRequest::where('active_payment_id', $payment->id)->exists()) {
                     throw ValidationException::withMessages(['payment_id' => 'يوجد طلب استرداد قائم لهذه الدفعة.']);
                 }
-                $refund = RefundRequest::create(['payment_id' => $payment->id, 'active_payment_id' => $payment->id, 'user_id' => $payment->payer_id, 'amount' => $payment->amount, 'currency' => $payment->currency, 'account_id' => trim($data['account_id']), 'reason_code' => 'exceptional', 'reason' => trim($data['reason']), 'status' => 'PENDING_REVIEW']);
+                $refund = app(OnlineRefunds::class)->request($payment, $enrollment, [...$data, 'reason_code' => 'exceptional'], auth()->id());
                 $this->audit('refund.requested', $refund, ['source' => 'administrative_exceptional']);
 
                 return $refund;
             }, 3);
+        } catch (HttpResponseException $error) {
+            throw ValidationException::withMessages(['payment_id' => $error->getResponse()->getData(true)['message'] ?? 'تعذر تقديم الاسترداد.']);
         } catch (UniqueConstraintViolationException $error) {
             throw ValidationException::withMessages(['payment_id' => 'يوجد طلب استرداد قائم لهذه الدفعة.']);
         }
@@ -157,6 +157,11 @@ class FinanceController extends AdminController
     public function completeRefund(Request $request, RefundRequest $refund)
     {
         return $this->apiResult(app(RefundController::class)->complete($request, $refund), 'تم توثيق إتمام التحويل اليدوي.');
+    }
+
+    public function refundProof(Request $request, RefundRequest $refund, string $kind)
+    {
+        return app(RefundController::class)->proof($request, $refund, $kind);
     }
 
     public function paymentSettings()

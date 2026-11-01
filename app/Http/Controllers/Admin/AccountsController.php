@@ -70,6 +70,7 @@ class AccountsController extends AdminController
     public function edit(Request $request, User $user)
     {
         $isTeacher = $this->teacher($request);
+        $request->validate(['tab' => ['nullable', 'in:profile,courses,payments,subscriptions']]);
         abort_unless($user->role === ($isTeacher ? 'teacher' : 'student'), 404);
 
         return $this->form($isTeacher, $user, $isTeacher ? $user->teacher : $user->student);
@@ -105,7 +106,7 @@ class AccountsController extends AdminController
             abort_unless($user->role === $role, 404);
         }
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'], 'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
+            'name' => ['required', 'string', 'max:255'], 'email' => $user ? ['sometimes', 'nullable', Rule::in([$user->email])] : ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user?->id)],
             'password' => [$user ? 'prohibited' : 'required', 'string', 'min:8', 'max:255', 'confirmed'],
             'status' => ['required', 'in:active,suspended'], 'region_id' => ['nullable', 'integer', 'exists:regions,id'],
@@ -120,6 +121,9 @@ class AccountsController extends AdminController
         ]);
         if (! $isTeacher && ! empty($data['school_id']) && (int) School::find($data['school_id'])->region_id !== (int) ($data['region_id'] ?? 0)) {
             throw ValidationException::withMessages(['school_id' => ['المدرسة لا تتبع المنطقة المختارة.']]);
+        }
+        if ($user) {
+            unset($data['email']);
         }
         $saved = DB::transaction(function () use ($request, $data, $user, $isTeacher, $role) {
             $identity = array_intersect_key($data, array_flip(['name', 'email', 'phone', 'region_id']));
@@ -182,6 +186,7 @@ class AccountsController extends AdminController
     public function show(Request $request, User $user)
     {
         $isTeacher = $this->teacher($request);
+        $request->validate(['tab' => ['nullable', 'in:profile,courses,payments,subscriptions']]);
         abort_unless($user->role === ($isTeacher ? 'teacher' : 'student'), 404);
         $account = $isTeacher ? $user->teacher : $user->student;
         abort_unless($account, 404);
@@ -193,7 +198,9 @@ class AccountsController extends AdminController
         $subscriptions = $isTeacher ? $account->subscriptions()->with('plan')->latest('starts_at')->get() : collect();
         $availability = $isTeacher ? $account->availabilities()->orderBy('date')->limit(20)->get() : collect();
 
-        return view('admin.accounts.show', compact('user', 'account', 'isTeacher', 'payments', 'courses', 'sessions', 'subscriptions', 'availability'));
+        $tab = $request->input('tab', 'profile');
+
+        return view('admin.accounts.show', compact('user', 'account', 'isTeacher', 'payments', 'courses', 'sessions', 'subscriptions', 'availability', 'tab'));
     }
 
     public function status(Request $request, User $user)

@@ -60,6 +60,7 @@ Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(fu
         Route::get('refunds/create', [FinanceController::class, 'createRefund'])->name('refunds.create');
         Route::post('refunds', [FinanceController::class, 'storeRefund'])->name('refunds.store');
         Route::get('refunds/{refund}', [FinanceController::class, 'refund'])->whereNumber('refund')->name('refunds.show');
+        Route::get('refunds/{refund}/proof/{kind}', [FinanceController::class, 'refundProof'])->where('kind', 'refund|original')->name('refunds.proof');
         Route::post('refunds/{refund}/review', [FinanceController::class, 'reviewRefund'])->name('refunds.review');
         Route::post('refunds/{refund}/complete', [FinanceController::class, 'completeRefund'])->name('refunds.complete');
         Route::get('subscriptions', [SubscriptionsController::class, 'index'])->name('subscriptions.index');

@@ -98,4 +98,35 @@ class TeachingMigrationTest extends TestCase
         (require database_path('migrations/2026_10_31_000002_separate_teaching_sessions_from_enrollments.php'))->up();
         $this->assertDatabaseHas('individuals', ['student_id' => $f['student'], 'teacher_subject_id' => $f['course']]);
     }
+
+    public function test_interrupted_backfill_resumes_without_duplicate_individuals_or_losing_attendance(): void
+    {
+        $f = $this->legacy();
+        $migration = require database_path('migrations/2026_10_31_000002_separate_teaching_sessions_from_enrollments.php');
+        $interrupt = true;
+        DB::listen(function ($query) use (&$interrupt) {
+            if ($interrupt && str_contains($query->sql, 'attendance_session_id_student_id_unique')) {
+                $interrupt = false;
+                throw new \RuntimeException('Simulated interruption after new attendance index');
+            }
+        });
+        try {
+            $migration->up();
+            $this->fail('Expected simulated interruption');
+        } catch (\RuntimeException $error) {
+            $this->assertSame('Simulated interruption after new attendance index', $error->getMessage());
+        }
+        $id = DB::table('sessions')->where('id', $f['session'])->value('type_id');
+        $this->assertDatabaseCount('individuals', 1);
+        $migration->up();
+        $migration->up();
+        $this->assertDatabaseCount('individuals', 1);
+        $this->assertDatabaseHas('sessions', ['id' => $f['session'], 'type' => 'individual', 'type_id' => $id]);
+        $this->assertDatabaseHas('attendance', ['session_id' => $f['session'], 'student_id' => $f['student'], 'note' => 'Keep this note']);
+        (require database_path('migrations/2026_10_31_000003_complete_online_and_cash_teaching.php'))->up();
+        $migration->up();
+        $this->assertDatabaseCount('individuals', 1);
+        $this->assertSame('subject', DB::table('individuals')->value('teaching_scope_type'));
+        $this->assertTrue(Schema::hasIndex('refund_lesson_items', 'refund_lesson_items_request_allocation_unique'));
+    }
 }
