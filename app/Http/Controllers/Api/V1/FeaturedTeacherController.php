@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Enrollment;
 use App\Models\Teacher;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,7 +23,7 @@ class FeaturedTeacherController extends ApiController
                 'active_students_count',
             );
         $paginator = $query->orderByDesc('active_students_count')->orderBy('teachers.id')
-            ->paginate($this->perPage($request));
+            ->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'teachers'))->paginate($this->perPage($request));
         $paginator->through(fn (Teacher $teacher): array => [
             'id' => $teacher->id,
             'name' => $teacher->user->name,

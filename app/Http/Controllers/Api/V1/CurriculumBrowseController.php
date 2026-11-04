@@ -4,19 +4,20 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Content;
 use App\Models\Lesson;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CurriculumBrowseController extends ApiController
 {
-    public function lessonContents(Lesson $lesson): JsonResponse
+    public function lessonContents(Lesson $lesson, Request $request): JsonResponse
     {
         abort_unless($lesson->status === 'published' && $lesson->unit?->status === 'published'
             && $lesson->unit?->teacherSubject?->status === 'active'
             && $lesson->unit?->teacherSubject?->subject?->status === 'active'
             && $lesson->unit?->teacherSubject?->teacher?->status === 'active'
             && $lesson->unit?->teacherSubject?->teacher?->user?->status === 'active', 404);
-        $contents = $lesson->contents()
+        $contents = $lesson->contents()->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'contents'))
             ->where('status', 'published')
             ->withCount(['assets', 'quizzes' => fn ($q) => $q->where('status', 'published')])->with(['quizzes' => fn ($q) => $q->where('status', 'published')->select('id', 'content_id', 'status', 'attempts_allowed', 'duration_minutes')])
             ->with(['assets' => fn ($q) => $q->where('status', 'active')->with('videoAsset')])

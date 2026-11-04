@@ -147,7 +147,6 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
     Route::post('/student/groups/{group}/join-request', [GroupJoinRequestController::class, 'store']);
     Route::get('/student/groups/{group}/join-requests', [GroupJoinRequestController::class, 'studentIndex']);
     Route::post('/student/groups/{group}/withdraw', [PhysicalTeachingController::class, 'withdraw']);
-    Route::get('/student/teachers/{teacher}/physical/individual-offers', [PhysicalTeachingController::class, 'offers']);
     Route::get('/student/teachers/{teacher}/availability', [PhysicalAvailabilityController::class, 'index']);
     Route::post('/student/individual-bookings', [PhysicalTeachingController::class, 'book']);
     Route::get('/student/teachers/{teacher}/online-content', [OnlineLearningController::class, 'tree']);

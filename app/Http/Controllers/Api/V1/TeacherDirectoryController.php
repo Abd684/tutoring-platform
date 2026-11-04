@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Teacher;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 
 class TeacherDirectoryController extends ApiController
@@ -18,17 +19,9 @@ class TeacherDirectoryController extends ApiController
         ], ['grade.prohibited' => 'Grade filtering is not supported: teaching grades are not mapped to teacher subjects.']);
         $query = Teacher::where('status', 'active')->whereHas('user', fn ($q) => $q->where('status', 'active'))
             ->with('user:id,name,region_id,avatar_path,status');
-        foreach (['search', 'specialization'] as $field) {
-            $value = trim($data[$field] ?? '');
-            if ($value === '') {
-                continue;
-            }
-            $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($value)).'%';
-            if ($field === 'search') {
-                $query->whereHas('user', fn ($q) => $q->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$pattern]));
-            } else {
-                $query->whereRaw("LOWER(specialization) LIKE ? ESCAPE '!'", [$pattern]);
-            }
+        $specialization = trim($data['specialization'] ?? '');
+        if ($specialization !== '') {
+            $query->whereRaw("LOWER(specialization) LIKE ? ESCAPE '!'", [app(ListSearch::class)->pattern($specialization)]);
         }
         if (isset($data['region_id'])) {
             $query->whereHas('user', fn ($q) => $q->where('region_id', $data['region_id']));
@@ -36,7 +29,7 @@ class TeacherDirectoryController extends ApiController
         if (isset($data['subject_id'])) {
             $query->whereHas('teacherSubjects', fn ($q) => $q->where('subject_id', $data['subject_id'])->where('status', 'active')->whereHas('subject', fn ($q) => $q->where('status', 'active')));
         }
-        $page = $query->orderBy('id')->paginate($data['per_page'] ?? 20);
+        $page = $query->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'teachers'))->orderBy('id')->paginate($data['per_page'] ?? 20);
         $page->setCollection($page->getCollection()->map(fn ($teacher) => [
             'id' => $teacher->id, 'name' => $teacher->user->name, 'specialization' => $teacher->specialization,
             'avatar_url' => $teacher->user->avatar_url, 'modes' => ['online', 'physical'], 'status' => $teacher->status, 'region_id' => $teacher->user->region_id,

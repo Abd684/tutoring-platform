@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Group;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 
 class TeacherGroupMembersController extends ApiController
@@ -15,7 +16,7 @@ class TeacherGroupMembersController extends ApiController
         if (isset($data['status']) && $data['status'] !== 'all') {
             $query->where('status', $data['status']);
         }
-        $p = $query->with(['student.user:id,name,phone,region_id,avatar_path', 'student.school.region'])->orderByDesc('id')->paginate($this->perPage($r));
+        $p = $query->with(['student.user:id,name,phone,region_id,avatar_path', 'student.school.region'])->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $r, 'members'))->paginate($this->perPage($r));
 
         return $this->paginated($p);
     }

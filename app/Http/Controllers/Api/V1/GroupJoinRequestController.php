@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Group;
 use App\Models\GroupJoinRequest;
 use App\Services\GroupJoinRequests;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 
 class GroupJoinRequestController extends ApiController
@@ -22,7 +23,7 @@ class GroupJoinRequestController extends ApiController
     {
         $this->authorize('accessStudent', Group::class);
 
-        return $this->paginated(GroupJoinRequest::where('group_id', $group->id)->where('student_id', $request->user()->student->id)->orderByDesc('id')->paginate($this->perPage($request)));
+        return $this->paginated(GroupJoinRequest::where('group_id', $group->id)->where('student_id', $request->user()->student->id)->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'join_requests'))->paginate($this->perPage($request)));
     }
 
     public function teacherIndex(Request $request, Group $group)
@@ -34,7 +35,7 @@ class GroupJoinRequestController extends ApiController
             $query->where('status', $data['status'] ?? 'pending');
         }
 
-        return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
+        return $this->paginated($query->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'join_requests'))->paginate($this->perPage($request)));
     }
 
     public function decide(Request $request, Group $group, GroupJoinRequest $joinRequest, string $decision, GroupJoinRequests $service)

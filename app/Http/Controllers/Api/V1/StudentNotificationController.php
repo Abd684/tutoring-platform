@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Notification;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 
 class StudentNotificationController extends ApiController
 {
     public function index(Request $r)
     {
-        $p = Notification::where('user_id', $r->user()->id)->orderByDesc('id')->paginate($this->perPage($r));
+        $p = Notification::where('user_id', $r->user()->id)->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $r, 'notifications'))->paginate($this->perPage($r));
         $p->setCollection($p->getCollection()->map(fn ($n) => $n->only(['id', 'type', 'title', 'body', 'data', 'created_at', 'related_payment_id']) + ['read' => $n->read_at !== null, 'read_at' => $n->read_at]));
 
         return $this->paginated($p);

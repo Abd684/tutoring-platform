@@ -7,7 +7,6 @@ use App\Models\AuditLog;
 use App\Models\Content;
 use App\Models\Enrollment;
 use App\Models\Group;
-use App\Models\IndividualOffer;
 use App\Models\Lesson;
 use App\Models\Payment;
 use App\Models\PaymentLessonAllocation;
@@ -234,11 +233,11 @@ class PaidBookingRefundTest extends TestCase
         $this->assertDatabaseCount('group_students', 1);
     }
 
-    public function test_individual_offer_books_a_cash_slot_once_without_enrollment_or_payment(): void
+    public function test_subject_books_a_cash_slot_once_without_enrollment_or_payment(): void
     {
-        $offer = IndividualOffer::create(['teacher_subject_id' => $this->course->id, 'teaching_scope_type' => 'unit', 'teaching_scope_id' => $this->unit->id, 'title' => 'Unit tutoring', 'session_price' => 25, 'status' => 'active']);
+        $this->course->update(['individual_session_price' => 25, 'individual_currency' => 'SYP']);
         $a = TeacherAvailability::create(['teacher_id' => $this->teacher->id, 'date' => now()->addDay()->toDateString(), 'start_time' => '10:00', 'end_time' => '11:00', 'recurrence_type' => 'none', 'timezone' => 'UTC', 'status' => 'active']);
-        $body = ['offer_id' => $offer->id, 'availability_id' => $a->id, 'starts_at' => now()->addDay()->setTime(10, 0)->toIso8601String(), 'ends_at' => now()->addDay()->setTime(11, 0)->toIso8601String()];
+        $body = ['teacher_subject_id' => $this->course->id, 'availability_id' => $a->id, 'starts_at' => now()->addDay()->setTime(10, 0)->toIso8601String(), 'ends_at' => now()->addDay()->setTime(11, 0)->toIso8601String()];
         $this->postJson('/api/v1/student/individual-bookings', $body)->assertCreated()->assertJsonPath('data.payment_method', 'cash_to_teacher')->assertJsonPath('data.session.type', 'individual');
         $other = User::factory()->create();
         Student::create(['user_id' => $other->id, 'status' => 'active']);

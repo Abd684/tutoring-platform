@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Session;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 
 class StudentBookingController extends ApiController
@@ -15,7 +16,7 @@ class StudentBookingController extends ApiController
         $sessions = Session::forStudent($request->user()->student->id)->with(['teacher.user:id,name', 'target.teacherSubject.subject'])
             ->when($scope === 'upcoming', fn ($q) => $q->where('starts_at', '>=', now())->where('status', 'scheduled'))
             ->when($scope === 'history', fn ($q) => $q->where(fn ($q) => $q->where('ends_at', '<=', now())->orWhereIn('status', ['completed', 'cancelled'])))
-            ->orderBy('starts_at')->get();
+            ->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'sessions'))->orderBy('starts_at')->get();
 
         return response()->json(['data' => $sessions->map(fn ($session) => $this->payload($session))]);
     }

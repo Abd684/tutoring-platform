@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Governortate;
 use App\Models\Region;
 use App\Models\School;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class LocationController extends Controller
 {
@@ -15,9 +17,9 @@ class LocationController extends Controller
      *
      * Public endpoint used by the registration screen.
      */
-    public function governorates(): JsonResponse
+    public function governorates(Request $request): JsonResponse
     {
-        $governorates = Governortate::query()
+        $governorates = Governortate::query()->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'locations'))
             ->select('id', 'name')
             ->orderBy('id')
             ->get();
@@ -33,7 +35,7 @@ class LocationController extends Controller
      *
      * Return only regions that belong to the selected governorate.
      */
-    public function regions(int $id): JsonResponse
+    public function regions(int $id, Request $request): JsonResponse
     {
         $governorate = Governortate::query()
             ->select('id', 'name')
@@ -46,7 +48,7 @@ class LocationController extends Controller
             ], 404);
         }
 
-        $regions = Region::query()
+        $regions = Region::query()->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'locations'))
             ->where('governortate_id', $governorate->id)
             ->select('id', 'name')
             ->orderBy('name')
@@ -63,7 +65,7 @@ class LocationController extends Controller
      *
      * Return only schools that belong to the selected region.
      */
-    public function schools(int $id): JsonResponse
+    public function schools(int $id, Request $request): JsonResponse
     {
         $region = Region::query()
             ->select('id', 'name')
@@ -76,7 +78,7 @@ class LocationController extends Controller
             ], 404);
         }
 
-        $schools = School::query()
+        $schools = School::query()->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'locations'))
             ->where('region_id', $region->id)
             ->select('id', 'name')
             ->orderBy('name')

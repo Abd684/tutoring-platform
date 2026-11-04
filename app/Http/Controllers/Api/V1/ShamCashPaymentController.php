@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentCheckout;
 use App\Models\PaymentSetting;
 use App\Models\Student;
+use App\Services\ListSearch;
 use App\Services\OnlinePricing;
 use App\Services\ShamCashPayments;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -142,7 +143,7 @@ class ShamCashPaymentController extends ApiController
         if (isset($filters['payment_status'])) {
             $query->where('status', ['PENDING_REVIEW' => 'pending', 'APPROVED' => 'succeeded', 'REJECTED' => 'failed'][$filters['payment_status']]);
         }
-        $paginator = $query->orderByDesc('id')->paginate($this->perPage($request));
+        $paginator = $query->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'payments'))->paginate($this->perPage($request));
         $paginator->setCollection($paginator->getCollection()->map(fn ($payment) => $service->payload($payment)));
 
         return $this->paginated($paginator);

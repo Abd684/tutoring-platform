@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\PaidBooking;
 use App\Models\TeacherAvailability;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -36,7 +37,7 @@ class TeacherAvailabilityController extends ApiController
             ->orderBy('start_time');
 
         return $this->paginated(
-            $query->paginate($this->perPage($request))
+            $query->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'availability'))->paginate($this->perPage($request))
         );
     }
 

@@ -21,7 +21,7 @@ class TeachingMigrationTest extends TestCase
         DB::setDefaultConnection('teaching_legacy');
         Schema::swap(DB::connection('teaching_legacy')->getSchemaBuilder());
         foreach (glob(database_path('migrations/*.php')) as $path) {
-            if (str_contains($path, '2026_10_31_000002') || str_contains($path, '2026_10_31_000003')) {
+            if (str_contains($path, '2026_10_31_000002') || str_contains($path, '2026_10_31_000003') || str_contains($path, '2026_11_04_000001')) {
                 continue;
             }
             (require $path)->up();

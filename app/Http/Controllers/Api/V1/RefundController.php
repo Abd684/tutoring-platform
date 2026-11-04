@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Payment;
 use App\Models\RefundRequest;
+use App\Services\ListSearch;
 use App\Services\OnlinePricing;
 use App\Services\OnlineRefunds;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class RefundController extends ApiController
         if (isset($d['payment_id'])) {
             return $this->success($service->eligibility($q->findOrFail($d['payment_id'])));
         }
-        $p = $q->orderByDesc('id')->paginate($this->perPage($r));
+        $p = $q->tap(fn ($query) => app(ListSearch::class)->apply($query, $r, 'payments'))->orderByDesc('id')->paginate($this->perPage($r));
         $p->setCollection($p->getCollection()->map(fn ($x) => $service->eligibility($x)));
 
         return $this->paginated($p);
@@ -67,7 +68,7 @@ class RefundController extends ApiController
         abort_unless($r->user()->status === 'active', 403);
         $d = $r->validate(['status' => ['sometimes', 'in:PENDING_REVIEW,APPROVED,REJECTED,COMPLETED']]);
         $q = RefundRequest::query()->when($r->user()->role === 'student', fn ($q) => $q->where('user_id', $r->user()->id))->when(isset($d['status']), fn ($q) => $q->where('status', $d['status']));
-        $p = $q->orderByDesc('id')->paginate($this->perPage($r));
+        $p = $q->tap(fn ($query) => app(ListSearch::class)->apply($query, $r, 'refunds'))->orderByDesc('id')->paginate($this->perPage($r));
         $p->setCollection($p->getCollection()->map(fn ($x) => $this->payload($x)));
 
         return $this->paginated($p);

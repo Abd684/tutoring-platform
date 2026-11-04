@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\SubscriptionPlan;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,7 @@ class SubscriptionPlanController extends ApiController
             ->orderBy('price')
             ->orderBy('id');
 
-        return $this->paginated($query->paginate($this->perPage($request)));
+        return $this->paginated($query->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'plans'))->paginate($this->perPage($request)));
     }
 
     public function index(Request $request): JsonResponse
@@ -37,10 +38,9 @@ class SubscriptionPlanController extends ApiController
         $query = SubscriptionPlan::query();
 
         $query->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
-            ->when($request->filled('billing_cycle'), fn ($q) => $q->where('billing_cycle', $request->string('billing_cycle')))
-            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%'));
+            ->when($request->filled('billing_cycle'), fn ($q) => $q->where('billing_cycle', $request->string('billing_cycle')));
 
-        return $this->paginated($query->orderBy('price')->orderBy('id')->paginate($this->perPage($request)));
+        return $this->paginated($query->orderBy('price')->orderBy('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'plans'))->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse

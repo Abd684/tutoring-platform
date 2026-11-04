@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Services\ContentAccess;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 
 class StudentQuizReadController extends ApiController
@@ -63,7 +64,7 @@ class StudentQuizReadController extends ApiController
             ->withCount(['attempts as attempts_used' => $owned])
             ->addSelect(['latest_attempt_id' => QuizAttempt::select('id')->whereColumn('quiz_id', 'quizzes.id')->where('student_id', $student->id)->orderByDesc('id')->limit(1),
                 'active_attempt_id' => QuizAttempt::select('id')->whereColumn('quiz_id', 'quizzes.id')->where('student_id', $student->id)->where('status', 'in_progress')->orderByDesc('id')->limit(1)]);
-        $page = $query->orderByDesc('id')->paginate($data['per_page'] ?? 20);
+        $page = $query->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'quizzes'))->orderByDesc('id')->paginate($data['per_page'] ?? 20);
         $ids = $page->getCollection()->flatMap(fn ($q) => [$q->latest_attempt_id, $q->active_attempt_id])->filter()->unique();
         $attempts = QuizAttempt::where('student_id', $student->id)->whereIn('id', $ids)->withCount(['answers as pending_answers_count' => fn ($q) => $this->pending($q)])->get()->keyBy('id');
         $allowed = $access->accessibleContents($student)->whereIn('id', $page->getCollection()->pluck('content_id'))->pluck('id')->flip();

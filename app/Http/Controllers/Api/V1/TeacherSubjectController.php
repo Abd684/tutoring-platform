@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\Teacher;
 use App\Models\Enrollment;
+use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use App\Services\CurriculumVisibility;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -90,6 +91,8 @@ class TeacherSubjectController extends ApiController
                 Rule::unique('teacher_subjects', 'subject_id')->where(fn ($q) => $q->where('teacher_id', $request->integer('teacher_id'))),
             ],
             'price' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
+            'individual_session_price' => ['sometimes', 'nullable', 'numeric', 'between:0,9999999999.99'],
+            'individual_currency' => ['sometimes', 'string', 'regex:/^[A-Z]{3}$/'],
             'group_enabled' => ['sometimes', 'boolean'],
             'max_group_size' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'status' => ['sometimes', 'string', 'max:50'],
@@ -129,6 +132,8 @@ class TeacherSubjectController extends ApiController
                     ->ignore($teacherSubject->id),
             ],
             'price' => ['sometimes', 'numeric', 'min:0', 'max:9999999999.99'],
+            'individual_session_price' => ['sometimes', 'nullable', 'numeric', 'between:0,9999999999.99'],
+            'individual_currency' => ['sometimes', 'string', 'regex:/^[A-Z]{3}$/'],
             'group_enabled' => ['sometimes', 'boolean'],
             'max_group_size' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'status' => ['sometimes', 'string', 'max:50'],
@@ -156,11 +161,11 @@ class TeacherSubjectController extends ApiController
         return $this->success(message: 'Teacher subject deleted successfully.');
     }
 
-    public function getSubjectsByTeacher(Teacher $teacher): JsonResponse
+    public function getSubjectsByTeacher(Teacher $teacher, Request $request): JsonResponse
     {
         abort_unless(app(CurriculumVisibility::class)->teacher($teacher), 404);
 
-        $subjects = $teacher->teacherSubjects()
+        $subjects = $teacher->teacherSubjects()->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'courses'))
             ->where('status', 'active')
             ->whereHas('subject', fn ($query) => $query->where('status', 'active'))
             ->with(['subject:id,name,status'])
@@ -170,11 +175,11 @@ class TeacherSubjectController extends ApiController
         return $this->success($subjects, 'Subjects retrieved successfully.');
     }
 
-    public function units(TeacherSubject $teacherSubject): JsonResponse
+    public function units(TeacherSubject $teacherSubject, Request $request): JsonResponse
     {
         abort_unless(app(CurriculumVisibility::class)->course($teacherSubject), 404);
 
-        $units = $teacherSubject->units()
+        $units = $teacherSubject->units()->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'units'))
             ->where('status', 'published')
             ->orderBy('order_no')
             ->orderBy('id')

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Subject;
 use App\Models\TeacherSubject;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 
 class TeacherCourseController extends TeacherSubjectManagementController
@@ -13,6 +14,6 @@ class TeacherCourseController extends TeacherSubjectManagementController
         $this->authorize('viewOwnAny', TeacherSubject::class);
         $data = $request->validate(['page' => ['sometimes', 'integer', 'min:1'], 'per_page' => ['sometimes', 'integer', 'between:1,100']]);
 
-        return $this->paginated(Subject::where('status', 'active')->select('id', 'name', 'description', 'status')->orderBy('id')->paginate($data['per_page'] ?? 20));
+        return $this->paginated(Subject::where('status', 'active')->select('id', 'name', 'description', 'status')->orderBy('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'subjects'))->paginate($data['per_page'] ?? 20));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Unit;
 use App\Services\CurriculumVisibility;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -71,11 +72,11 @@ class UnitController extends ApiController
         return $this->success(message: 'Unit deleted successfully.');
     }
 
-    public function lessons(Unit $unit): JsonResponse
+    public function lessons(Unit $unit, Request $request): JsonResponse
     {
         abort_unless(app(CurriculumVisibility::class)->unit($unit), 404);
 
-        $lessons = $unit->lessons()
+        $lessons = $unit->lessons()->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'lessons'))
             ->where('status', 'published')
             ->orderBy('order_no')
             ->orderBy('id')

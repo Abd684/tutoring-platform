@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\AuditLog;
 use App\Models\NotificationCampaign;
+use App\Services\ListSearch;
 use App\Services\NotificationCampaigns;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class NotificationCampaignController extends ApiController
         $data = $request->validate(['status' => ['sometimes', 'in:draft,scheduled,dispatched,cancelled']]);
 
         return $this->paginated(NotificationCampaign::when(isset($data['status']), fn ($q) => $q->where('status', $data['status']))
-            ->orderByDesc('id')->paginate($this->perPage($request)));
+            ->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'campaigns'))->paginate($this->perPage($request)));
     }
 
     public function store(Request $request)

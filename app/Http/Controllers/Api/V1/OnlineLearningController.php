@@ -11,6 +11,7 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use App\Services\ContentAccess;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +26,7 @@ class OnlineLearningController extends ApiController
     public function tree(Request $r, Teacher $teacher, ContentAccess $access)
     {
         abort_unless($teacher->status === 'active' && $teacher->user?->status === 'active', 404);
-        $courses = $teacher->teacherSubjects()->where('status', 'active')->whereHas('subject', fn ($q) => $q->where('status', 'active'))->with(['subject', 'units' => fn ($q) => $q->where('status', 'published')->orderBy('order_no'), 'units.lessons' => fn ($q) => $q->where('status', 'published')->orderBy('order_no'), 'units.lessons.contents' => fn ($q) => $q->where('status', 'published')->orderBy('order_no')])->get();
+        $courses = $teacher->teacherSubjects()->tap(fn ($query) => app(ListSearch::class)->apply($query, $r, 'curriculum'))->where('status', 'active')->whereHas('subject', fn ($q) => $q->where('status', 'active'))->with(['subject', 'units' => fn ($q) => $q->where('status', 'published')->orderBy('order_no'), 'units.lessons' => fn ($q) => $q->where('status', 'published')->orderBy('order_no'), 'units.lessons.contents' => fn ($q) => $q->where('status', 'published')->orderBy('order_no')])->get();
         $rights = $access->accessibleContents($r->user()->student)->pluck('id')->flip();
 
         return $this->success(['teacher' => ['id' => $teacher->id, 'name' => $teacher->user->name, 'avatar_url' => $teacher->user->avatar_url, 'modes' => ['online', 'physical']],
@@ -36,7 +37,7 @@ class OnlineLearningController extends ApiController
     public function content(Request $r, Lesson $lesson, ContentAccess $access)
     {
         $this->visible($lesson);
-        $contents = $lesson->contents()->where('status', 'published')->with(['quizzes' => fn ($q) => $q->where('status', 'published')->select('id', 'content_id', 'quiz_type', 'attempts_allowed', 'duration_minutes', 'progress_weight', 'status')])->orderBy('order_no')->get();
+        $contents = $lesson->contents()->tap(fn ($query) => app(ListSearch::class)->apply($query, $r, 'contents'))->where('status', 'published')->with(['quizzes' => fn ($q) => $q->where('status', 'published')->select('id', 'content_id', 'quiz_type', 'attempts_allowed', 'duration_minutes', 'progress_weight', 'status')])->orderBy('order_no')->get();
         $rights = $access->accessibleContents($r->user()->student)->where('lesson_id', $lesson->id)->pluck('id')->flip();
 
         return $this->success(['lesson' => $lesson->only(['id', 'title', 'description', 'price']), 'access' => ['allowed' => $rights->isNotEmpty(), 'reason' => $rights->isNotEmpty() ? null : 'PAYMENT_REQUIRED'],

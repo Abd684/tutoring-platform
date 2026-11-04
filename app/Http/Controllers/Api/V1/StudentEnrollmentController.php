@@ -10,6 +10,7 @@ use App\Models\Student;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
 use App\Services\ContentAccess;
+use App\Services\ListSearch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\JsonResponse;
@@ -62,7 +63,7 @@ class StudentEnrollmentController extends ApiController
                 },
             ])
             ->orderByDesc('id')
-            ->paginate($this->perPage($request));
+            ->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'enrollments'))->paginate($this->perPage($request));
 
         $data = collect($paginator->items())
             ->map(fn (Enrollment $enrollment) => $this->enrollmentPayload($enrollment))

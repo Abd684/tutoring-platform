@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\NotificationCampaign;
+use App\Services\ListSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,7 @@ class NotificationFeedController extends ApiController
         $union = $kind === 'personal' ? $personal : ($kind === 'campaign' ? $campaigns->toBase() : $personal->unionAll($campaigns->toBase()));
         $query = DB::query()->fromSub($union, 'feed');
         $unread = (clone $query)->whereNull('read_at')->count();
+        app(ListSearch::class)->apply($query, $request, 'feed');
         if ($request->boolean('unread_only')) {
             $query->whereNull('read_at');
         }

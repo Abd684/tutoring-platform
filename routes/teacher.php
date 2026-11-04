@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\V1\GroupController;
 use App\Http\Controllers\Api\V1\GroupJoinRequestController;
 use App\Http\Controllers\Api\V1\GroupStudentController;
 use App\Http\Controllers\Api\V1\IndividualController;
-use App\Http\Controllers\Api\V1\IndividualOfferController;
 use App\Http\Controllers\Api\V1\LegacyGroupMembersController;
 use App\Http\Controllers\Api\V1\NotificationFeedController;
 use App\Http\Controllers\Api\V1\SessionController;
@@ -84,9 +83,6 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
 });
 
 Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
-    Route::get('/individual-offers', [IndividualOfferController::class, 'index']);
-    Route::post('/individual-offers', [IndividualOfferController::class, 'store']);
-    Route::patch('/individual-offers/{individualOffer}', [IndividualOfferController::class, 'update']);
     Route::get('/groups/{group}/students', [TeacherGroupMembersController::class, 'index']);
     Route::get('/groups/{group}/join-requests', [GroupJoinRequestController::class, 'teacherIndex']);
     Route::post('/groups/{group}/join-requests/{joinRequest}/{decision}', [GroupJoinRequestController::class, 'decide'])->whereIn('decision', ['approve', 'reject']);

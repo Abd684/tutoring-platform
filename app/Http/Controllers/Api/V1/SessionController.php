@@ -8,6 +8,7 @@ use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Services\LegacyTeaching;
+use App\Services\ListSearch;
 use App\Services\PaidLessonBookings;
 use App\Services\SessionRules;
 use Carbon\Carbon;
@@ -72,7 +73,7 @@ class SessionController extends ApiController
         }
 
         return $this->paginated(
-            $query->paginate($this->perPage($request))
+            $query->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'sessions'))->paginate($this->perPage($request))
         );
     }
 

@@ -66,7 +66,7 @@ class StudentAuthController extends Controller
 
             $response = $this->studentLogin($request);
             $payload = $response->getData(true);
-            $payload['message'] = 'طھظ… ط¥ظ†ط´ط§ط، ط­ط³ط§ط¨ظƒ ظˆطھط³ط¬ظٹظ„ ط¯ط®ظˆظ„ظƒ ط¨ظ†ط¬ط§ط­.';
+            $payload['message'] = 'تم إنشاء حسابك وتسجيل دخولك بنجاح.';
 
             return response()->json($payload, 201);
         });
@@ -74,7 +74,7 @@ class StudentAuthController extends Controller
         return $result;
     }
 
-    // طھط³ط¬ظٹظ„ ط¯ط®ظˆظ„ ط§ظ„ط·ط§ظ„ط¨ ظ…ط¹ ظ…ط¨ط¯ط£ ط¬ظ‡ط§ط² ظˆط§ط­ط¯ ظپط¹ط§ظ„.
+    // تسجيل دخول الطالب مع مبدأ جهاز واحد فعال.
     public function studentLogin(Request $request)
     {
         $validated = $request->validate(array_merge([

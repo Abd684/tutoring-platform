@@ -21,11 +21,11 @@ class TeacherSubject extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['teacher_id', 'subject_id', 'price', 'group_enabled', 'max_group_size', 'status'];
+    protected $fillable = ['teacher_id', 'subject_id', 'price', 'individual_session_price', 'individual_currency', 'group_enabled', 'max_group_size', 'status'];
 
     protected function casts(): array
     {
-        return ['price' => 'decimal:2', 'group_enabled' => 'boolean', 'max_group_size' => 'integer'];
+        return ['price' => 'decimal:2', 'individual_session_price' => 'decimal:2', 'group_enabled' => 'boolean', 'max_group_size' => 'integer'];
     }
 
     public function teacher(): BelongsTo

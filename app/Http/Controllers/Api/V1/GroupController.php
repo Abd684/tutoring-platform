@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Group;
 use App\Models\TeacherSubject;
+use App\Services\ListSearch;
 use App\Services\TeachingScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,10 +22,9 @@ class GroupController extends ApiController
             ->withCount(['groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active')]);
 
         $query->when($request->filled('teacher_subject_id'), fn ($q) => $q->where('teacher_subject_id', $request->integer('teacher_subject_id')))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
-            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%'));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')));
 
-        return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
+        return $this->paginated($query->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'own_groups'))->paginate($this->perPage($request)));
     }
 
     public function index(Request $request): JsonResponse
@@ -36,10 +36,9 @@ class GroupController extends ApiController
             ->withCount(['groupStudents as active_members_count' => fn ($q) => $q->where('status', 'active')]);
 
         $query->when($request->filled('teacher_subject_id'), fn ($q) => $q->where('teacher_subject_id', $request->integer('teacher_subject_id')))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
-            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%'));
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')));
 
-        return $this->paginated($query->orderByDesc('id')->paginate($this->perPage($request)));
+        return $this->paginated($query->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'own_groups'))->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse

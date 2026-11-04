@@ -6,6 +6,7 @@ use App\Models\Individual;
 use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
+use App\Services\ListSearch;
 use App\Services\TeachingScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,7 @@ class IndividualController extends ApiController
         $this->authorize('viewOwnAny', Individual::class);
 
         return $this->paginated(Individual::whereHas('teacherSubject', fn ($q) => $q->where('teacher_id', $request->user()->teacher->id))
-            ->with(['student.user:id,name', 'teacherSubject.subject'])->orderByDesc('id')->paginate($this->perPage($request)));
+            ->with(['student.user:id,name', 'teacherSubject.subject'])->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'individuals'))->paginate($this->perPage($request)));
     }
 
     public function store(Request $request)
@@ -35,7 +36,7 @@ class IndividualController extends ApiController
             $student = Student::whereKey($data['student_id'])->lockForUpdate()->firstOrFail();
             abort_unless($student->status === 'active' && $student->user?->status === 'active', 422, 'Student must be active.');
 
-            return $this->success(Individual::create($data + ['status' => 'active']), 'Individual teaching created.', 201);
+            return $this->success(Individual::create($data + ['status' => 'active', 'session_price' => $course->individual_session_price ?? 0, 'currency' => $course->individual_currency]), 'Individual teaching created.', 201);
         });
     }
 

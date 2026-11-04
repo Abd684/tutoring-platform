@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\TeacherSubject;
+use App\Services\ListSearch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class TeacherSubjectManagementController extends ApiController
         return $this->paginated(TeacherSubject::query()
             ->where('teacher_id', $request->user()->teacher->id)
             ->with('subject:id,name,status')
-            ->orderByDesc('id')->paginate($this->perPage($request)));
+            ->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'own_courses'))->paginate($this->perPage($request)));
     }
 
     public function store(Request $request): JsonResponse
@@ -64,7 +65,10 @@ class TeacherSubjectManagementController extends ApiController
         if (! ($validated['group_enabled'] ?? $teacherSubject->group_enabled)) {
             $validated['max_group_size'] = null;
         }
-        $teacherSubject->update($validated);
+        DB::transaction(function () use ($request, $teacherSubject, $validated) {
+            Teacher::whereKey($request->user()->teacher->id)->lockForUpdate()->firstOrFail();
+            TeacherSubject::whereKey($teacherSubject->id)->lockForUpdate()->firstOrFail()->update($validated);
+        }, 3);
 
         return $this->success($teacherSubject->fresh()->load('subject:id,name,status'), 'Teacher subject updated successfully.');
     }
@@ -88,6 +92,8 @@ class TeacherSubjectManagementController extends ApiController
         return [
             'subject_id' => [$course === null ? 'required' : 'sometimes', 'integer', Rule::exists('subjects', 'id')->where('status', 'active'), $unique],
             'price' => [$course === null ? 'required' : 'sometimes', 'numeric', 'min:0', 'max:9999999999.99'],
+            'individual_session_price' => ['sometimes', 'nullable', 'numeric', 'between:0,9999999999.99'],
+            'individual_currency' => ['sometimes', 'string', 'regex:/^[A-Z]{3}$/'],
             'group_enabled' => ['sometimes', 'boolean'],
             'max_group_size' => ['nullable', 'integer', 'min:1', 'max:100000'],
             'teacher_id' => ['prohibited'],

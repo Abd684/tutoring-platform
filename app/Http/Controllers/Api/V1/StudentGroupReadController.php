@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Group;
 use App\Models\GroupStudent;
+use App\Services\ListSearch;
 use App\Services\StudentGroupAccess;
 use Illuminate\Http\Request;
 
@@ -29,7 +30,7 @@ class StudentGroupReadController extends ApiController
         $count = $access->memberships()
             ->whereColumn('group_students.group_id', 'groups.id')->selectRaw('COUNT(DISTINCT group_students.student_id)');
         $query->addSelect(['active_members_count' => $count]);
-        $page = $query->orderByDesc('id')->paginate($data['per_page'] ?? 20);
+        $page = $query->orderByDesc('id')->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'groups'))->paginate($data['per_page'] ?? 20);
         $eligible = $access->memberships($student)->whereIn('group_id', $page->getCollection()->pluck('id'))->pluck('id')->flip();
         $readable = Group::whereIn('id', $activeGroups)->whereIn('id', $page->getCollection()->pluck('id'))->pluck('id')->flip();
         $page->setCollection($page->getCollection()->map(function ($group) use ($eligible, $readable) {

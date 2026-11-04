@@ -6,6 +6,7 @@ use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\Teacher;
 use App\Services\HlsVideos;
+use App\Services\ListSearch;
 use App\Services\VideoMetadata;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ class TeacherContentAssetController extends ApiController
             ->whereHas('content.lesson.unit.teacherSubject', fn ($query) => $query->where('teacher_id', $teacher->id))
             ->when($request->filled('content_id'), fn ($query) => $query->where('content_id', $request->integer('content_id')))
             ->orderByDesc('id')
-            ->paginate($this->perPage($request));
+            ->tap(fn ($query) => app(ListSearch::class)->apply($query, $request, 'assets'))->paginate($this->perPage($request));
 
         return $this->paginated($assets);
     }
