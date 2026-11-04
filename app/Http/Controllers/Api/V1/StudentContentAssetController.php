@@ -35,6 +35,8 @@ class StudentContentAssetController extends ApiController
             ->when($content->type === 'video', fn ($q) => $q->where('mime_type', 'like', 'video/%'))
             ->latest('id')->firstOrFail();
 
+        abort_if($content->type === 'pdf', 410, 'Use the protected PDF viewing session API.');
+
         return $this->assetToken($contentAsset, $student);
     }
 
@@ -46,8 +48,9 @@ class StudentContentAssetController extends ApiController
         return $this->success($content->assets()->where('status', 'active')->with('videoAsset')->get()->map(fn ($asset) => [
             'id' => $asset->id, 'mime_type' => $asset->mime_type, 'file_size' => $asset->file_size,
             'duration_seconds' => $asset->videoAsset?->duration_seconds,
-            'processing_status' => str_starts_with($asset->mime_type ?? '', 'video/') ? ($asset->videoAsset?->processing_status ?? 'pending') : null,
-            'token_endpoint' => url('/api/v1/content-assets/'.$asset->id.'/access-token'),
+            'processing_status' => str_starts_with($asset->mime_type ?? '', 'video/') ? ($asset->videoAsset?->processing_status ?? 'pending') : ($asset->mime_type === 'application/pdf' ? $asset->processing_status : null),
+            'total_pages' => $asset->mime_type === 'application/pdf' ? $asset->total_pages : null,
+            'token_endpoint' => $asset->mime_type === 'application/pdf' ? url('/api/v1/pdf/'.$asset->id.'/view') : url('/api/v1/content-assets/'.$asset->id.'/access-token'),
         ]));
     }
 
@@ -55,6 +58,7 @@ class StudentContentAssetController extends ApiController
     {
         $this->authorize('accessStudent', Content::class);
         $student = $request->user()->student;
+        abort_if($contentAsset->mime_type === 'application/pdf', 410, 'Use the protected PDF viewing session API.');
         abort_unless($contentAsset->status === 'active', 404);
         $this->authorize('access', $contentAsset->content);
 
@@ -83,8 +87,9 @@ class StudentContentAssetController extends ApiController
 
     public function play(Request $request, ContentAsset $contentAsset): StreamedResponse|BinaryFileResponse
     {
-        // Original video is never served to students, even through old signed URLs.
+        // Original video and PDF are never served to students, even through old signed URLs.
         abort_if(str_starts_with($contentAsset->mime_type ?? '', 'video/'), 404);
+        abort_if($contentAsset->mime_type === 'application/pdf', 410, 'PDF files are available only through protected rendered pages.');
         $this->authorize('accessStudent', Content::class);
 
         $student = $request->user()->student;

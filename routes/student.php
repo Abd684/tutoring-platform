@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\V1\ShamCashPaymentController;
 use App\Http\Controllers\Api\V1\StudentAuthController;
 use App\Http\Controllers\Api\V1\StudentBookingController;
 use App\Http\Controllers\Api\V1\StudentContentAssetController;
+use App\Http\Controllers\Api\V1\SecurePdfController;
 use App\Http\Controllers\Api\V1\StudentEnrollmentController;
 use App\Http\Controllers\Api\V1\StudentGroupReadController;
 use App\Http\Controllers\Api\V1\StudentLearningController;
@@ -53,6 +54,11 @@ Route::get('/me', [StudentAuthController::class, 'studentMe'])
 
 // Student enrollment / purchase APIs from the SDD.
 Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(function (): void {
+    Route::post('/pdf/{document}/view', [SecurePdfController::class, 'open'])->whereNumber('document')->middleware('throttle:20,1');
+    Route::get('/pdf/sessions/{session}/pages/{page}', [SecurePdfController::class, 'page'])->whereNumber('page')->middleware('throttle:90,1');
+    Route::get('/pdf/sessions/{session}/pages', [SecurePdfController::class, 'pages'])->middleware('throttle:30,1');
+    Route::get('/pdf/sessions/{session}', [SecurePdfController::class, 'show'])->middleware('throttle:30,1');
+    Route::delete('/pdf/sessions/{session}', [SecurePdfController::class, 'close'])->middleware('throttle:20,1');
     Route::post('/teachers/{teacher}/bookings', [IndividualBookingController::class, 'store']);
     Route::get('/teachers/{teacher}/available-sessions', [AvailableSessionController::class, 'index']);
     Route::get('/student/bookings', [StudentBookingController::class, 'index']);

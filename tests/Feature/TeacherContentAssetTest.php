@@ -23,6 +23,7 @@ class TeacherContentAssetTest extends TestCase
     {
         parent::setUp();
         config(['filesystems.media_disk' => 'local']);
+        config(['pdf.master_key' => base64_encode(random_bytes(32))]);
     }
 
     public function test_teacher_can_upload_list_and_delete_a_file_for_owned_content(): void
@@ -32,7 +33,7 @@ class TeacherContentAssetTest extends TestCase
         Sanctum::actingAs($user);
 
         $upload = $this->post('/api/v1/teacher/contents/'.$content->id.'/asset', [
-            'file' => UploadedFile::fake()->create('lesson.pdf', 100, 'application/pdf'),
+            'file' => UploadedFile::fake()->createWithContent('lesson.pdf', "%PDF-1.4\nlesson"),
         ])->assertCreated()
             ->assertJsonPath('message', 'File uploaded successfully.');
 
@@ -57,7 +58,7 @@ class TeacherContentAssetTest extends TestCase
 
         Sanctum::actingAs($owner);
         $assetId = $this->post('/api/v1/teacher/contents/'.$content->id.'/asset', [
-            'file' => UploadedFile::fake()->create('private.pdf', 50, 'application/pdf'),
+            'file' => UploadedFile::fake()->createWithContent('private.pdf', "%PDF-1.4\nprivate"),
         ])->assertCreated()->json('data.id');
 
         Sanctum::actingAs($other);
@@ -66,7 +67,7 @@ class TeacherContentAssetTest extends TestCase
         $this->getJson('/api/v1/teacher/content-assets/'.$assetId)->assertNotFound();
         $this->deleteJson('/api/v1/teacher/content-assets/'.$assetId)->assertNotFound();
         $this->post('/api/v1/teacher/contents/'.$content->id.'/asset', [
-            'file' => UploadedFile::fake()->create('attack.pdf', 50, 'application/pdf'),
+            'file' => UploadedFile::fake()->createWithContent('attack.pdf', "%PDF-1.4\nattack"),
         ])->assertNotFound();
 
         $this->assertDatabaseHas('content_assets', ['id' => $assetId]);

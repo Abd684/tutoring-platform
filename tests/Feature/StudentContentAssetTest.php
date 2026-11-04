@@ -21,7 +21,7 @@ class StudentContentAssetTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_student_with_active_content_enrollment_can_view_file_inline(): void
+    public function test_student_cannot_retrieve_original_pdf_through_legacy_playback_route(): void
     {
         Storage::fake('local');
         [$studentUser, $student] = $this->student();
@@ -37,13 +37,7 @@ class StudentContentAssetTest extends TestCase
         ]);
         Sanctum::actingAs($studentUser);
 
-        $token = $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')
-            ->assertOk()
-            ->assertJsonStructure(['data' => ['playback_url', 'expires_at']]);
-
-        $this->get($token->json('data.playback_url'))
-            ->assertOk()
-            ->assertHeader('content-disposition', 'inline; filename='.basename($asset->storage_key));
+        $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')->assertStatus(410);
     }
 
     public function test_unsubscribed_or_expired_student_cannot_view_file(): void
@@ -65,6 +59,22 @@ class StudentContentAssetTest extends TestCase
         ]);
 
         $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')->assertNotFound();
+    }
+
+    public function test_ready_pdf_is_served_only_with_owner_session_token_and_can_be_revoked(): void
+    {
+        Storage::fake('local'); [$user, $student] = $this->student(); [$asset, $content, $teacher] = $this->asset();
+        $asset->update(['processing_status'=>'ready','total_pages'=>1]);
+        $canvas=imagecreatetruecolor(400,600); ob_start(); imagejpeg($canvas); $page=ob_get_clean(); imagedestroy($canvas);
+        Storage::disk('local')->put('pdf-pages/'.$asset->id.'/v1/1.jpg',$page);
+        Enrollment::create(['student_id'=>$student->id,'teacher_id'=>$teacher->id,'enrollable_type'=>(new Content)->getMorphClass(),'enrollable_id'=>$content->id,'status'=>'active','starts_at'=>now()->subDay(),'expires_at'=>now()->addDay()]);
+        Sanctum::actingAs($user);
+        $open=$this->postJson('/api/v1/pdf/'.$asset->id.'/view')->assertOk();
+        $reference=$open->json('data.session_reference'); $token=$open->json('data.session_token');
+        $this->getJson('/api/v1/pdf/sessions/'.$reference.'/pages/1')->assertForbidden();
+        $this->withHeader('X-PDF-Session',$token)->getJson('/api/v1/pdf/sessions/'.$reference.'/pages/1')->assertOk()->assertJsonPath('data.mime_type','image/jpeg');
+        $this->deleteJson('/api/v1/pdf/sessions/'.$reference)->assertOk();
+        $this->withHeader('X-PDF-Session',$token)->getJson('/api/v1/pdf/sessions/'.$reference.'/pages/1')->assertForbidden();
     }
 
     private function student(): array

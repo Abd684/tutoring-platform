@@ -74,28 +74,25 @@ class PolymorphicEnrollmentTest extends TestCase
         $this->assertSame(['content', 'teacher_subject', 'unit'], DB::table('enrollments')->distinct()->orderBy('enrollable_type')->pluck('enrollable_type')->all());
     }
 
-    public function test_step_9_each_active_scope_grants_signed_playback_and_denies_outside_scope(): void
+    public function test_step_9_each_active_scope_opens_protected_pdf_viewing_and_denies_outside_scope(): void
     {
         Storage::fake('local');
         $student = $this->setupStudent();
         [$subject, $unit, $content, $teacher] = $this->curriculum();
         [, , $outside] = $this->curriculum();
+        $assets = [];
         foreach ([$content, $outside] as $file) {
             Storage::disk('local')->put('test/'.$file->id.'.pdf', 'private');
-            ContentAsset::create(['content_id' => $file->id, 'disk' => 'local', 'storage_key' => 'test/'.$file->id.'.pdf', 'mime_type' => 'application/pdf', 'status' => 'active']);
+            $asset = ContentAsset::create(['content_id' => $file->id, 'disk' => 'local', 'storage_key' => 'test/'.$file->id.'.pdf', 'mime_type' => 'application/pdf', 'status' => 'active']);
+            $asset->update(['processing_status' => 'ready', 'total_pages' => 1]); $assets[$file->id] = $asset;
         }
         foreach ([$content, $unit, $subject] as $model) {
             $enrollment = $model->enrollments()->create(['student_id' => $student->id, 'teacher_id' => $teacher->id, 'status' => 'pending']);
-            $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')->assertNotFound();
+            $this->postJson('/api/v1/pdf/'.$assets[$content->id]->id.'/view')->assertNotFound();
             $enrollment->update(['status' => 'active']);
-            $this->freezeTime();
-            $response = $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')->assertOk();
-            $url = $response->json('data.playback_url');
-            $this->assertTrue(URL::hasValidSignature(Request::create($url)));
-            parse_str(parse_url($url, PHP_URL_QUERY), $query);
-            $this->assertSame(now()->addMinutes(5)->timestamp, (int) $query['expires']);
-            $this->get($url)->assertOk();
-            $this->postJson('/api/v1/contents/'.$outside->id.'/playback-token')->assertNotFound();
+            $response = $this->postJson('/api/v1/pdf/'.$assets[$content->id]->id.'/view')->assertOk();
+            $this->assertNotEmpty($response->json('data.session_token'));
+            $this->postJson('/api/v1/pdf/'.$assets[$outside->id]->id.'/view')->assertNotFound();
             $enrollment->delete();
         }
     }

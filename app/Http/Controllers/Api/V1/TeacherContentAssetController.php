@@ -8,6 +8,8 @@ use App\Models\Teacher;
 use App\Services\HlsVideos;
 use App\Services\ListSearch;
 use App\Services\VideoMetadata;
+use App\Services\PdfEncryption;
+use Illuminate\Support\Facades\File;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -71,16 +73,14 @@ class TeacherContentAssetController extends ApiController
             ]);
         }
 
-        $validated = $request->validate([
-            'file' => ['required', 'file', 'max:512000'],
-        ]);
+        $validated = $request->validate(['file' => ['required', 'file', 'max:'.($content->type === 'pdf' ? 25600 : 512000)]]);
 
         $file = $validated['file'];
         $allowedMimeTypes = $content->type === 'pdf'
             ? ['application/pdf']
             : ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'];
 
-        if (! in_array($file->getMimeType(), $allowedMimeTypes, true)) {
+        if (! in_array($file->getMimeType(), $allowedMimeTypes, true) || ($content->type === 'pdf' && ! str_starts_with((string) file_get_contents($file->getRealPath(), false, null, 0, 5), '%PDF-'))) {
             throw ValidationException::withMessages([
                 'file' => ["The uploaded file is not a valid {$content->type} file."],
             ]);
@@ -93,6 +93,18 @@ class TeacherContentAssetController extends ApiController
             return $this->businessError('The file could not be stored.', 500);
         }
 
+        if ($content->type === 'pdf') {
+            $work = storage_path('app/private/pdf-upload/'.\Illuminate\Support\Str::uuid());
+            File::ensureDirectoryExists(dirname($work));
+            try {
+                app(PdfEncryption::class)->encrypt($file->getRealPath(), $work);
+                Storage::disk($disk)->put($storageKey, fopen($work, 'rb'));
+            } catch (Throwable $exception) {
+                Storage::disk($disk)->delete($storageKey);
+                throw $exception;
+            } finally { @unlink($work); }
+        }
+
         try {
             $asset = ContentAsset::create([
                 'content_id' => $content->id,
@@ -101,9 +113,10 @@ class TeacherContentAssetController extends ApiController
                 'mime_type' => $file->getMimeType(),
                 'file_size' => $file->getSize(),
                 'checksum' => hash_file('sha256', $file->getRealPath()),
-                'encryption_type' => null,
-                'encryption_status' => 'pending',
+                'encryption_type' => $content->type === 'pdf' ? 'AES-256-GCM-ENVELOPE' : null,
+                'encryption_status' => $content->type === 'pdf' ? 'done' : 'pending',
                 'status' => 'active',
+                'processing_status' => $content->type === 'pdf' ? 'pending' : 'ready',
             ]);
         } catch (Throwable $exception) {
             Storage::disk($disk)->delete($storageKey);
@@ -127,6 +140,7 @@ class TeacherContentAssetController extends ApiController
         $this->authorize('manage', $contentAsset);
 
         Storage::disk($contentAsset->disk)->delete($contentAsset->storage_key);
+        if ($contentAsset->mime_type === 'application/pdf') Storage::disk($contentAsset->disk)->deleteDirectory('pdf-pages/'.$contentAsset->id);
         $contentAsset->delete();
 
         return $this->success(message: 'File deleted successfully.');

@@ -118,25 +118,26 @@ class StudentFeaturesTest extends TestCase
         $video = ContentAsset::create(['content_id' => $content->id, 'disk' => 'local', 'storage_key' => 'video.mp4', 'mime_type' => 'video/mp4', 'status' => 'active']);
         VideoAsset::where('content_asset_id', $video->id)->update(['duration_seconds' => 121]);
         $pdf = ContentAsset::create(['content_id' => $content->id, 'disk' => 'local', 'storage_key' => 'notes.pdf', 'mime_type' => 'application/pdf', 'status' => 'active']);
+        $pdf->update(['processing_status' => 'ready', 'total_pages' => 1]);
         Sanctum::actingAs($user);
         $assets = $this->getJson('/api/v1/contents/'.$content->id.'/assets')->assertOk()->json('data');
         $this->assertCount(2, $assets);
         $this->assertArrayNotHasKey('storage_key', $assets[0]);
         $this->postJson('/api/v1/contents/'.$content->id.'/playback-token')->assertConflict()->assertJsonPath('code', 'VIDEO_PROCESSING');
-        $pdfUrl = $this->postJson('/api/v1/content-assets/'.$pdf->id.'/access-token')->assertOk()->json('data.playback_url');
-        $this->get($pdfUrl)->assertOk()->assertHeader('Content-Type', 'application/pdf');
-        $this->withHeader('Range', 'bytes=0-1')->get($pdfUrl)->assertStatus(206)->assertHeader('Content-Range', 'bytes 0-1/3');
-        $this->withHeader('Range', '');
+        $this->postJson('/api/v1/content-assets/'.$pdf->id.'/access-token')->assertStatus(410);
+        $view = $this->postJson('/api/v1/pdf/'.$pdf->id.'/view')->assertOk();
+        $session = $view->json('data.session_reference'); $sessionToken = $view->json('data.session_token');
+        $this->withHeader('X-PDF-Session', $sessionToken)->getJson('/api/v1/pdf/sessions/'.$session)->assertOk();
         $this->getJson('/api/v1/lessons/'.$content->lesson_id.'/contents')->assertJsonPath('data.0.duration_seconds', 121)->assertJsonPath('data.0.learning_objectives', ['Solve an equation']);
         [$other] = $this->student();
         Sanctum::actingAs($other);
-        $this->get($pdfUrl)->assertForbidden();
+        $this->withHeader('X-PDF-Session', $sessionToken)->getJson('/api/v1/pdf/sessions/'.$session)->assertNotFound();
         Sanctum::actingAs($user);
         $enrollment->update(['status' => 'cancelled']);
-        $this->get($pdfUrl)->assertNotFound();
+        $this->withHeader('X-PDF-Session', $sessionToken)->getJson('/api/v1/pdf/sessions/'.$session)->assertNotFound();
         $enrollment->update(['status' => 'active']);
-        $this->travel(6)->minutes();
-        $this->get($pdfUrl)->assertForbidden();
+        $this->travel(31)->minutes();
+        $this->withHeader('X-PDF-Session', $sessionToken)->getJson('/api/v1/pdf/sessions/'.$session)->assertForbidden();
     }
 
     public function test_teacher_statistics_use_real_counts_and_nullable_experience(): void

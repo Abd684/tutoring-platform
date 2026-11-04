@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Contracts\PdfRenderer;
+use App\Services\PopplerPdfRenderer;
+use App\Services\ImagickPdfRenderer;
+
 use App\Models\Content;
 use App\Models\ContentAsset;
 use App\Models\Group;
@@ -23,7 +27,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->app->bind(PdfRenderer::class, fn () => config('pdf.renderer') === 'imagick'
+            ? new ImagickPdfRenderer()
+            : new PopplerPdfRenderer());
     }
 
     public function boot(): void
