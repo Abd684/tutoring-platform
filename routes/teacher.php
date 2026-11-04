@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\GroupJoinRequestController;
 use App\Http\Controllers\Api\V1\GroupStudentController;
 use App\Http\Controllers\Api\V1\IndividualController;
 use App\Http\Controllers\Api\V1\IndividualOfferController;
+use App\Http\Controllers\Api\V1\LegacyGroupMembersController;
+use App\Http\Controllers\Api\V1\NotificationFeedController;
 use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\StudentLearningController;
 use App\Http\Controllers\Api\V1\StudentNotificationController;
@@ -101,3 +103,14 @@ Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
 });
 
 Route::post('/answers/{answer}/grade', [TeachingContentController::class, 'grade'])->middleware(['auth:sanctum', 'role:teacher']);
+
+// Compatibility routes retained for already deployed clients.
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function (): void {
+    Route::post('/groups/{id}/enrollments', [LegacyGroupMembersController::class, 'store']);
+    Route::delete('/groups/{id}/enrollments/{enrollment}', [LegacyGroupMembersController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum', 'role:teacher'])->group(function () {
+    Route::get('/notification-feed', [NotificationFeedController::class, 'index']);
+    Route::post('/notification-campaigns/{campaign}/read', [NotificationFeedController::class, 'read'])->whereNumber('campaign');
+});

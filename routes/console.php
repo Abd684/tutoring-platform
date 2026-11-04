@@ -130,3 +130,5 @@ Artisan::command('admin:create {--name=} {--email=} {--phone=}', function () {
     $user = User::create(['name' => $name, 'email' => $email, 'phone' => $phone, 'password_hash' => Hash::make($password), 'role' => 'company_admin', 'status' => 'active']);
     $this->info('Administrator created: '.$user->id.'. Existing accounts were not modified.');
 });
+
+require __DIR__.'/notifications-console.php';

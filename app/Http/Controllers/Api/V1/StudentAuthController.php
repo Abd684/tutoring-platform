@@ -66,7 +66,7 @@ class StudentAuthController extends Controller
 
             $response = $this->studentLogin($request);
             $payload = $response->getData(true);
-            $payload['message'] = 'تم إنشاء حسابك وتسجيل دخولك بنجاح.';
+            $payload['message'] = 'طھظ… ط¥ظ†ط´ط§ط، ط­ط³ط§ط¨ظƒ ظˆطھط³ط¬ظٹظ„ ط¯ط®ظˆظ„ظƒ ط¨ظ†ط¬ط§ط­.';
 
             return response()->json($payload, 201);
         });
@@ -74,17 +74,19 @@ class StudentAuthController extends Controller
         return $result;
     }
 
-    // تسجيل دخول الطالب مع مبدأ جهاز واحد فعال.
+    // طھط³ط¬ظٹظ„ ط¯ط®ظˆظ„ ط§ظ„ط·ط§ظ„ط¨ ظ…ط¹ ظ…ط¨ط¯ط£ ط¬ظ‡ط§ط² ظˆط§ط­ط¯ ظپط¹ط§ظ„.
     public function studentLogin(Request $request)
     {
         $validated = $request->validate(array_merge([
-            'phone' => ['required', 'string', 'max:30'],
+            'phone' => ['required_without:email', 'string', 'max:30'],
+            'email' => ['required_without:phone', 'email', 'max:255'],
             'password' => ['required', 'string'],
         ], $this->deviceValidationRules()));
 
         [$user, $student] = $this->validatedStudentCredentials(
-            $validated['phone'],
-            $validated['password']
+            $validated['phone'] ?? $validated['email'],
+            $validated['password'],
+            isset($validated['phone']) ? 'phone' : 'email'
         );
 
         $result = DB::transaction(function () use ($request, $validated, $user, $student) {
@@ -369,9 +371,9 @@ class StudentAuthController extends Controller
         ]);
     }
 
-    private function validatedStudentCredentials(string $phone, string $password): array
+    private function validatedStudentCredentials(string $phone, string $password, string $field = 'phone'): array
     {
-        $user = User::where('phone', $phone)->first();
+        $user = User::where($field, $phone)->first();
 
         if (! $user || ! Hash::check($password, $user->password_hash)) {
             throw new HttpResponseException(

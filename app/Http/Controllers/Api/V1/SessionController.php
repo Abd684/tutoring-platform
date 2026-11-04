@@ -7,6 +7,7 @@ use App\Models\Individual;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
+use App\Services\LegacyTeaching;
 use App\Services\PaidLessonBookings;
 use App\Services\SessionRules;
 use Carbon\Carbon;
@@ -79,6 +80,20 @@ class SessionController extends ApiController
      * Create session for authenticated teacher.
      */
     public function store(Request $request): JsonResponse
+    {
+        if ($request->hasAny(['group_id', 'enrollment_id'])) {
+            return DB::transaction(function () use ($request) {
+                $this->authorize('create', Session::class);
+                app(LegacyTeaching::class)->adaptSession($request);
+
+                return $this->storeCurrent($request);
+            }, 3);
+        }
+
+        return $this->storeCurrent($request);
+    }
+
+    private function storeCurrent(Request $request): JsonResponse
     {
         $this->authorize('create', Session::class);
         $request->validate(['type' => ['required'], 'type_id' => ['required'], 'starts_at' => ['required'], 'ends_at' => ['required']]);
@@ -228,6 +243,20 @@ class SessionController extends ApiController
      * Update teacher session.
      */
     public function update(Request $request, Session $session): JsonResponse
+    {
+        if ($request->hasAny(['group_id', 'enrollment_id']) && ($request->filled('group_id') || $request->filled('enrollment_id'))) {
+            return DB::transaction(function () use ($request, $session) {
+                $this->authorize('update', $session);
+                app(LegacyTeaching::class)->adaptSession($request);
+
+                return $this->updateCurrent($request, $session);
+            }, 3);
+        }
+
+        return $this->updateCurrent($request, $session);
+    }
+
+    private function updateCurrent(Request $request, Session $session): JsonResponse
     {
         $this->authorize('update', $session);
         if ($request->has('progress_notes') && count($request->except(['_token', '_method'])) === 1) {

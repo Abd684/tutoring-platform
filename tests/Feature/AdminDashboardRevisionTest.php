@@ -104,7 +104,7 @@ class AdminDashboardRevisionTest extends TestCase
         $this->assertSame('active', $b['group']->fresh()->status);
         $student = $this->student();
         $this->get('/admin/teachers/'.$student->user_id.'/groups')->assertNotFound();
-        $this->post('/admin/groups', ['name' => 'غير مسموح'])->assertStatus(405);
+        $this->post('/admin/groups', ['name' => 'غير مسموح'])->assertStatus(303)->assertRedirect('/admin/teachers');
     }
 
     public function test_session_scope_blocks_cross_teacher_reads_and_writes(): void
@@ -280,3 +280,4 @@ class AdminDashboardRevisionTest extends TestCase
         $this->get('/admin/refunds/'.$r->id)->assertOk()->assertSee('name="rejection_code"', false);
     }
 }
+

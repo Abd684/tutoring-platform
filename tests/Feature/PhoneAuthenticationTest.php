@@ -35,7 +35,7 @@ class PhoneAuthenticationTest extends TestCase
             $this->postJson($prefix.'/login', array_replace($credentials, ['password' => 'wrong']))->assertUnauthorized();
             unset($credentials['phone']);
             $this->postJson($prefix.'/login', $credentials + ['email' => 'old@example.com'])
-                ->assertUnprocessable()->assertJsonValidationErrors('phone');
+                ->assertUnauthorized();
         }
     }
 

@@ -26,6 +26,14 @@ Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(fu
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('/', OverviewController::class)->name('overview');
         Route::get('search', SearchController::class)->name('search');
+        Route::controller(\App\Http\Controllers\Admin\NotificationsController::class)->prefix('notifications')->name('notifications.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/recipients', 'recipients')->name('recipients');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{campaign}', 'update')->whereNumber('campaign')->name('update');
+            Route::post('/{campaign}/dispatch', 'dispatch')->whereNumber('campaign')->name('dispatch');
+            Route::post('/{campaign}/cancel', 'cancel')->whereNumber('campaign')->name('cancel');
+        });
         foreach (['students' => 'student', 'teachers' => 'teacher'] as $path => $kind) {
             Route::get($path, [AccountsController::class, 'index'])->defaults('kind', $kind)->name($path.'.index');
             Route::get($path.'/create', [AccountsController::class, 'create'])->defaults('kind', $kind)->name($path.'.create');
@@ -52,6 +60,16 @@ Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(fu
         });
         Route::get('groups', fn () => redirect()->route('admin.teachers.index'))->name('legacy.groups');
         Route::get('sessions', fn () => redirect()->route('admin.teachers.index'))->name('legacy.sessions');
+        // Preserve bookmarks without restoring standalone navigation tabs.
+        Route::get('groups/create', fn () => redirect()->route('admin.teachers.index'))->name('legacy.groups.create');
+        Route::get('sessions/create', fn () => redirect()->route('admin.teachers.index'))->name('legacy.sessions.create');
+        Route::get('groups/{group}/edit', fn (\App\Models\Group $group) => redirect()->route('admin.groups.edit', ['teacherUser'=>$group->teacherSubject->teacher->user_id,'group'=>$group]))->whereNumber('group')->name('legacy.groups.edit');
+        Route::get('groups/{group}', fn (\App\Models\Group $group) => redirect()->route('admin.groups.show', ['teacherUser'=>$group->teacherSubject->teacher->user_id,'group'=>$group]))->whereNumber('group')->name('legacy.groups.show');
+        Route::get('sessions/{session}', fn (\App\Models\Session $session) => redirect()->route('admin.sessions.show', ['teacherUser'=>$session->teacher->user_id,'session'=>$session]))->whereNumber('session')->name('legacy.sessions.show');
+        // Require review of old open forms in the updated teacher workspace.
+        foreach (['post'=>['groups','groups/{group}/members','sessions','sessions/{session}/cancel'], 'put'=>['groups/{group}'], 'delete'=>['groups/{group}/members/{membership}']] as $method=>$paths) {
+            foreach ($paths as $path) Route::$method($path, fn () => redirect()->route('admin.teachers.index', [], 303)->with('warning','تم تحديث اللوحة؛ افتح صفحة المدرس وأعد مراجعة الطلب قبل حفظه.'));
+        }
         Route::get('payments', [FinanceController::class, 'payments'])->name('payments.index');
         Route::get('payments/{payment}', [FinanceController::class, 'payment'])->whereNumber('payment')->name('payments.show');
         Route::post('payments/{payment}/review', [FinanceController::class, 'review'])->name('payments.review');

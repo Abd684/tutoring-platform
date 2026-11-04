@@ -102,6 +102,7 @@ class StudentSessionFlowTest extends TestCase
 
     public function test_morph_targets_validate_ownership_type_and_capacity(): void
     {
+        $this->withHeader('X-Liqaa-Teaching-Contract', '2');
         Sanctum::actingAs($this->teacher->user);
         $url = '/api/v1/teacher/sessions';
         $this->postJson($url, ['type' => 'individual', 'enrollment_id' => $this->enrollment->id] + $this->interval())->assertUnprocessable();

@@ -17,9 +17,9 @@ trait HandlesDeviceTransfers
     public function studentDeviceTransfer(Request $request)
     {
         $validated = $request->validate(array_merge([
-            'phone' => ['required', 'string', 'max:30'], 'password' => ['required', 'string'],
+            'phone' => ['required_without:email', 'string', 'max:30'], 'email' => ['required_without:phone', 'email', 'max:255'], 'password' => ['required', 'string'],
         ], $this->deviceValidationRules()));
-        [$user, $student] = $this->validatedStudentCredentials($validated['phone'], $validated['password']);
+        [$user, $student] = $this->validatedStudentCredentials($validated['phone'] ?? $validated['email'], $validated['password'], isset($validated['phone']) ? 'phone' : 'email');
 
         return DB::transaction(function () use ($validated, $student, $user) {
             $student = Student::whereKey($student->id)->lockForUpdate()->firstOrFail();

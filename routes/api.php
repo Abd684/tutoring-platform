@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
 use App\Http\Controllers\Api\V1\FeaturedTeacherController;
 use App\Http\Controllers\Api\V1\LegacyPricingAllocationController;
 use App\Http\Controllers\Api\V1\LocationController;
+use App\Http\Controllers\Api\V1\NotificationCampaignController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileAvatarController;
 use App\Http\Controllers\Api\V1\RefundController;
@@ -136,3 +137,13 @@ Route::prefix('v1')->group(function (): void {
 });
 
 Route::post('v1/admin/payments/{payment}/pricing-allocation', [LegacyPricingAllocationController::class, 'store'])->middleware(['auth:sanctum', 'role:company_admin']);
+
+Route::prefix('v1/admin/notification-campaigns')->middleware(['auth:sanctum', 'role:company_admin'])->group(function () {
+    $controller = NotificationCampaignController::class;
+    Route::get('/', [$controller, 'index']);
+    Route::post('/', [$controller, 'store']);
+    Route::get('/{campaign}', [$controller, 'show'])->whereNumber('campaign');
+    Route::put('/{campaign}', [$controller, 'update'])->whereNumber('campaign');
+    Route::post('/{campaign}/dispatch', [$controller, 'dispatch'])->whereNumber('campaign');
+    Route::post('/{campaign}/cancel', [$controller, 'cancel'])->whereNumber('campaign');
+});

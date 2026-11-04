@@ -9,11 +9,13 @@ use App\Http\Controllers\Api\V1\EnrollmentPaymentController;
 use App\Http\Controllers\Api\V1\GroupJoinRequestController;
 use App\Http\Controllers\Api\V1\HlsPlaybackController;
 use App\Http\Controllers\Api\V1\IndividualBookingController;
+use App\Http\Controllers\Api\V1\NotificationFeedController;
 use App\Http\Controllers\Api\V1\OnlineLearningController;
 use App\Http\Controllers\Api\V1\PaidLessonController;
 use App\Http\Controllers\Api\V1\PhysicalAvailabilityController;
 use App\Http\Controllers\Api\V1\PhysicalTeachingController;
 use App\Http\Controllers\Api\V1\ProfileAvatarController;
+use App\Http\Controllers\Api\V1\PushRegistrationController;
 use App\Http\Controllers\Api\V1\QuizAttemptController;
 use App\Http\Controllers\Api\V1\QuizController;
 use App\Http\Controllers\Api\V1\RefundController;
@@ -129,6 +131,9 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
 Route::middleware(['auth:sanctum', 'role:student,teacher', StudentDeviceWhenRequired::class])->group(function () {
     Route::post('/profile/avatar', [ProfileAvatarController::class, 'store'])->middleware('throttle:20,1');
     Route::delete('/profile/avatar', [ProfileAvatarController::class, 'destroy']);
+
+    Route::post('/push-tokens', [PushRegistrationController::class, 'store'])->middleware('throttle:20,1');
+    Route::delete('/push-tokens', [PushRegistrationController::class, 'destroy']);
 });
 
 Route::post('/student/register', [StudentAuthController::class, 'register'])->middleware('throttle:10,1');
@@ -154,4 +159,9 @@ Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(fun
     Route::post('/student/refunds', [RefundController::class, 'store']);
     Route::get('/student/refunds/{refund}', [RefundController::class, 'show'])->whereNumber('refund');
     Route::patch('/student/refunds/{refund}/payout-details', [RefundController::class, 'payout']);
+});
+
+Route::middleware(['auth:sanctum', 'role:student', 'student.device'])->group(function () {
+    Route::get('/student/notification-feed', [NotificationFeedController::class, 'index']);
+    Route::post('/student/notification-campaigns/{campaign}/read', [NotificationFeedController::class, 'read'])->whereNumber('campaign');
 });

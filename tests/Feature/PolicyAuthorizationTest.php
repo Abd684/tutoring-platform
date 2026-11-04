@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\Content;
 use App\Models\Enrollment;
 use App\Models\Lesson;
+use App\Models\NotificationCampaign;
 use App\Models\Payment;
+use App\Models\PushRegistration;
 use App\Models\Session;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -39,6 +41,21 @@ class PolicyAuthorizationTest extends TestCase
             $class = 'App\\Models\\'.basename($path, '.php');
             $record = new $class;
             $this->assertNotNull(Gate::getPolicyFor($record), $class);
+            if (in_array($class, [PushRegistration::class, NotificationCampaign::class], true)) {
+                // Credential registrations have no generic CRUD. Campaigns use
+                // dispatch/cancel workflows instead of arbitrary updates/deletes.
+                $this->assertSame($class === NotificationCampaign::class, Gate::forUser($admin)->allows('create', $class));
+                foreach (['update', 'delete', 'restore', 'forceDelete'] as $ability) {
+                    $this->assertFalse(Gate::forUser($admin)->allows($ability, $record));
+                }
+                $this->assertFalse(Gate::forUser($student)->allows('create', $class));
+                $this->assertFalse(Gate::forUser($teacher)->allows('create', $class));
+                $admin->status = 'suspended';
+                $this->assertFalse(Gate::forUser($admin)->allows('viewAny', $class));
+                $admin->status = 'active';
+
+                continue;
+            }
             if (in_array($class, [Session::class, TeacherAvailability::class], true)) {
                 continue;
             }

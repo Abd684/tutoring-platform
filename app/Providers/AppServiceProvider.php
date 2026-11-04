@@ -7,10 +7,12 @@ use App\Models\ContentAsset;
 use App\Models\Group;
 use App\Models\Individual;
 use App\Models\Lesson;
+use App\Models\Notification;
 use App\Models\PaidBooking;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
 use App\Observers\ContentAssetObserver;
+use App\Observers\NotificationObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -27,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         ContentAsset::observe(ContentAssetObserver::class);
+        Notification::observe(NotificationObserver::class);
+
         Relation::morphMap([
             'teacher_subject' => TeacherSubject::class,
             'unit' => Unit::class,

@@ -25,8 +25,8 @@ class GroupStudentController extends ApiController
             $student = Student::whereKey($data['student_id'])->lockForUpdate()->firstOrFail();
             app(GroupMembershipRules::class)->validate($group, $student);
             abort_unless(in_array($group->status, ['active', 'forming'], true), 409, 'Group is closed.');
-            abort_if($group->groupStudents()->where('student_id', $student->id)->where('status', 'active')->exists(), 409, 'Student is already a member.');
-            abort_if($group->groupStudents()->where('status', 'active')->count() >= $group->capacity, 409, 'Group is full.');
+            abort_if($group->groupStudents()->where('student_id', $student->id)->where('status', 'active')->lockForUpdate()->get()->isNotEmpty(), 409, 'Student is already a member.');
+            abort_if($group->groupStudents()->where('status', 'active')->lockForUpdate()->get()->count() >= $group->capacity, 409, 'Group is full.');
             $member = GroupStudent::updateOrCreate(['group_id' => $group->id, 'student_id' => $student->id], ['status' => 'active', 'joined_at' => now(), 'left_at' => null]);
 
             app(GroupJoinRequests::class)->approveAfterDirectAdd($group, $student, $request->user()->id);

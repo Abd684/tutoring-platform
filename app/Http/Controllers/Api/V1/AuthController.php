@@ -16,11 +16,12 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'phone' => ['required', 'string', 'max:30'],
+            'phone' => ['required_without:email', 'string', 'max:30'],
+            'email' => ['required_without:phone', 'email', 'max:255'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::with('teacher')->where('phone', $validatedData['phone'])->first();
+        $user = User::with('teacher')->where(isset($validatedData['phone']) ? 'phone' : 'email', $validatedData['phone'] ?? $validatedData['email'])->first();
 
         if (! $user || ! Hash::check($validatedData['password'], $user->password_hash)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
