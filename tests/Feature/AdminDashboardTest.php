@@ -63,7 +63,7 @@ class AdminDashboardTest extends TestCase
 
     private function protectedPages(): array
     {
-        return ['/admin', '/admin/students', '/admin/students/create', '/admin/teachers', '/admin/teachers/create', '/admin/payments', '/admin/refunds', '/admin/subscriptions', '/admin/plans', '/admin/plans/create', '/admin/content', '/admin/content/create', '/admin/settings', '/admin/payment-settings', '/admin/audit', '/admin/search?q=Test'];
+        return ['/admin', '/admin/lesson-files', '/admin/students', '/admin/students/create', '/admin/teachers', '/admin/teachers/create', '/admin/payments', '/admin/refunds', '/admin/subscriptions', '/admin/plans', '/admin/plans/create', '/admin/content', '/admin/content/create', '/admin/settings', '/admin/payment-settings', '/admin/audit', '/admin/search?q=Test'];
     }
 
     public function test_dashboard_requires_active_administrator_on_every_page(): void
@@ -271,8 +271,9 @@ class AdminDashboardTest extends TestCase
     {
         $f = $this->fixture();
         $this->actingAs($this->admin());
-        $this->get('/admin/content?lesson_id='.$f['lesson']->id)->assertOk()->assertSee('type=pdf', false)->assertSee('type=video', false);
+        $this->get('/admin/lesson-files?type=pdf')->assertOk()->assertSee('value="pdf" selected', false)->assertSee('data-content-upload', false);
         $this->get('/admin/content/create?lesson_id='.$f['lesson']->id.'&type=pdf')->assertOk()->assertSee('value="pdf" selected', false);
+        $this->get('/admin/lesson-files?type=quiz')->assertSessionHasErrors('type');
         $this->get('/admin/content/create?type=invalid')->assertSessionHasErrors('type');
         $this->post('/admin/content', ['lesson_id' => $f['lesson']->id, 'title' => 'Missing media', 'type' => 'video', 'order_no' => 1, 'status' => 'published'])->assertSessionHasErrors('file');
         $this->assertDatabaseMissing('contents', ['title' => 'Missing media']);

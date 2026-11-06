@@ -52,12 +52,20 @@ class ContentController extends AdminController
         return $this->form($content);
     }
 
-    private function form(Content $content)
+    public function upload(Request $request)
+    {
+        $request->validate(['type' => ['nullable', 'in:video,pdf']]);
+        $content = new Content(['status' => 'draft', 'type' => $request->input('type', 'video'), 'order_no' => 1]);
+
+        return $this->form($content, true);
+    }
+
+    private function form(Content $content, bool $uploadMode = false)
     {
         $lessons = Lesson::with('unit.teacherSubject.teacher.user')->orderBy('id')->get();
         $content->load('assets', 'quizzes');
 
-        return view('admin.content.form', compact('content', 'lessons'));
+        return view('admin.content.form', compact('content', 'lessons', 'uploadMode'));
     }
 
     public function store(Request $request)

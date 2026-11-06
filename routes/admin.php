@@ -92,6 +92,7 @@ Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(fu
         Route::get('plans/{plan}/edit', [SubscriptionsController::class, 'editPlan'])->name('plans.edit');
         Route::put('plans/{plan}', [SubscriptionsController::class, 'updatePlan'])->name('plans.update');
         Route::get('content', [ContentController::class, 'index'])->name('content.index');
+        Route::get('lesson-files', [ContentController::class, 'upload'])->name('lesson-files');
         Route::get('content/create', [ContentController::class, 'create'])->name('content.create');
         Route::post('content', [ContentController::class, 'store'])->name('content.store');
         Route::get('content/{content}/edit', [ContentController::class, 'edit'])->name('content.edit');
