@@ -50,6 +50,7 @@ class TeacherFrontendWorkflowTest extends TestCase
         $this->assertDatabaseCount('group_students', 0);
         $this->postJson('/api/v1/student/groups/'.$f['g']->id.'/join')->assertOk()->assertJsonPath('data.join_request.id', $id);
         $this->assertDatabaseCount('group_join_requests', 1);
+        $this->assertSame(1, \App\Models\Notification::where('user_id', $f['u']->id)->where('type', 'group_join_requested')->count());
         $this->getJson('/api/v1/student/groups/'.$f['g']->id.'/join-requests')->assertOk()->assertJsonPath('meta.total', 1);
         Sanctum::actingAs($f['u']);
         $this->getJson('/api/v1/teacher/groups/'.$f['g']->id.'/join-requests')->assertOk()->assertJsonPath('data.0.student.user.name', $s->user->name)->assertJsonMissingPath('data.0.student.user.password_hash');
@@ -62,6 +63,7 @@ class TeacherFrontendWorkflowTest extends TestCase
         $this->assertDatabaseCount('payments', 0);
         $this->getJson('/api/v1/teacher/groups/'.$f['g']->id.'/students?status=active')->assertOk()->assertJsonPath('meta.total', 1);
         $this->assertDatabaseHas('notifications', ['user_id' => $s->user_id, 'type' => 'group_join_approved']);
+        $this->assertSame(1, \App\Models\Notification::where('user_id', $s->user_id)->where('type', 'group_join_approved')->count());
         $this->assertDatabaseHas('audit_logs', ['action' => 'group_join_request.approved', 'entity_id' => $id]);
     }
 
@@ -75,6 +77,7 @@ class TeacherFrontendWorkflowTest extends TestCase
         $this->postJson($path)->assertUnprocessable();
         $this->postJson($path, ['review_note' => '   '])->assertUnprocessable();
         $this->postJson($path, ['review_note' => 'No suitable level'])->assertOk()->assertJsonPath('data.membership', null);
+        $this->assertDatabaseHas('notifications', ['user_id' => $s->user_id, 'type' => 'group_join_rejected', 'body' => 'No suitable level']);
         $next = $this->requestFor($f['g'], $s);
         $this->assertNotSame($id, $next);
         $this->assertDatabaseCount('group_join_requests', 2);

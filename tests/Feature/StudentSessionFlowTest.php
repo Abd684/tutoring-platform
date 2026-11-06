@@ -57,6 +57,42 @@ class StudentSessionFlowTest extends TestCase
         return ['starts_at' => now()->addDay()->setTime(10, 0)->toIso8601String(), 'ends_at' => now()->addDay()->setTime(11, 0)->toIso8601String()];
     }
 
+    public function test_session_reminders_are_due_only_and_do_not_repeat_even_after_notification_pruning(): void
+    {
+        $this->travelTo(now()->startOfMinute());
+        $due = $this->makeSession(['starts_at' => now()->addHour(), 'ends_at' => now()->addHours(2)]);
+        $this->makeSession(['starts_at' => now()->addHours(2), 'ends_at' => now()->addHours(3)]);
+        $this->makeSession(['status' => 'cancelled', 'starts_at' => now()->addMinutes(30), 'ends_at' => now()->addMinutes(90)]);
+        $this->artisan('notifications:session-reminders')->assertSuccessful();
+        $this->assertDatabaseCount('notifications', 2);
+        $this->assertDatabaseHas('notifications', ['user_id' => $this->user->id, 'type' => 'session_reminder']);
+        $this->assertDatabaseHas('notifications', ['user_id' => $this->teacher->user_id, 'type' => 'session_reminder']);
+        \App\Models\Notification::query()->delete();
+        $this->artisan('notifications:session-reminders')->assertSuccessful();
+        $this->assertDatabaseCount('notifications', 0);
+        $due->update(['starts_at' => now()->addMinutes(45)]);
+        $this->artisan('notifications:session-reminders')->assertSuccessful();
+        $this->assertDatabaseCount('notifications', 2);
+    }
+
+    public function test_cancellation_notifies_active_group_members_once_and_rolls_back_atomically(): void
+    {
+        $group = Group::create(['teacher_subject_id' => $this->course->id, 'name' => 'Group', 'capacity' => 3, 'status' => 'active']);
+        GroupStudent::create(['group_id' => $group->id, 'student_id' => $this->student->id, 'status' => 'active']);
+        $session = $this->makeSession(['type' => 'group', 'type_id' => $group->id]);
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        $session->update(['status' => 'cancelled']);
+        $this->assertDatabaseCount('notifications', 2);
+        \Illuminate\Support\Facades\DB::rollBack();
+        $this->assertDatabaseCount('notifications', 0);
+        $session->refresh()->update(['status' => 'cancelled']);
+        $session->update(['status' => 'cancelled']);
+        $this->assertDatabaseCount('notifications', 2);
+        $this->assertDatabaseHas('notifications', ['user_id' => $this->user->id, 'type' => 'session_cancelled']);
+        $this->artisan('notifications:session-reminders')->assertSuccessful();
+        $this->assertDatabaseCount('notifications', 2);
+    }
+
     private function makeSession(array $extra = []): Session
     {
         return Session::create(array_replace(['teacher_id' => $this->teacher->id, 'type' => 'individual', 'type_id' => $this->individual->id,

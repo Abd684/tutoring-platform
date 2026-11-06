@@ -27,6 +27,12 @@ Artisan::command('notifications:dispatch-due', function () {
 
 Schedule::command('notifications:dispatch-due')->everyMinute()->withoutOverlapping();
 
+Artisan::command('notifications:session-reminders', function () {
+    $count = app(\App\Services\SessionNotifications::class)->remindDue();
+    $this->info('Checked due sessions: '.$count);
+});
+Schedule::command('notifications:session-reminders')->everyMinute()->withoutOverlapping();
+
 // Preview by default. Never schedule a destructive retention job implicitly.
 Artisan::command('notifications:prune {--execute} {--dry-run}', function () {
     $personal = fn () => DB::table('notifications')->where(fn ($q) => $q->where(fn ($q) => $q->whereNotNull('read_at')->where('read_at', '<=', now()->subDays(7)))
