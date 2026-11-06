@@ -36,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
     {
         ContentAsset::observe(ContentAssetObserver::class);
         Notification::observe(NotificationObserver::class);
+        \App\Models\Payment::observe(\App\Observers\PaymentObserver::class);
+        \App\Models\Session::observe(\App\Observers\SessionObserver::class);
 
         Relation::morphMap([
             'teacher_subject' => TeacherSubject::class,

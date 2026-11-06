@@ -88,6 +88,12 @@ class EnrollmentPaymentController extends ApiController
                 return $this->success(['payment' => app(ShamCashPayments::class)->payload($payment->fresh()), 'enrollment' => $enrollment->fresh()], 'Payment review completed.');
             }
 
+            Notification::create(['user_id' => $payment->payer_id,
+                'type' => $validated['decision'] === 'confirm' ? 'payment_approved' : 'payment_rejected',
+                'title' => $validated['decision'] === 'confirm' ? 'تم تأكيد الدفع' : 'تم رفض طلب الدفع',
+                'body' => $validated['decision'] === 'confirm' ? 'تم تأكيد عملية الدفع بنجاح.' : ($validated['rejection_reason'] ?? 'تم رفض طلب الدفع.'),
+                'related_payment_id' => $payment->id]);
+
             return $this->success(['payment' => $payment->fresh(), 'enrollment' => $enrollment->fresh()], 'Payment review completed.');
         });
     }

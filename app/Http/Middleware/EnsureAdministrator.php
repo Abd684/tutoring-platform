@@ -19,6 +19,10 @@ class EnsureAdministrator
         }
         abort_unless($user->role === 'company_admin' && $user->status === 'active', 403);
         view()->share('dashboardSettings', PlatformSetting::dashboard());
+        view()->share('paymentAlerts', \App\Models\Notification::where('user_id', $user->id)
+            ->where('type', 'payment_submitted')->whereHas('user')
+            ->whereIn('related_payment_id', Payment::where('status', 'pending')->select('id'))
+            ->latest('id')->limit(5)->get());
         view()->share('navCounts', ['payments' => Payment::where('status', 'pending')->count(),
             'refunds' => RefundRequest::where('status', 'PENDING_REVIEW')->count()]);
 

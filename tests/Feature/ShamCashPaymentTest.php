@@ -83,6 +83,9 @@ class ShamCashPaymentTest extends TestCase
             ->assertJsonPath('data.currency', 'SYP')->assertJsonPath('data.payer_id', $this->student->id)
             ->assertJsonPath('data.payment_status', 'PENDING_REVIEW')->assertJsonMissingPath('data.proof_path')->json('data.id');
         $payment = Payment::findOrFail($id);
+        $this->assertDatabaseHas('notifications', ['user_id' => $this->admin->id, 'type' => 'payment_submitted', 'related_payment_id' => $id]);
+        $this->actingAs($this->admin, 'web')->get('/admin')->assertOk()->assertSee('إثبات دفع بانتظار المراجعة')->assertSee(route('admin.payments.show', $id), false);
+        Sanctum::actingAs($this->student);
         Storage::disk('local')->assertExists($payment->proof_path);
         $this->assertSame('pending', Enrollment::find($payment->payable_id)->status);
         $this->getJson('/api/v1/contents/'.$this->content->id.'/assets')->assertNotFound();
@@ -99,7 +102,7 @@ class ShamCashPaymentTest extends TestCase
         $this->assertDatabaseHas('notifications', ['user_id' => $this->student->id, 'type' => 'payment_approved', 'related_payment_id' => $id]);
         $this->postJson($review, ['decision' => 'confirm'])->assertConflict();
         $this->postJson($review, ['decision' => 'reject', 'rejection_reason' => 'late'])->assertConflict();
-        $this->assertDatabaseCount('notifications', 1);
+        $this->assertSame(1, Notification::where('user_id', $this->student->id)->where('type', 'payment_approved')->where('related_payment_id', $id)->count());
         Sanctum::actingAs($this->student);
         $this->getJson('/api/v1/contents/'.$this->content->id.'/assets')->assertOk();
         $this->getJson('/api/v1/student/payments/'.$id)->assertOk()->assertJsonPath('data.payment_status', 'APPROVED');

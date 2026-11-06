@@ -175,6 +175,13 @@ class PaidLessonController extends ApiController
                 $enrollment->update(['status' => 'cancelled']);
             }
             $bookings->audit('booking.payment_'.$data['decision'], $booking, $request->user()->id, ['payment_id' => $payment->id, 'rejection_reason' => $payment->rejection_reason]);
+            \App\Models\Notification::create(['user_id' => $payment->payer_id,
+                'type' => $confirmed ? 'payment_approved' : 'payment_rejected',
+                'title' => $confirmed ? 'تم تأكيد الدفع' : 'تم رفض طلب الدفع',
+                'body' => $confirmed
+                    ? ($booking->status === 'NEEDS_RESCHEDULE' ? 'تم تأكيد الدفع. يرجى اختيار موعد بديل للجلسة.' : 'تم تأكيد الدفع وحجز جلستك بنجاح.')
+                    : 'سبب الرفض: '.$payment->rejection_reason,
+                'related_payment_id' => $payment->id, 'data' => ['payment_id' => $payment->id, 'booking_id' => $booking->id]]);
 
             return $this->success(['payment' => app(ShamCashPayments::class)->payload($payment->fresh()),
                 'booking' => $booking->fresh(), 'enrollment' => $enrollment->fresh()], 'Payment review completed.');
