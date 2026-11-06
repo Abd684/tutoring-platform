@@ -41,7 +41,8 @@ class ContentController extends AdminController
 
     public function create(Request $request)
     {
-        $content = new Content(['status' => 'draft', 'type' => 'video', 'order_no' => 1, 'price' => 0, 'lesson_id' => $request->integer('lesson_id') ?: null]);
+        $request->validate(['type' => ['nullable', 'in:video,pdf,quiz,link'], 'lesson_id' => ['nullable', 'integer', 'exists:lessons,id']]);
+        $content = new Content(['status' => 'draft', 'type' => $request->input('type', 'video'), 'order_no' => 1, 'price' => null, 'lesson_id' => $request->integer('lesson_id') ?: null]);
 
         return $this->form($content);
     }
@@ -75,7 +76,8 @@ class ContentController extends AdminController
             'description' => ['nullable', 'string', 'max:30000'], 'type' => ['required', 'in:video,pdf,quiz,link'], 'price' => ['nullable', 'numeric', 'between:0,9999999999.99'],
             'order_no' => ['required', 'integer', 'min:0'], 'status' => ['required', 'in:draft,published,archived,scheduled'],
             'scheduled_publish_at' => ['required_if:status,scheduled', 'nullable', 'date', 'after:now'],
-            'learning_objectives' => ['nullable', 'string', 'max:10000'], 'file' => ['nullable', 'file', 'max:512000']]);
+            'learning_objectives' => ['nullable', 'string', 'max:10000'],
+            'file' => [in_array($request->input('type'), ['video', 'pdf'], true) && ! $content->assets()->where('status', 'active')->exists() ? 'required' : 'nullable', 'file', 'max:512000']]);
         if ($content->exists && $content->type !== $data['type'] && ($content->assets()->exists() || $content->quizzes()->exists())) {
             throw ValidationException::withMessages(['type' => ['لا يمكن تغيير نوع محتوى مرتبط بملفات أو اختبارات. أنشئ محتوى جديداً.']]);
         }

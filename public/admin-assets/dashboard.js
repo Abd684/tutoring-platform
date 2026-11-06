@@ -27,3 +27,32 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('[data-print]').forEach(button=>button.addEventListener('click',()=>window.print()));
   document.querySelectorAll('[data-reset-form]').forEach(button=>button.addEventListener('click',()=>button.closest('form').reset()));
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const type = document.querySelector('[data-content-type]');
+  const panel = document.querySelector('[data-content-upload]');
+  const input = document.querySelector('[data-content-file]');
+  if (!type || !panel || !input) return;
+  const feedback = panel.querySelector('[data-upload-feedback]');
+  const update = () => {
+    const pdf = type.value === 'pdf';
+    const enabled = pdf || type.value === 'video';
+    panel.hidden = !enabled;
+    input.disabled = !enabled;
+    input.required = enabled && panel.dataset.hasAsset !== 'yes';
+    input.accept = pdf ? 'application/pdf,.pdf' : 'video/mp4,video/webm,video/quicktime,video/x-matroska,.mp4,.webm,.mov,.mkv';
+    panel.querySelector('[data-upload-heading]').textContent = pdf ? 'رفع ملف PDF للدرس' : 'رفع فيديو للدرس';
+    panel.querySelector('[data-upload-label]').textContent = pdf ? 'اختر ملف PDF' : 'اختر ملف الفيديو';
+    input.setCustomValidity('');
+    const file = input.files[0];
+    feedback.textContent = file ? `${file.name} — ${(file.size / 1048576).toFixed(2)} ميغابايت` : '';
+    if (file && file.size > 512000 * 1024) input.setCustomValidity('حجم الملف يتجاوز 500 ميغابايت.');
+    if (file && enabled) {
+      const valid = pdf ? /\.pdf$/i.test(file.name) : /\.(mp4|webm|mov|mkv)$/i.test(file.name);
+      if (!valid) input.setCustomValidity('اختر ملفاً مطابقاً لنوع المحتوى المحدد.');
+    }
+  };
+  type.addEventListener('change', update);
+  input.addEventListener('change', update);
+  update();
+});

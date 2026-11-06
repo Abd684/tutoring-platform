@@ -267,6 +267,19 @@ class AdminDashboardTest extends TestCase
         $this->assertDatabaseCount('payments', 0);
     }
 
+    public function test_lesson_upload_shortcuts_and_required_media_file(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($this->admin());
+        $this->get('/admin/content?lesson_id='.$f['lesson']->id)->assertOk()->assertSee('type=pdf', false)->assertSee('type=video', false);
+        $this->get('/admin/content/create?lesson_id='.$f['lesson']->id.'&type=pdf')->assertOk()->assertSee('value="pdf" selected', false);
+        $this->get('/admin/content/create?type=invalid')->assertSessionHasErrors('type');
+        $this->post('/admin/content', ['lesson_id' => $f['lesson']->id, 'title' => 'Missing media', 'type' => 'video', 'order_no' => 1, 'status' => 'published'])->assertSessionHasErrors('file');
+        $this->assertDatabaseMissing('contents', ['title' => 'Missing media']);
+        $this->put('/admin/curriculum/lesson/'.$f['lesson']->id, ['title' => $f['lesson']->title, 'status' => 'published', 'price' => 150])->assertRedirect();
+        $this->assertEquals(150, $f['lesson']->fresh()->price);
+    }
+
     public function test_private_file_upload_archiving_and_scheduled_publication(): void
     {
         Storage::fake('local');
