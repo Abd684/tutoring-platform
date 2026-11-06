@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Enrollment;
+use App\Models\DeviceTransferRequest;
 use App\Models\Group;
 use App\Models\GroupStudent;
 use App\Models\Payment;
@@ -16,6 +17,7 @@ use App\Models\Teacher;
 use App\Models\TeacherSubject;
 use App\Models\User;
 use App\Services\GroupMembershipRules;
+use App\Services\DeviceTransfers;
 use App\Services\OnlineRefunds;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -107,7 +109,7 @@ class AccountsController extends AdminController
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'], 'email' => $user ? ['sometimes', 'nullable', Rule::in([$user->email])] : ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
-            'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user?->id)],
+            'phone' => $user ? ['sometimes', 'nullable', Rule::in([$user->phone])] : ['required', 'string', 'max:20', Rule::unique('users', 'phone')],
             'password' => [$user ? 'prohibited' : 'required', 'string', 'min:8', 'max:255', 'confirmed'],
             'status' => ['required', 'in:active,suspended'], 'region_id' => ['nullable', 'integer', 'exists:regions,id'],
             'specialization' => ['nullable', 'string', 'max:255'], 'bio' => ['nullable', 'string', 'max:10000'],
@@ -123,7 +125,7 @@ class AccountsController extends AdminController
             throw ValidationException::withMessages(['school_id' => ['المدرسة لا تتبع المنطقة المختارة.']]);
         }
         if ($user) {
-            unset($data['email']);
+            unset($data['email'], $data['phone']);
         }
         $saved = DB::transaction(function () use ($request, $data, $user, $isTeacher, $role) {
             $identity = array_intersect_key($data, array_flip(['name', 'email', 'phone', 'region_id']));
@@ -199,8 +201,28 @@ class AccountsController extends AdminController
         $availability = $isTeacher ? $account->availabilities()->orderBy('date')->limit(20)->get() : collect();
 
         $tab = $request->input('tab', 'profile');
+        $deviceTransfers = $isTeacher ? collect() : DeviceTransferRequest::with(['sourceStudentDevice.device', 'targetDevice'])
+            ->where('student_id', $account->id)->latest('id')->limit(20)->get();
 
-        return view('admin.accounts.show', compact('user', 'account', 'isTeacher', 'payments', 'courses', 'sessions', 'subscriptions', 'availability', 'tab'));
+        return view('admin.accounts.show', compact('user', 'account', 'isTeacher', 'payments', 'courses', 'sessions', 'subscriptions', 'availability', 'tab', 'deviceTransfers'));
+    }
+
+    public function approveDeviceTransfer(Request $request, User $user, DeviceTransferRequest $transfer)
+    {
+        abort_unless($user->role === 'student' && $user->student
+            && (int) $transfer->student_id === (int) $user->student->id, 404);
+
+        $resolved = DB::transaction(function () use ($transfer) {
+            $resolved = app(DeviceTransfers::class)->resolve($transfer->id, 'approve');
+            if (! in_array($resolved->status, ['approved', 'auto_approved'], true)) {
+                throw ValidationException::withMessages(['operation' => ['تعذر الموافقة على طلب النقل؛ راجع حالة الطلب والحساب والجهاز.']]);
+            }
+            $this->audit('device_transfer.approved', $resolved);
+
+            return $resolved;
+        });
+
+        return redirect()->route('admin.students.show', $user)->with('success', 'تمت الموافقة على نقل الجهاز وإبطال جلسات الجهاز القديم.');
     }
 
     public function status(Request $request, User $user)

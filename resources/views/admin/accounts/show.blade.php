@@ -12,6 +12,20 @@
 @endif
 @if(!$isTeacher||request('tab')==='courses')<section class="panel profile-section" id="profile-courses"><div class="panel-heading"><h2>{{ $isTeacher?'المواد الدراسية':'المقررات الحالية والتسجيلات' }}</h2></div><div class="table-wrap"><table><thead><tr><th>المادة أو التسجيل</th><th>{{ $isTeacher?'السعر':'المدرس' }}</th><th>الحالة</th></tr></thead><tbody>@forelse($courses as $course)<tr><td>{{ $isTeacher?($course->subject?->name??'—'):($course->enrollable?->subject?->name??$course->enrollable?->title??'اشتراك #'.$course->id) }}<small>{{ $isTeacher?'عرض مادة #'.$course->id:$course->enrollable_type }}</small></td><td>{{ $isTeacher?number_format((float)$course->price,2).' ل.س':$course->teacher?->user?->name }}</td><td>@include('admin.partials.badge',['status'=>$course->status])</td></tr>@empty<tr><td colspan="3"><div class="empty-state">لا توجد مواد أو تسجيلات.</div></td></tr>@endforelse</tbody></table></div></section>
 @endif
+
+@if(!$isTeacher)
+<section class="panel profile-section" id="device-transfers">
+<div class="panel-heading"><div><h2>طلبات نقل الجهاز</h2><p>الموافقة تنقل الحساب إلى الجهاز الجديد وتبطل جلسات الجهاز القديم.</p></div></div>
+<div class="table-wrap"><table><thead><tr><th>الجهاز القديم</th><th>الجهاز الجديد</th><th>تاريخ الطلب</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody>
+@forelse($deviceTransfers as $transfer)
+<tr><td>{{ $transfer->sourceStudentDevice?->device?->manufacturer }} {{ $transfer->sourceStudentDevice?->device?->model??'—' }}<small>{{ $transfer->sourceStudentDevice?->device?->platform }}</small></td>
+<td>{{ $transfer->targetDevice?->manufacturer }} {{ $transfer->targetDevice?->model??'—' }}<small>{{ $transfer->targetDevice?->platform }}</small></td>
+<td class="numeric">{{ $transfer->created_at?->timezone($dashboardSettings['timezone'])->format('Y/m/d H:i') }}</td>
+<td>{{ ['pending'=>'بانتظار الموافقة','approved'=>'تمت الموافقة','auto_approved'=>'تمت الموافقة تلقائياً','rejected'=>'مرفوض','cancelled'=>'ملغى'][$transfer->status]??$transfer->status }}</td>
+<td>@if($transfer->status==='pending')<form method="post" action="{{ route('admin.students.device-transfers.approve',[$user,$transfer]) }}" data-confirm="هل تريد الموافقة على نقل جهاز الطالب وإبطال جلسات جهازه القديم؟">@csrf<button type="submit" class="button small">الموافقة على النقل</button></form>@else<span class="muted">—</span>@endif</td></tr>
+@empty<tr><td colspan="5"><div class="empty-state">لا توجد طلبات نقل جهاز لهذا الطالب.</div></td></tr>@endforelse
+</tbody></table></div></section>
+@endif
 @if(!$isTeacher)<section class="panel profile-section" id="profile-sessions"><div class="panel-heading"><h2>الجلسات</h2></div><div class="table-wrap"><table><thead><tr><th>الجلسة</th><th>البداية</th><th>الحالة</th><th></th></tr></thead><tbody>@forelse($sessions as $session)<tr><td>{{ $session->target?->name??'جلسة فردية #'.$session->id }}</td><td class="numeric">{{ $session->starts_at->timezone($dashboardSettings['timezone'])->format('Y/m/d H:i') }}</td><td>@include('admin.partials.badge',['status'=>$session->status])</td><td><a class="text-button" href="{{ \App\Support\AdminLinks::session($session,'show') }}">التفاصيل</a></td></tr>@empty<tr><td colspan="4"><div class="empty-state">لا توجد جلسات محفوظة.</div></td></tr>@endforelse</tbody></table></div></section>
 @endif
 @if(!$isTeacher||request('tab')==='payments')<section class="panel profile-section" id="profile-payments"><div class="panel-heading"><h2>العمليات المالية</h2></div><div class="table-wrap"><table><thead><tr><th>المرجع</th><th>المبلغ</th><th>الحالة</th><th></th></tr></thead><tbody>@forelse($payments as $payment)<tr><td class="numeric">{{ $payment->provider_reference??$payment->id }}</td><td>{{ $payment->amount }} {{ $payment->currency }}</td><td>@include('admin.partials.badge',['status'=>$payment->status])</td><td><a class="text-button" href="{{ route('admin.payments.show',$payment) }}">عرض الإيصال</a></td></tr>@empty<tr><td colspan="4"><div class="empty-state">لا توجد دفعات مرتبطة.</div></td></tr>@endforelse</tbody></table></div></section>@endif

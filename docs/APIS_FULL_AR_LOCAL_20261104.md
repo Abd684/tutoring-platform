@@ -1,10 +1,10 @@
-> تحديث 2026-11-01: وصف الانضمام الفوري للمجموعات في هذا الملف أصبح قديماً؛ إرسال الطالب ينشئ طلباً معلقاً إلى أن يوافق الأستاذ أو يرفض. راجع [TEACHER_FRONTEND_APIS_2026-11-01_04-11.md](TEACHER_FRONTEND_APIS_2026-11-01_04-11.md) للمسارات والحقول المعتمدة لهذه الميزة. بقية هذا الملف محفوظة كمرجع سابق.
+> تحديث 2026-11-04: انضمام الطالب إلى المجموعة ينشئ طلباً معلقاً يحتاج موافقة الأستاذ. راجع [TEACHER_FRONTEND_APIS_2026-11-01_04-11.md](TEACHER_FRONTEND_APIS_2026-11-01_04-11.md) لتفاصيل هذا التدفق.
 
-# مرجع جميع عمليات API المسجلة — 2026-10-31
+# مرجع جميع عمليات API المسجلة — 2026-11-04
 
-يغطي 171 مساراً مسجلاً و177 عملية HTTP بعد استبعاد HEAD المكرر. المصدر هو RouteCollection الفعلي بعد تطبيق Migrations في ذاكرة مؤقتة.
+يغطي 190 مساراً مسجلاً و196 عملية HTTP بعد استبعاد HEAD المكرر. المصدر هو RouteCollection الفعلي بعد تحديث 2026-11-04. أضيف ملحق التغييرات الجديدة في آخر الملف.
 
-ابدأ بـ FRONTEND_CONTRACT_FINAL_AR.md لتدفقات العمل والأمثلة المعتمدة، ثم استخدم هذا الملف كفهرس كامل لكل المسارات. ملف OpenAPI قابل للاستيراد في أدوات API وملف Postman جاهز للاستيراد مع تعبئة التوكن والمعرّفات والملفات.
+ابدأ بـ FRONTEND_CONTRACT_FINAL_AR_LOCAL_20261104.md لتدفقات العمل والأمثلة المعتمدة، ثم استخدم هذا الملف كفهرس كامل لكل المسارات. تدفقات الإشعارات وأمثلتها المفصلة في NOTIFICATIONS_FRONTEND_LOCAL_2026-11-04_05-16.md.
 
 ## قواعد عامة
 
@@ -2987,3 +2987,179 @@ Path parameters: `refund`.
 الاستجابة والسلوك: data: RefundRequest؛ يُسمح بتعديل account_id لطلبك pending/approved فقط.
 
 المصدر: `app/Http/Controllers/Api/V1/RefundController.php:83`.
++
+
+---
+
+# ملحق 2026-11-04 — المسارات المضافة أو المحدّثة
+
+المسارات التالية ظهرت في نسخة المشروع الحالية بعد تحديث الإشعارات. بقية عمليات API موثقة في الأقسام السابقة. الأساس لكل الطلبات: `Accept: application/json`، وللمسارات المحمية `Authorization: Bearer <access_token>`. أمثلة المعرفات وهمية.
+
+## إشعارات الطالب والأستاذ
+
+### `POST /api/v1/push-tokens` — تسجيل عنوان FCM
+
+الصلاحيات: طالب بجلسة الجهاز الفعالة أو أستاذ مسجل الدخول.
+
+الطلب:
+```json
+{"fcm_token":"<FCM_REGISTRATION_TOKEN>","platform":"android"}
+```
+
+الاستجابة `200`:
+```json
+{"status":true,"message":"Push token registered.","data":{"registered":true}}
+```
+
+الحقول: `fcm_token` مطلوب نص بطول 20–4096؛ `platform` مطلوب وأحد `android|ios|web`. الحقول `user_id` و`device_id` ممنوعة؛ الخادم يستنتج الحساب والجهاز من جلسة الدخول. تعارض ملكية العنوان يرجع `409`، والتحقق `422`.
+
+### `DELETE /api/v1/push-tokens` — إلغاء التسجيل
+
+الصلاحيات مثل تسجيل العنوان. أرسل JSON body:
+
+```json
+{"fcm_token":"<FCM_REGISTRATION_TOKEN>"}
+```
+
+الاستجابة `200`:
+```json
+{"status":true,"message":"Push token unregistered.","data":{"registered":false}}
+```
+
+الاستدعاء آمن عند تكراره. على التطبيق استدعاؤه قبل logout بينما التوكن الحالي ما زال صالحاً.
+
+### `GET /api/v1/student/notification-feed` و`GET /api/v1/teacher/notification-feed`
+
+الصلاحيات: الدور المطابق، والطالب يحتاج جلسة جهاز فعالة. Query اختياري: `page`، `per_page` (1–100، الافتراضي 20)، `unread_only` (boolean)، `kind=all|personal|campaign`.
+
+شكل كل عنصر في `data`: `kind,id,type,title,body,data,read_at,created_at,related_payment_id,key,read`. استخدم `key` مثل `campaign:17` لتمييز المعرفات المتشابهة بين الإشعارات الشخصية والحملات. التواريخ UTC بصيغة ISO-8601.
+
+استجابة `200`:
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "kind": "campaign",
+      "id": 17,
+      "type": "campaign",
+      "title": "إعلان المنصة",
+      "body": "نص الإعلان",
+      "data": null,
+      "read_at": null,
+      "created_at": "2026-11-04T08:00:00.000000Z",
+      "related_payment_id": null,
+      "key": "campaign:17",
+      "read": false
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 20,
+    "total": 1,
+    "last_page": 1,
+    "unread_count": 1
+  }
+}
+```
+
+### `POST /api/v1/student/notification-campaigns/{campaign}/read` و`POST /api/v1/teacher/notification-campaigns/{campaign}/read`
+
+لا يوجد body مطلوب؛ أرسل `{}`. لا يمكن قراءة حملة غير مرئية للمستخدم؛ حينها `404`.
+
+```json
+{
+  "status": true,
+  "data": {
+    "id": 17,
+    "kind": "campaign",
+    "key": "campaign:17",
+    "read": true,
+    "read_at": "2026-11-04T08:05:00.000000Z"
+  }
+}
+```
+
+### مسارات المدرّس القديمة لعضوية المجموعة
+
+هذه المسارات توافق العملاء القدامى؛ استخدم مسارات `/students` الأحدث عند تطوير واجهة جديدة.
+
+#### `POST /api/v1/teacher/groups/{id}/enrollments`
+
+الصلاحيات: المدرّس المالك للمجموعة.
+
+الطلب:
+```json
+{"enrollment_id":42}
+```
+
+`enrollment_id` مطلوب، integer، ويجب أن يخص الطالب ومادة المدرّس المتوافقة مع المجموعة. `student_id` ممنوع في هذا المسار؛ يحدد الطالب من التسجيل.
+
+الاستجابة: نفس نتيجة إضافة طالب إلى المجموعة، ويُضاف لها `enrollment_id` و`enrollment` و`group` للتوافق مع العميل القديم. أخطاء الملكية/المجموعة غير المتوافقة لا تكشف سجلات الغير.
+
+#### `DELETE /api/v1/teacher/groups/{id}/enrollments/{enrollment}`
+
+الصلاحيات: المدرّس المالك للمجموعة والتسجيل. لا يوجد body. النجاح يعيد غلاف `status=true` وبيانات إزالة العضوية، مع بيانات `enrollment` و`group` لتوافق API القديم. قد يعاد `404` عند عدم تطابق الملكية أو المادة.
+
+## حملات الإشعارات — الإدارة
+
+كل المسارات تتطلب `company_admin` فعالاً.
+
+### `GET /api/v1/admin/notification-campaigns`
+
+Query اختياري: `status=draft|scheduled|dispatched|cancelled`، و`page` و`per_page`.
+
+```json
+{
+  "status": true,
+  "data": [
+    {
+      "id": 17,
+      "created_by": 3,
+      "target_scope": "students",
+      "target_user_id": null,
+      "title": "إعلان المنصة",
+      "body": "نص الإعلان",
+      "data": null,
+      "status": "dispatched",
+      "scheduled_at": null,
+      "dispatched_at": "2026-11-04T08:00:00.000000Z"
+    }
+  ],
+  "meta": {"current_page": 1, "per_page": 20, "total": 1, "last_page": 1}
+}
+```
+
+### `POST /api/v1/admin/notification-campaigns`
+
+الطلب:
+```json
+{
+  "title": "إعلان المنصة",
+  "body": "نص الإعلان",
+  "target_scope": "all",
+  "data": {"screen": "notifications"}
+}
+```
+
+الحقول المطلوبة: `title` نص حتى 180، `body` نص حتى 2000، و`target_scope` أحد `all|students|teachers|student|teacher`. عند اختيار `student` أو `teacher` أرسل `target_user_id` لمستخدم فعال من الدور نفسه؛ يمنع هذا الحقل مع الجمهور. `scheduled_at` اختياري ويجب أن يكون تاريخاً مستقبلياً. `data` اختياري: حتى 20 قيمة نصية/فارغة، أقصى طول للقيمة 512. الحقول `status,dispatched_at,created_by` ممنوعة.
+
+استجابة الإنشاء `201`: `status=true` و`message` و`data` للحملة. بدون `scheduled_at` تحفظ كمسودة؛ مع موعد مستقبلي تحفظ كـ`scheduled` ولا تنشر حتى يحين الموعد.
+
+### `GET /api/v1/admin/notification-campaigns/{campaign}`
+
+لا يوجد body. يعيد `200` مع `{"status":true,"data":{...campaign fields...}}`. يتطلب صلاحية إدارة الحملة.
+
+### `PUT /api/v1/admin/notification-campaigns/{campaign}`
+
+Body مثل طلب الإنشاء ويجب إعادة الحقول المطلوبة. يمكن تعديل المسودة أو المجدولة فقط؛ تعاد الحملة داخل `data`. الحملة المنشورة أو الملغاة لا تتغير ويرجع `409`.
+
+### `POST /api/v1/admin/notification-campaigns/{campaign}/dispatch`
+
+لا يوجد body؛ أرسل `{}`. ينشر الحملة في صندوق الوارد ويجدول Push عند تفعيله. الاستجابة `200` بغلاف `status,message,data`. تكرار النشر لا ينشئ نسخة حملة أخرى؛ الحالة النهائية غير القابلة للنشر ترجع `409`.
+
+### `POST /api/v1/admin/notification-campaigns/{campaign}/cancel`
+
+لا يوجد body؛ أرسل `{}`. الاستجابة `200` مع الحملة بعد الإلغاء في `data`. لا يمكن سحب حملة منشورة، ويعاد `409`.
+
+تفاصيل أمثلة JSON الكاملة، حالات الحملات، وسلوك Push موضحة في [NOTIFICATIONS_FRONTEND_LOCAL_2026-11-04_05-16.md](NOTIFICATIONS_FRONTEND_LOCAL_2026-11-04_05-16.md).

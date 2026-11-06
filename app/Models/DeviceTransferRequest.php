@@ -19,4 +19,9 @@ class DeviceTransferRequest extends Model
     {
         return $this->belongsTo(StudentDevice::class, 'source_student_device_id');
     }
+
+    public function targetDevice()
+    {
+        return $this->belongsTo(Device::class, 'target_device_id');
+    }
 }

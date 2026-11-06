@@ -25,6 +25,8 @@ Route::prefix('admin')->name('admin.')->middleware(AdminLocale::class)->group(fu
     Route::middleware(EnsureAdministrator::class)->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('/', OverviewController::class)->name('overview');
+        Route::post('students/{user}/device-transfers/{transfer}/approve', [AccountsController::class, 'approveDeviceTransfer'])
+            ->whereNumber(['user', 'transfer'])->name('students.device-transfers.approve');
         Route::get('search', SearchController::class)->name('search');
         Route::controller(\App\Http\Controllers\Admin\NotificationsController::class)->prefix('notifications')->name('notifications.')->group(function () {
             Route::get('/', 'index')->name('index');

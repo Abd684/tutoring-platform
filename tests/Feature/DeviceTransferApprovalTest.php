@@ -47,6 +47,26 @@ class DeviceTransferApprovalTest extends TestCase
         return $this->withToken($token);
     }
 
+    public function test_admin_can_approve_only_the_selected_students_transfer(): void
+    {
+        $user = $this->student();
+        $this->login($user);
+        $transfer = $this->requestTransfer($user);
+        $other = $this->student();
+        $admin = User::factory()->create(['role' => 'company_admin', 'status' => 'active']);
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($admin, 'web');
+        $this->get('/admin/students/'.$user->id)->assertOk()->assertSee('device-transfers', false);
+        $this->post('/admin/students/'.$other->id.'/device-transfers/'.$transfer['id'].'/approve')->assertNotFound();
+        $this->assertDatabaseHas('device_transfer_requests', ['id' => $transfer['id'], 'status' => 'pending']);
+        $this->post('/admin/students/'.$user->id.'/device-transfers/'.$transfer['id'].'/approve')
+            ->assertRedirect('/admin/students/'.$user->id);
+        $this->assertDatabaseHas('device_transfer_requests', ['id' => $transfer['id'], 'status' => 'approved']);
+        $this->assertDatabaseHas('audit_logs', ['user_id' => $admin->id, 'action' => 'admin.device_transfer.approved']);
+        $this->assertSame(1, StudentDevice::where('student_id', $user->student->id)->where('is_active', true)->count());
+        $this->assertDatabaseHas('device_sessions', ['status' => 'revoked', 'revoke_reason' => 'device_transfer']);
+    }
+
     public function test_approval_revokes_old_tokens_and_refresh_and_claim_is_single_use(): void
     {
         $user = $this->student();
