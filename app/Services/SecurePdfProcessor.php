@@ -15,10 +15,13 @@ class SecurePdfProcessor
 
     public function process(ContentAsset $asset): void
     {
-        $work = storage_path('app/private/pdf-work/'.Str::uuid()); File::ensureDirectoryExists($work);
+        $work = storage_path('app/private/pdf-work/asset-'.$asset->id);
+        File::deleteDirectory($work);
+        File::ensureDirectoryExists($work);
         $disk = Storage::disk($asset->disk);
         $asset->update(['processing_status'=>'processing','processing_error_code'=>null]);
         try {
+            if ($disk->size($asset->storage_key) > config('pdf.max_source_bytes')) throw new RuntimeException('PDF_SOURCE_SIZE_LIMIT');
             $encrypted = $work.'/source.enc'; $plain = $work.'/source.pdf';
             file_put_contents($encrypted, $disk->get($asset->storage_key));
             if (substr(file_get_contents($encrypted, false, null, 0, 6), 0, 6) !== 'LQPDF2') {
@@ -30,11 +33,15 @@ class SecurePdfProcessor
             if (! str_starts_with((string) file_get_contents($plain, false, null, 0, 5), '%PDF-')) throw new RuntimeException('PDF_INVALID');
             $renderDir = $work.'/pages'; File::ensureDirectoryExists($renderDir);
             $pages = $this->renderer->render($plain, $renderDir);
+            if ($pages < 1 || $pages > max(1, (int) config('pdf.max_document_pages', 200))) throw new RuntimeException('PDF_RENDER_PAGE_LIMIT');
             $prefix = 'pdf-pages/'.$asset->id.'/v'.($asset->processing_version ?? 1);
             $disk->deleteDirectory('pdf-pages/'.$asset->id);
             $rendered = glob($renderDir.'/page-*.jpg') ?: []; natsort($rendered);
+            $bytes = 0;
             foreach (array_values($rendered) as $i => $path) {
-                $pageNo = $i + 1; $disk->put($prefix.'/'.$pageNo.'.jpg', file_get_contents($path));
+                $bytes += filesize($path);
+                if ($bytes > config('pdf.max_render_bytes')) throw new RuntimeException('PDF_RENDER_SIZE_LIMIT');
+                $pageNo = $i + 1; if (! $disk->put($prefix.'/'.$pageNo.'.jpg', file_get_contents($path))) throw new RuntimeException('PDF_PAGE_STORAGE_FAILED');
             }
             if (count($rendered) !== $pages) throw new RuntimeException('PDF_RENDER_INCOMPLETE');
             $asset->update(['processing_status'=>'ready','total_pages'=>$pages,'processed_at'=>now(),'encryption_type'=>'AES-256-GCM-ENVELOPE','encryption_status'=>'done']);

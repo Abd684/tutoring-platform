@@ -9,6 +9,7 @@ use App\Services\HlsVideos;
 use App\Services\ListSearch;
 use App\Services\VideoMetadata;
 use App\Services\PdfEncryption;
+use App\Services\PdfAssetRegistration;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,9 +49,7 @@ class TeacherContentAssetController extends ApiController
                 || str_contains($key, '..') || str_contains($key, '\\')) {
                 throw ValidationException::withMessages(['storage_key' => ['File must be in the owned content directory.']]);
             }
-            $asset = ContentAsset::create([
-                'content_id' => $content->id,
-                ...$request->validate([
+            $attributes = $request->validate([
                     'disk' => ['required', Rule::in(array_values(array_diff(array_keys(config('filesystems.disks')), ['public'])))],
                     'storage_key' => ['required', 'string', 'max:2048'],
                     'mime_type' => ['required', Rule::in(['application/pdf', 'video/mp4', 'video/quicktime', 'video/webm', 'video/x-matroska'])],
@@ -59,8 +58,10 @@ class TeacherContentAssetController extends ApiController
                     'encryption_type' => ['nullable', 'string', 'max:100'],
                     'encryption_status' => ['sometimes', Rule::in(['pending', 'processing', 'done', 'failed'])],
                     'status' => ['sometimes', Rule::in(['active', 'archived'])],
-                ]),
-            ]);
+                ]);
+            $asset = $attributes['mime_type'] === 'application/pdf'
+                ? app(PdfAssetRegistration::class)->register($content, $attributes)
+                : ContentAsset::create(['content_id' => $content->id, ...$attributes]);
 
             app(VideoMetadata::class)->probe($asset);
 
@@ -106,8 +107,7 @@ class TeacherContentAssetController extends ApiController
         }
 
         try {
-            $asset = ContentAsset::create([
-                'content_id' => $content->id,
+            $attributes = [
                 'disk' => $disk,
                 'storage_key' => $storageKey,
                 'mime_type' => $file->getMimeType(),
@@ -117,7 +117,13 @@ class TeacherContentAssetController extends ApiController
                 'encryption_status' => $content->type === 'pdf' ? 'done' : 'pending',
                 'status' => 'active',
                 'processing_status' => $content->type === 'pdf' ? 'pending' : 'ready',
-            ]);
+            ];
+            $asset = $content->type === 'pdf'
+                ? app(PdfAssetRegistration::class)->register($content, $attributes, true)
+                : ContentAsset::create(['content_id' => $content->id, ...$attributes]);
+            if ($asset->disk !== $disk || $asset->storage_key !== $storageKey) {
+                Storage::disk($disk)->delete($storageKey);
+            }
         } catch (Throwable $exception) {
             Storage::disk($disk)->delete($storageKey);
             throw $exception;

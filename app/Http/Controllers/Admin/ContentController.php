@@ -11,6 +11,7 @@ use App\Models\Subject;
 use App\Models\TeacherSubject;
 use App\Models\Unit;
 use App\Services\VideoMetadata;
+use App\Services\PdfAssetRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -115,8 +116,15 @@ class ContentController extends AdminController
                     $teacherId = $content->lesson->unit->teacherSubject->teacher_id;
                     $path = $file->store("teachers/{$teacherId}/contents/{$content->id}", $disk);
                     abort_unless($path, 500);
-                    $asset = ContentAsset::create(['content_id' => $content->id, 'disk' => $disk, 'storage_key' => $path, 'mime_type' => $file->getMimeType(),
-                        'file_size' => $file->getSize(), 'checksum' => hash_file('sha256', $file->getRealPath()), 'encryption_status' => 'pending', 'status' => 'active']);
+                    $attributes = ['disk' => $disk, 'storage_key' => $path, 'mime_type' => $file->getMimeType(),
+                        'file_size' => $file->getSize(), 'checksum' => hash_file('sha256', $file->getRealPath()), 'encryption_status' => 'pending', 'status' => 'active'];
+                    $asset = $content->type === 'pdf'
+                        ? app(PdfAssetRegistration::class)->register($content, $attributes, true)
+                        : ContentAsset::create(['content_id' => $content->id, ...$attributes]);
+                    if ($asset->disk !== $disk || $asset->storage_key !== $path) {
+                        Storage::disk($disk)->delete($path);
+                        $path = null;
+                    }
                     app(VideoMetadata::class)->probe($asset, $file->getRealPath());
                 }
                 $this->audit('content.saved', $content, ['scheduled' => $data['scheduled_publish_at'] !== null]);

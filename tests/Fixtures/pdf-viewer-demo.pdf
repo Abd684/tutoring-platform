@@ -1,0 +1,275 @@
+%PDF-1.4
+%“Œ‹ž ReportLab Generated PDF document (opensource)
+1 0 obj
+<<
+/F1 2 0 R /F2 3 0 R
+>>
+endobj
+2 0 obj
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
+endobj
+3 0 obj
+<<
+/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
+endobj
+4 0 obj
+<<
+/Contents 11 0 R /MediaBox [ 0 0 595 842 ] /Parent 10 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+5 0 obj
+<<
+/Contents 12 0 R /MediaBox [ 0 0 595 842 ] /Parent 10 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+6 0 obj
+<<
+/Contents 13 0 R /MediaBox [ 0 0 595 842 ] /Parent 10 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+7 0 obj
+<<
+/Contents 14 0 R /MediaBox [ 0 0 595 842 ] /Parent 10 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+8 0 obj
+<<
+/PageMode /UseNone /Pages 10 0 R /Type /Catalog
+>>
+endobj
+9 0 obj
+<<
+/Author (anonymous) /CreationDate (D:20261105163621+03'00') /Creator (anonymous) /Keywords () /ModDate (D:20261105163621+03'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (unspecified) /Title (Liqaa - Frontend PDF Demo) /Trapped /False
+>>
+endobj
+10 0 obj
+<<
+/Count 4 /Kids [ 4 0 R 5 0 R 6 0 R 7 0 R ] /Type /Pages
+>>
+endobj
+11 0 obj
+<<
+/Length 1084
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+.054902 .145098 .231373 rg
+n 0 0 595 842 re f*
+.219608 .85098 .752941 rg
+BT /F2 14 Tf 16.8 TL ET
+BT 1 0 0 1 48 780 Tm (LIQAA / FRONTEND TEST) Tj T* ET
+1 1 1 rg
+BT /F2 30 Tf 36 TL ET
+BT 1 0 0 1 48 700 Tm (PDF viewer demo) Tj T* ET
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 48 663 Tm (A sample document for every teacher.) Tj T* ET
+.098039 .231373 .333333 rg
+n
+56 360 m
+539 360 l
+547.8448 360 555 367.1552 555 376 c
+555 584 l
+555 592.8448 547.8448 600 539 600 c
+56 600 l
+47.1552 600 40 592.8448 40 584 c
+40 376 l
+40 367.1552 47.1552 360 56 360 c
+h
+f*
+1 1 1 rg
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 58 550 Tm (Open this document from the teacher content list.) Tj T* ET
+BT 1 0 0 1 58 495 Tm (Confirm that all four pages are available.) Tj T* ET
+BT 1 0 0 1 58 440 Tm (Use a student account with access to test the viewer.) Tj T* ET
+.219608 .85098 .752941 rg
+BT /F2 90 Tf 108 TL ET
+BT 1 0 0 1 48 180 Tm (01) Tj T* ET
+BT /F1 11 Tf 13.2 TL ET
+BT 1 0 0 1 48 70 Tm (DEMO CONTENT | 2026-11-05 | Free test material) Tj T* ET
+BT 1 0 0 1 525.594 70 Tm (1 / 4) Tj T* ET
+ 
+endstream
+endobj
+12 0 obj
+<<
+/Length 1075
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+.054902 .145098 .231373 rg
+n 0 0 595 842 re f*
+.219608 .85098 .752941 rg
+BT /F2 14 Tf 16.8 TL ET
+BT 1 0 0 1 48 780 Tm (LIQAA / FRONTEND TEST) Tj T* ET
+1 1 1 rg
+BT /F2 30 Tf 36 TL ET
+BT 1 0 0 1 48 700 Tm (Page navigation) Tj T* ET
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 48 663 Tm (A second page with a different visual marker.) Tj T* ET
+.098039 .231373 .333333 rg
+n
+56 360 m
+539 360 l
+547.8448 360 555 367.1552 555 376 c
+555 584 l
+555 592.8448 547.8448 600 539 600 c
+56 600 l
+47.1552 600 40 592.8448 40 584 c
+40 376 l
+40 367.1552 47.1552 360 56 360 c
+h
+f*
+1 1 1 rg
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 58 550 Tm (Move forward and back between pages.) Tj T* ET
+BT 1 0 0 1 58 495 Tm (Check page numbers and loading indicators.) Tj T* ET
+BT 1 0 0 1 58 440 Tm (Reopen the document and confirm a fresh session.) Tj T* ET
+.219608 .85098 .752941 rg
+BT /F2 90 Tf 108 TL ET
+BT 1 0 0 1 48 180 Tm (02) Tj T* ET
+BT /F1 11 Tf 13.2 TL ET
+BT 1 0 0 1 48 70 Tm (DEMO CONTENT | 2026-11-05 | Free test material) Tj T* ET
+BT 1 0 0 1 525.594 70 Tm (2 / 4) Tj T* ET
+ 
+endstream
+endobj
+13 0 obj
+<<
+/Length 982
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+.054902 .145098 .231373 rg
+n 0 0 595 842 re f*
+.219608 .85098 .752941 rg
+BT /F2 14 Tf 16.8 TL ET
+BT 1 0 0 1 48 780 Tm (LIQAA / FRONTEND TEST) Tj T* ET
+1 1 1 rg
+BT /F2 30 Tf 36 TL ET
+BT 1 0 0 1 48 700 Tm (Readability check) Tj T* ET
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 48 663 Tm (Sample learning content: simple arithmetic.) Tj T* ET
+.098039 .231373 .333333 rg
+n
+56 360 m
+539 360 l
+547.8448 360 555 367.1552 555 376 c
+555 584 l
+555 592.8448 547.8448 600 539 600 c
+56 600 l
+47.1552 600 40 592.8448 40 584 c
+40 376 l
+40 367.1552 47.1552 360 56 360 c
+h
+f*
+1 1 1 rg
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 58 550 Tm (12 + 8 = 20) Tj T* ET
+BT 1 0 0 1 58 495 Tm (9 x 7 = 63) Tj T* ET
+BT 1 0 0 1 58 440 Tm (100 / 4 = 25) Tj T* ET
+.219608 .85098 .752941 rg
+BT /F2 90 Tf 108 TL ET
+BT 1 0 0 1 48 180 Tm (03) Tj T* ET
+BT /F1 11 Tf 13.2 TL ET
+BT 1 0 0 1 48 70 Tm (DEMO CONTENT | 2026-11-05 | Free test material) Tj T* ET
+BT 1 0 0 1 525.594 70 Tm (3 / 4) Tj T* ET
+ 
+endstream
+endobj
+14 0 obj
+<<
+/Length 1082
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+.054902 .145098 .231373 rg
+n 0 0 595 842 re f*
+.219608 .85098 .752941 rg
+BT /F2 14 Tf 16.8 TL ET
+BT 1 0 0 1 48 780 Tm (LIQAA / FRONTEND TEST) Tj T* ET
+1 1 1 rg
+BT /F2 30 Tf 36 TL ET
+BT 1 0 0 1 48 700 Tm (Viewer checklist) Tj T* ET
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 48 663 Tm (The final page confirms navigation to page four.) Tj T* ET
+.098039 .231373 .333333 rg
+n
+56 360 m
+539 360 l
+547.8448 360 555 367.1552 555 376 c
+555 584 l
+555 592.8448 547.8448 600 539 600 c
+56 600 l
+47.1552 600 40 592.8448 40 584 c
+40 376 l
+40 367.1552 47.1552 360 56 360 c
+h
+f*
+1 1 1 rg
+BT /F1 15 Tf 18 TL ET
+BT 1 0 0 1 58 550 Tm (Check that the student watermark is visible.) Tj T* ET
+BT 1 0 0 1 58 495 Tm (Check zoom, portrait layout, and page edges.) Tj T* ET
+BT 1 0 0 1 58 440 Tm (This document contains test content only.) Tj T* ET
+.219608 .85098 .752941 rg
+BT /F2 90 Tf 108 TL ET
+BT 1 0 0 1 48 180 Tm (04) Tj T* ET
+BT /F1 11 Tf 13.2 TL ET
+BT 1 0 0 1 48 70 Tm (DEMO CONTENT | 2026-11-05 | Free test material) Tj T* ET
+BT 1 0 0 1 525.594 70 Tm (4 / 4) Tj T* ET
+ 
+endstream
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000061 00000 n 
+0000000102 00000 n 
+0000000209 00000 n 
+0000000321 00000 n 
+0000000516 00000 n 
+0000000711 00000 n 
+0000000906 00000 n 
+0000001101 00000 n 
+0000001170 00000 n 
+0000001448 00000 n 
+0000001526 00000 n 
+0000002662 00000 n 
+0000003789 00000 n 
+0000004822 00000 n 
+trailer
+<<
+/ID 
+[<badc8df7954a81119b42840ba57d3100><badc8df7954a81119b42840ba57d3100>]
+% ReportLab generated PDF document -- digest (opensource)
+
+/Info 9 0 R
+/Root 8 0 R
+/Size 15
+>>
+startxref
+5956
+%%EOF

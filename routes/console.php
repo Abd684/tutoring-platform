@@ -133,8 +133,4 @@ Artisan::command('admin:create {--name=} {--email=} {--phone=}', function () {
 
 require __DIR__.'/notifications-console.php';
 
-Artisan::command('pdf:process-pending {--limit=5}', function () {
-    $assets = \App\Models\ContentAsset::query()->where('mime_type', 'application/pdf')->whereIn('processing_status', ['pending','failed'])->limit(max(1, min(20, (int) $this->option('limit'))))->get();
-    foreach ($assets as $asset) app(\App\Services\SecurePdfProcessor::class)->process($asset);
-    $this->info("Processed {$assets->count()} PDF file(s).");
-});
+Schedule::command('pdf:process-pending --limit=5')->everyMinute()->withoutOverlapping(15)->runInBackground();

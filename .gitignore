@@ -24,3 +24,5 @@ Homestead.yaml
 Thumbs.db
 
 /tutoring-platform.zip
+
+/storage/framework/pdf-locks/
